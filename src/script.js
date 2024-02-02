@@ -14,17 +14,11 @@ function handleFileUpload(event) {
         const reader = new FileReader();
         reader.onload = function (e) {
             const objData = e.target.result;
-
-            // Remove the current 3D model, if any
             if (currentModel) {
                 viewerContainer.removeChild(currentModel);
                 currentModel = null;
             }
-
-            // Reset the zoom factor
             zoomFactor = 1.0;
-
-            // Render the new 3D model
             renderObjModel(objData);
         };
         reader.readAsText(file);
@@ -53,7 +47,6 @@ function renderObjModel(objData) {
     directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
 
-    // Variables for handling interaction
     let isDragging = false;
     let previousMouseX = 0;
     let previousMouseY = 0;
@@ -72,20 +65,19 @@ function renderObjModel(objData) {
         if (!isDragging) return;
         const deltaX = e.clientX - previousMouseX;
         const deltaY = e.clientY - previousMouseY;
-        obj.rotation.x += deltaX * 0.01;
-        obj.rotation.y += deltaY * 0.01;
+        obj.rotation.y += deltaX * 0.01; // Apply deltaX to Y rotation
+        obj.rotation.x += deltaY * 0.01; // Apply deltaY to X rotation
         previousMouseX = e.clientX;
         previousMouseY = e.clientY;
     });
+    
 
-    // Zoom controls using mouse wheel or touchpad gestures
     modelContainer.addEventListener("wheel", (e) => {
         zoomFactor -= e.deltaY * 0.001;
-        zoomFactor = Math.max(0.1, zoomFactor); // Prevent zooming in too close
-        camera.position.z = 5 * zoomFactor; // Adjust camera position based on zoom factor
+        zoomFactor = Math.max(0.1, zoomFactor); 
+        camera.position.z = 5 * zoomFactor; 
     });
 
-    // Animation loop
     const animate = function () {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
