@@ -39,7 +39,19 @@ function renderObjModel(objData) {
     const obj = loader.parse(objData);
     scene.add(obj);
 
-    camera.position.z = 5;
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    obj.position.x = -center.x;
+    obj.position.y = -center.y;
+    obj.position.z = -center.z;
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 * Math.tan(fov / 2));
+    camera.position.z = cameraZ * 1.5; 
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
@@ -65,17 +77,19 @@ function renderObjModel(objData) {
         if (!isDragging) return;
         const deltaX = e.clientX - previousMouseX;
         const deltaY = e.clientY - previousMouseY;
-        obj.rotation.y += deltaX * 0.01; // Apply deltaX to Y rotation
-        obj.rotation.x += deltaY * 0.01; // Apply deltaY to X rotation
+        obj.rotation.y += deltaX * 0.01; 
+        obj.rotation.x += deltaY * 0.01; 
         previousMouseX = e.clientX;
         previousMouseY = e.clientY;
     });
-    
 
     modelContainer.addEventListener("wheel", (e) => {
-        zoomFactor -= e.deltaY * 0.001;
-        zoomFactor = Math.max(0.1, zoomFactor); 
-        camera.position.z = 5 * zoomFactor; 
+        const zoomIntensity = 0.1;
+        zoomFactor -= e.deltaY * zoomIntensity;
+        zoomFactor = Math.max(0.1, Math.min(100, zoomFactor)); 
+        
+        let adjustedCameraZ = cameraZ * zoomFactor; 
+        camera.position.z = Math.max(adjustedCameraZ, maxDim * 0.1); 
     });
 
     const animate = function () {
