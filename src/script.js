@@ -2,10 +2,19 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
 import { GLTFLoader } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js";
+import { LineGeometry } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineMaterial.js';
+import { Line2 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
 // import { loadAndPlotTemporal, updateTemporalView, updateTemporalPlotSize } from "./temporal.js"
 import {loadAndPlotTemporal, animateTemporalView} from "./temporal.js"
 
 
+let bins = 5; 
+window.addEventListener('binSizeChange', function(e) {
+  bins = e.detail; 
+  console.log('Bin size changed to:', e.detail);
+});
+let intervals ; 
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff); // Set the background to white
@@ -139,15 +148,25 @@ function updatePlayPauseButton() {
 }
 
 
-// document.getElementById('toggle-speech').addEventListener('change', function() {
-//   if (this.checked) {
-//     // Speech functionality enabled
-//     console.log('Speech functionality enabled');
-//   } else {
-//     // Speech functionality disabled
-//     console.log('Speech functionality disabled');
-//   }
-// });
+document.getElementById('toggle-speech').addEventListener('change', function() {
+  if (this.checked) {
+    // Speech functionality enabled
+    console.log('Speech functionality enabled');
+  } else {
+    // Speech functionality disabled
+    console.log('Speech functionality disabled');
+  }
+});
+
+document.getElementById('toggle-xr-interaction').addEventListener('change', function() {
+  if (this.checked) {
+    // Speech functionality enabled
+    console.log('XR Interaction enabled');
+  } else {
+    // Speech functionality disabled
+    console.log('XR Interaction disabled');
+  }
+});
 
 
 // document.getElementById('toggle-absolute-time').addEventListener('change', function() {
@@ -165,18 +184,23 @@ function animateVisualization() {
   const startTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
   const endTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
   const startTime = Math.min(...startTimes);
-  const endTime = Math.max(...endTimes);
+  const somePadding = 5000;
+  const endTime = Math.max(...endTimes) + somePadding;
   const totalDuration = endTime - startTime;
+  const intervalDuration = totalDuration / bins; 
 
   const nextTimestamp = startTime + currentTimestamp;
   if (currentTimestamp < totalDuration) {
     const currentAbsoluteTime = startTime + currentTimestamp;
-
+    const binIndex = Math.floor((currentAbsoluteTime) / intervalDuration);
+    const startTimeStamp = startTime + (binIndex * intervalDuration);
+    const endTimeStamp = startTimeStamp + intervalDuration;
     // Update visualization for each dataset
     // should be a for loop 
-    updateVisualization(currentAbsoluteTime, jsonDatas[0], meshes[0],interactionMeshes[0], speechMeshes[0], avatars[0]);
-    updateVisualization(currentAbsoluteTime, jsonDatas[1], meshes[1], interactionMeshes[1],speechMeshes[1], avatars[1]);
-
+    jsonDatas.forEach((data, index) => {
+      updateVisualization(currentAbsoluteTime,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+    });
+  
     updateTimeDisplay(currentAbsoluteTime, startTime);
     animateTemporalView(nextTimestamp); // This might need adjustment to handle multiple datasets
 
@@ -189,6 +213,7 @@ function animateVisualization() {
   } else {
     isAnimating = false;
     currentTimestamp = 0; // Reset currentTimestamp if you want to loop
+    toggleAnimation();
   }
 }
 
@@ -236,46 +261,151 @@ function createPointsMovement(data, id, isHighlight = false) {
 }
 
 
-function createLineMovement(data, id, isHighlight = false) {
-  const geometry = new THREE.BufferGeometry();
+// function createLineMovement(data, id, isHighlight = false) {
+//   const geometry = new THREE.BufferGeometry();
+//   const positions = [];
+//   const colors = [];
+//   const hsl = { h: 0, s: 0, l: 0 };
+//   let baseColor;
+//   // console.log("yo this is id " + id);
+//   if (id === 1) {
+//       baseColor = new THREE.Color("#69b3a2");
+//   } else {
+//       baseColor = new THREE.Color("#ff6347");
+//   }
+//   baseColor.getHSL(hsl);
+//   const scaleFactor = 2;
+//   const offsetX = 0;
+//   const offsetY = 1;
+//   const offsetZ = 1;
+//   data.forEach(entry => {
+//       if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+//           const dof = parseData(entry.Data);
+//           if (dof) {
+//               const x = dof[0] * scaleFactor + offsetX;
+//               const y = dof[1] * scaleFactor + offsetY;
+//               const z = dof[2] * scaleFactor + offsetZ;
+//               positions.push(x, y, z);
+//               const lightness = isHighlight ? 0.5 : 0.8;
+//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+//               colors.push(color.r, color.g, color.b);
+//           }
+//       }
+//   });
+
+//   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+//   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+//   const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
+//   const lineMesh = new THREE.Line(geometry, material);
+//   return lineMesh;
+// }
+
+// function createLineMovement(data, id, isHighlight = false) {
+//   // Assuming THREE.LineGeometry behaves similarly to THREE.BufferGeometry
+//   const geometry = new THREE.LineGeometry(); // Use LineGeometry
+//   // const geometry = new LineGeometry();
+//   const positions = [];
+//   const colors = [];
+//   const hsl = { h: 0, s: 0, l: 0 };
+//   let baseColor;
+  
+//   if (id === 1) {
+//       baseColor = new THREE.Color("#69b3a2");
+//   } else {
+//       baseColor = new THREE.Color("#ff6347");
+//   }
+//   baseColor.getHSL(hsl);
+//   const scaleFactor = 2;
+//   const offsetX = 0;
+//   const offsetY = 1;
+//   const offsetZ = 1;
+  
+//   data.forEach(entry => {
+//       if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+//           const dof = parseData(entry.Data); // Ensure this function returns an array of numbers
+//           if (dof) {
+//               const x = dof[0] * scaleFactor + offsetX;
+//               const y = dof[1] * scaleFactor + offsetY;
+//               const z = dof[2] * scaleFactor + offsetZ;
+//               positions.push(x, y, z);
+//               const lightness = isHighlight ? 0.5 : 0.8;
+//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+//               // console.log("here");
+//               colors.push(color.r, color.g, color.b);
+//           }
+//       }
+//   });
+
+//   // Assuming setPositions and setColors methods are available or equivalent in your LineGeometry
+//   geometry.setPositions(positions); // Adjusted for LineGeometry if it has a direct method
+//   geometry.setColors(colors); // Adjusted for LineGeometry if it has a direct method
+
+//   const material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
+//   const lineMesh = new THREE.Line(geometry, material);
+//   return lineMesh;
+// }
+
+
+
+function createLineMovement(data, id, speechFlag, isHighlight = false) {
+  const geometry = new LineGeometry(); // Use the LineGeometry for line data
   const positions = [];
-  const colors = [];
+  const colors = []; 
   const hsl = { h: 0, s: 0, l: 0 };
   let baseColor;
-  // console.log("yo this is id " + id);
+  let linewidth = 1 ; 
+
   if (id === 1) {
-      baseColor = new THREE.Color("#69b3a2");
+    baseColor = new THREE.Color("#69b3a2");
   } else {
-      baseColor = new THREE.Color("#ff6347");
+    baseColor = new THREE.Color("#ff6347");
   }
   baseColor.getHSL(hsl);
   const scaleFactor = 2;
   const offsetX = 0;
   const offsetY = 1;
   const offsetZ = 1;
+
   data.forEach(entry => {
-      if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
-          const dof = parseData(entry.Data);
-          if (dof) {
-              const x = dof[0] * scaleFactor + offsetX;
-              const y = dof[1] * scaleFactor + offsetY;
-              const z = dof[2] * scaleFactor + offsetZ;
-              positions.push(x, y, z);
-              const lightness = isHighlight ? 0.5 : 0.8;
-              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
-              colors.push(color.r, color.g, color.b);
-          }
+    if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+      const dof = parseData(entry.Data); // Ensure this function returns an array of numbers
+      if (dof) {
+        const x = dof[0] * scaleFactor + offsetX;
+        const y = dof[1] * scaleFactor + offsetY;
+        const z = dof[2] * scaleFactor + offsetZ;
+        positions.push(x, y, z);
+        const lightness = isHighlight ? 0.5 : 0.8;
+        const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+        colors.push(color.r, color.g, color.b); // Flatten the color array
       }
+    }
   });
 
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setPositions(positions.flat()); // Flatten the positions array for LineGeometry
+  geometry.setColors(baseColor);
+  if (speechFlag) { linewidth = 4 ; }
+  // if (speechFlag && id == 2 ) 
+  // {
+  //   console.log("here with speechflahAHAAA " + speechFlag );
+  //   console.log("AND WITH TRANSCRIPTIOPN TEXTTTTT" + data);
+  // }
+  const material = new LineMaterial({
+    // vertexColors: true,
+    linewidth: linewidth, // Width of the line
+    color: baseColor, // Base color, might need adjustment based on how you want to use colors
+    transparent: true,
+    opacity: isHighlight ? 1.0 : 0.5
+  });
 
-  const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
-  const lineMesh = new THREE.Line(geometry, material);
-  return lineMesh;
+  // Adjust the material size to ensure it displays correctly
+  material.resolution.set(window.innerWidth, window.innerHeight); // Necessary for LineMaterial
+
+  const line = new Line2(geometry, material);
+  line.computeLineDistances();
+
+  return line;
 }
-
 
 function createPointsSpeech(data,id,isHighlight = false){
   const geometry = new THREE.BufferGeometry();
@@ -319,7 +449,7 @@ function createPointsSpeech(data,id,isHighlight = false){
               x = x*scaleFactor + offsetX;
               y = y * scaleFactor + offsetY;
               z = z * scaleFactor + offsetZ;
-              console.log(`creating point here at x: ${x}, y: ${y} , z:${z}`);
+              // console.log(`creating point here at x: ${x}, y: ${y} , z:${z}`);
               positions.push(x,y,z);
               const lightness = isHighlight ? 0.5 : 0.8;
               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
@@ -527,7 +657,7 @@ async function initializeScene() {
   // Fetch both datasets concurrently
   const responses = await Promise.all([
       fetch('file1.json').then(response => response.json()), // Load the first file
-      fetch('file1Transformed.json').then(response => response.json())  // Load the second file
+      fetch('file1Transformed_emptySpeech.json').then(response => response.json())  // Load the second file
   ]);
   const avatarArray = await Promise.all([
     loadAvatarModel('Stickman.glb'),
@@ -578,85 +708,59 @@ async function initializeScene() {
 
 initializeScene();
 
+function filterDataByType(data) {
+  const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
+  const validDataInteraction = data.filter(entry => entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction');
+  const validDataSpeech = data.filter(entry => entry.TranscriptionText !== undefined && entry.TranscriptionText !== '');
+  return { validData, validDataInteraction, validDataSpeech };
+}
 
+function findClosestDataEntry(data, timestamp) {
+  if (data.length === 0) return null;
+  return data.reduce((prev, curr) => {
+      const currTimestamp = new Date(curr.Timestamp).getTime();
+      const prevTimestamp = new Date(prev.Timestamp).getTime();
+      return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
+  });
+}
 
-function updateVisualization(timestamp, data, mesh, interactionMesh, speechMesh, avatar) {
+function updateVisualization(currTimeStamp, startTimeStamp, endTimeStamp, data, mesh, interactionMesh, speechMesh, avatar) {
   if (!avatar) {
       console.error('The avatar has not been loaded.');
       return;
   }
-  const startTime = new Date(data[0].Timestamp).getTime();
-  const endTime = new Date(data[data.length - 1].Timestamp).getTime();
-//   if (timestamp < startTime || timestamp > endTime) {
-//     // console.log("Hello hiding it?")
-//     avatar.visible = false; // Hide the avatar if outside active range
-//     return;
-// } else {
-//     avatar.visible = true; // Show the avatar if within active range
-// }
+  const startTime = startTimeStamp ;
+  const endTime = endTimeStamp ;
+  const intervalData = data.filter(entry => {
+    const entryTime = new Date(entry.Timestamp).getTime();
+    return entryTime >= startTimeStamp && entryTime <= endTimeStamp;
+});
+// console.log(`Interval Start: ${new Date(startTimeStamp)}, Interval End: ${new Date(endTimeStamp)}`);
 
-  // Filter out entries that do not meet the specific conditions before finding the closest
-  const validData = data.filter(entry => 
-      entry.TrackingType === 'PhysicalDevice' && 
-      entry.FeatureType === 'Transformation' && 
-      typeof entry.Data === 'string'
-  );
-
-  const validDataInteraction = data.filter(entry => 
-    entry.TrackingType === 'XRContent' && 
-    entry.FeatureType === 'Interaction' 
-    // typeof entry.Data === 'string'
-);
-
-const validDataSpeech = data.filter(entry => 
-  entry.TranscriptionText !== undefined && 
-  entry.TranscriptionText !== '' 
-); 
-
-  // (entry.TranscriptionText !== undefined && entry.TranscriptionText !== '') {
-
+if (intervalData.length === 0) {
+  return;
+}
+  const { validData, validDataInteraction, validDataSpeech } = filterDataByType(intervalData);
+  const hasSpeech = validDataSpeech.length > 0;
   // Find closest entry to the timestamp among the filtered valid entries
-  let closestData = validData.reduce((prev, curr) => {
-      const currTimestamp = new Date(curr.Timestamp).getTime();
-      const prevTimestamp = new Date(prev.Timestamp).getTime();
-      return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
-  }, validData[0]);
-  // console.log("this is validData " + validDataInteraction);
-  let closestDataInteraction = validDataInteraction.reduce((prev, curr) => {
-    const currTimestamp = new Date(curr.Timestamp).getTime();
-    const prevTimestamp = new Date(prev.Timestamp).getTime();
-    return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
-}, validDataInteraction[0]);
+  const closestData = findClosestDataEntry(validData, currTimeStamp);
+  const closestDataInteraction = findClosestDataEntry(validDataInteraction, currTimeStamp);
+  const closestDataSpeech = findClosestDataEntry(validDataSpeech, currTimeStamp);
 
-let closestDataSpeech = validDataSpeech.reduce((prev, curr) => {
-  const currTimestamp = new Date(curr.Timestamp).getTime();
-  const prevTimestamp = new Date(prev.Timestamp).getTime();
-  return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
-}, validDataSpeech[0]);
-  // console.log("this is closestDataInteraction " + closestDataInteraction);
-  if (closestData && validData.length > 0 && closestDataInteraction && validDataInteraction.length > 0 
-    && closestDataSpeech && validDataSpeech.length > 0) {
+  // if (closestData && validData.length > 0 && closestDataInteraction && validDataInteraction.length > 0 
+  //   && closestDataSpeech && validDataSpeech.length > 0) {
     // console.log("here?");
+    // console.l
       const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
       const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
       const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
+      
 
-      if (mesh) {
-          scene.remove(mesh);
-      }
-      if (interactionMesh){
-        interactionMesh.forEach(sphere => {
-          scene.remove(sphere);
-      });
-    }
-    if (speechMesh){
-    //   speechMesh.forEach(sphere => {
-    //     scene.remove(sphere);
-    // });
-    scene.remove(speechMesh);
-    }
-        // scene.remove(interactionMesh);
-
+      if (mesh) { scene.remove(mesh);}
+      if (interactionMesh){ interactionMesh.forEach(sphere => {scene.remove(sphere);});}
+     // scene.remove(interactionMesh);
+    if (speechMesh){ scene.remove(speechMesh); }
+      
       const scaleFactor = 2;
       const offsetX = 0; // Adjust these offsets to move points in space
       const offsetY = 1;
@@ -664,9 +768,11 @@ let closestDataSpeech = validDataSpeech.reduce((prev, curr) => {
       let id ;
       if (jsonDatas[0] === data ) { id = 1 ;} 
       else { id = 2 };
+
       // Create and add new points geometry to the scene
       // const newMesh = createPointsMovement(currentData,id);
-      const newMesh = createLineMovement(currentData,id);
+      // const newMesh = createLineMovement(currentData,id);
+      const newMesh = createLineMovement(validData, id, validDataSpeech.length > 0);
       // console.log("Movement Mesh Properties:", newMesh.position, newMesh.scale, newMesh.visible);
       const newInteractionMesh = createSpheresInteraction(currentDataInteraction,id);
       // const newSpeechMesh = createSpheresSpeech(currentDataSpeech,id);
@@ -692,7 +798,7 @@ let closestDataSpeech = validDataSpeech.reduce((prev, curr) => {
   const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');   
   avatar.rotation.set(0, 0, 0);
   avatar.setRotationFromEuler(euler);
-  } 
+  // } 
 }
 
 function formatTime(timestamp) {
@@ -708,10 +814,17 @@ function createTimeSlider(data) {
   const globalStartTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
   const globalEndTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
   const globalStartTime = Math.min(...globalStartTimes);
-  const globalEndTime = Math.max(...globalEndTimes);
-  
+  const somePadding = 5000;
+  const globalEndTime = Math.max(...globalEndTimes) + somePadding ; 
+  // const paddedEndtime = globalEndTime + somePadding ; 
+  const totalTime = globalEndTime - globalStartTime; 
+  const intervalDuration = totalTime / bins; 
+  // console.log("yo these are the bins " + bins );
+  console.log(`this is script.js start time: ${new Date(globalStartTime)} and endtime : ${new Date(globalEndTime)} ` );
+  console.log("this is interval duration from script " + intervalDuration);
   const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-
+  intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(globalStartTime + i * intervalDuration));
+  
   const slider = d3.select('#slider-container').append('input')
       .attr('type', 'range')
       .attr('min', 0) 
@@ -720,6 +833,12 @@ function createTimeSlider(data) {
       .on('input', function() {
           const elapsedMinutes = +this.value;
           currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+          const binIndex = Math.floor((currentTimestamp) / intervalDuration);
+          const startTimeStamp = globalStartTime + (binIndex * intervalDuration);
+          const endTimeStamp = startTimeStamp + intervalDuration;
+         
+          // console.log(`Global Start Time (UTC): ${new Date(startTimeStamp)}`);
+          // console.log(`Global End Time (UTC): ${new Date(endTimeStamp)}`);
           if (isAnimating) {
             toggleAnimation(); 
             updatePlayPauseButton();
@@ -727,27 +846,28 @@ function createTimeSlider(data) {
           isAnimating = false; // Optionally pause animation
           const timestamp = globalStartTime + currentTimestamp;
           jsonDatas.forEach((data, index) => {
-            updateVisualization(timestamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+            updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
           });
           updateTimeDisplay(timestamp, globalStartTime);
           animateTemporalView(timestamp);
-          // updateVisualization(timestamp, jsonDatas[0],meshes[0],avatars[0]);
-          // updateVisualization(timestamp, jsonDatas[1],meshes[1],avatars[1]);
           // updateTimeDisplay(timestamp, startTime);
       });
   slider.node().value = 0;
   slider.on('input', function() {
     const elapsedMinutes = +this.value;
     currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+    const binIndex = Math.floor((currentTimestamp) / intervalDuration);
+    const startTimeStamp = globalStartTime + (binIndex * intervalDuration);
+    const endTimeStamp = startTimeStamp + intervalDuration;
     if (isAnimating) {
       toggleAnimation(); 
       updatePlayPauseButton();
     }
     isAnimating = false; // Optionally pause animation
     const timestamp = globalStartTime + currentTimestamp;
-    // updateVisualization(timestamp, jsonDatas,meshes);
-    updateVisualization(timestamp, jsonDatas[0], meshes[0],interactionMeshes[0],speechMeshes[0], avatars[0]);
-    updateVisualization(timestamp, jsonDatas[1], meshes[1],interactionMeshes[1],speechMeshes[1], avatars[1]);
+    jsonDatas.forEach((data, index) => {
+      updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+    });
     updateTimeDisplay(timestamp, globalStartTime);
     animateTemporalView(timestamp); 
 });

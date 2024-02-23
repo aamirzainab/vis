@@ -97,14 +97,18 @@ function createSharedAxis(data) {
   const margin = { top: 20, right: 30, bottom: 10, left: 30 };
   const width = spatialViewWidth - margin.left - margin.right;
   const startTime = d3.min(data, d => d.parsedStartTime);
-  const endTime = new Date(d3.max(data, d => d.parsedEndTime).getTime() + 5000);
+  const somePadding = 5000;
+  const endTime = new Date(d3.max(data, d => d.parsedEndTime).getTime() + somePadding);
   // const endTime = d3.max(data, d => d.parsedEndTime);
   const totalTime = endTime - startTime; // This is in milliseconds
   const intervalDuration = totalTime / bins; 
+  // console.log("yo these are the bins " + bins );
+  // console.log(`this is temporal.js start time: ${startTime} and endtime : ${endTime} ` );
+  // console.log("this is interval duration from temporal " + intervalDuration);
   // intervals = [0, 1, 2, 3,4 ].map(i => new Date(startTime.getTime() + i * intervalDuration));
-  console.log("rthis is starttime " + startTime);
+  // console.log("rthis is starttime " + startTime);
   intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(startTime.getTime() + i * intervalDuration));
-  const somePadding = 5000;
+  
   intervalWidth = (totalTime) / bins;
 
   x = d3.scaleTime()
