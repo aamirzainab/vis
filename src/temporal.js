@@ -236,9 +236,9 @@ function createPlotAggragatedInteractions(aggregatedData) {
           .attr("y", yPos)
           .attr("width", barWidth)
           .attr("height", barHeight) // Use fixed bar height
-          .attr("fill", color)
-          .attr("stroke", "black")
-          .attr("stroke-width", 1);
+          .attr("fill", color);
+          // .attr("stroke", "black")
+          // .attr("stroke-width", 1);
 
       // Adjust text position based on fixed bar height as needed
       const textYPos = yPos + barHeight / 2;
@@ -254,6 +254,39 @@ function createPlotAggragatedInteractions(aggregatedData) {
     }
     });
   });
+  const text = "XR INTERACTION";
+const padding = 10; 
+const textHeight = 100; 
+const textWidth = 60; 
+
+// Adjust for the rotation
+const rectX = -fixedHeight / 2 - textHeight / 2 - padding;
+const rectY = -margin.left - textWidth / 2 - padding;
+
+// Width and height are adjusted for the longer text
+const rectWidth = textWidth + 2 * padding;
+const rectHeight = textHeight + 2 * padding;
+
+// Add a rectangle (box) for the background
+svg.append("rect")
+  .attr("class", "title-rect")
+  .attr("x", rectX)
+  .attr("y", rectY - 10) // Slightly adjust the rectangle's position
+  .attr("width", rectHeight + 10) // Width and height are swapped due to rotation, with a little extra for padding
+  .attr("height", rectWidth)
+  .attr("transform", "rotate(-90)")
+  .style("fill", "lightgreen"); // Customize the fill and style as needed
+
+// Add the text, rotated similarly to the rectangle
+svg.append("text")
+.attr("class", "title-text")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 0 - margin.left)
+  .attr("x", 0 - (fixedHeight / 2))
+  .attr("dy", "1em")
+  .style("text-anchor", "middle")
+  .style("font-size", "13px")
+  .text(text);
 }
 
 
@@ -287,7 +320,7 @@ function createPlotInteraction(data) {
     .range(["#69b3a2", "#ff6347"]);
 
 
-  const text = "XR INTERACTION";
+const text = "XR INTERACTION";
 const padding = 10; 
 const textHeight = 100; 
 const textWidth = 60; 

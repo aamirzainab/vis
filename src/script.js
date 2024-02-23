@@ -14,7 +14,35 @@ window.addEventListener('binSizeChange', function(e) {
   bins = e.detail; 
   console.log('Bin size changed to:', e.detail);
 });
-let intervals ; 
+// let intervals ; 
+let speechEnabled = false  ; 
+let xrInteractionEnabled = false ;
+let noneEnabled = true ; 
+let globalState = {
+  currentTimestamp: 0,
+  bins: 5,
+  jsonDatas: [],
+  avatars: [],
+  meshes: [],
+  interactionMeshes: [],
+  speechMeshes: [],
+  intervals :undefined,  
+  intervalDuration: 0,
+  globalStartTime: 0,
+  globalEndTime: 0,
+  startTimeStamp: 0,
+  endTimeStamp: 0,
+  currentDataIndex: -1, 
+};
+let isAnimating = false;
+let currentTimestamp = 0; // Start Timestamp, global..scared 
+const animationStep = 50; // Animation speed 
+let jsonDatas = null;
+let roomMesh;
+let meshes = [];
+let avatars = []
+let interactionMeshes = []
+let speechMeshes = []
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff); // Set the background to white
@@ -83,15 +111,6 @@ scene.add(gridHelper);
 
 // let pointsMesh;
 // let avatar;
-let isAnimating = false;
-let currentTimestamp = 0; // Start Timestamp, global..scared 
-const animationStep = 50; // Animation speed 
-let jsonDatas = null;
-let roomMesh;
-let meshes = [];
-let avatars = []
-let interactionMeshes = []
-let speechMeshes = []
 
 
 async function loadAvatarModel(filename) {
@@ -147,61 +166,67 @@ function updatePlayPauseButton() {
   }
 }
 
+document.getElementById('toggle-none').addEventListener('change', function() {
+  noneEnabled = this.checked;
+  if (this.checked) {
+    speechEnabled = false ; 
+    xrInteractionEnabled = false ; 
+    console.log({noneEnabled, speechEnabled, xrInteractionEnabled});
+    updateLineThickness();
+  } else {
+    console.log(' ')
+   
+  }
+});
 
 document.getElementById('toggle-speech').addEventListener('change', function() {
-  if (this.checked) {
-    // Speech functionality enabled
-    console.log('Speech functionality enabled');
+  speechEnabled = this.checked;
+  if (this.checked) { 
+    noneEnabled = false ;
+    xrInteractionEnabled = false ;
+    console.log({noneEnabled, speechEnabled, xrInteractionEnabled});
+    updateLineThickness();
   } else {
-    // Speech functionality disabled
-    console.log('Speech functionality disabled');
+    console.log(' ');
   }
 });
 
 document.getElementById('toggle-xr-interaction').addEventListener('change', function() {
+  xrInteractionEnabled = this.checked;
   if (this.checked) {
-    // Speech functionality enabled
-    console.log('XR Interaction enabled');
+    noneEnabled = false ;
+    speechEnabled = false ; 
+    console.log({noneEnabled, speechEnabled, xrInteractionEnabled});
+    updateLineThickness();
   } else {
-    // Speech functionality disabled
-    console.log('XR Interaction disabled');
+    console.log(' ');
   }
 });
 
 
-// document.getElementById('toggle-absolute-time').addEventListener('change', function() {
-//   if (this.checked) {
-//     // Absolute time functionality enabled
-//     console.log('Absolute time functionality enabled');
-//   } else {
-//     // Absolute time functionality disabled
-//     console.log('Absolute time functionality disabled');
-//   }
-// });
-
 function animateVisualization() {
-  if (!isAnimating || jsonDatas.length === 0) return;
+  if (!isAnimating || globalState.jsonDatas.length === 0) return;
+  const jsonDatas = globalState.jsonDatas;
   const startTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
   const endTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  const startTime = Math.min(...startTimes);
+  globalState.globalStartTime = Math.min(...startTimes);
   const somePadding = 5000;
-  const endTime = Math.max(...endTimes) + somePadding;
-  const totalDuration = endTime - startTime;
-  const intervalDuration = totalDuration / bins; 
+  globalState.globalEndTime = Math.max(...endTimes) + somePadding;
+  const totalDuration = globalState.globalEndTime - globalState.globalStartTime;
+  const intervalDuration = totalDuration / globalState.bins; 
 
-  const nextTimestamp = startTime + currentTimestamp;
-  if (currentTimestamp < totalDuration) {
-    const currentAbsoluteTime = startTime + currentTimestamp;
+  const nextTimestamp = globalState.globalStartTime + globalState.currentTimestamp;
+  if (globalState.currentTimestamp < totalDuration) {
+    const currentAbsoluteTime = globalState.globalStartTime + globalState.currentTimestamp;
     const binIndex = Math.floor((currentAbsoluteTime) / intervalDuration);
-    const startTimeStamp = startTime + (binIndex * intervalDuration);
-    const endTimeStamp = startTimeStamp + intervalDuration;
-    // Update visualization for each dataset
+    globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+    globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
     // should be a for loop 
     jsonDatas.forEach((data, index) => {
-      updateVisualization(currentAbsoluteTime,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+      updateVisualization(currentAbsoluteTime);
     });
   
-    updateTimeDisplay(currentAbsoluteTime, startTime);
+    updateTimeDisplay(currentAbsoluteTime, globalState.startTime);
     animateTemporalView(nextTimestamp); // This might need adjustment to handle multiple datasets
 
     const slider = document.querySelector('#slider-container input[type=range]');
@@ -261,94 +286,7 @@ function createPointsMovement(data, id, isHighlight = false) {
 }
 
 
-// function createLineMovement(data, id, isHighlight = false) {
-//   const geometry = new THREE.BufferGeometry();
-//   const positions = [];
-//   const colors = [];
-//   const hsl = { h: 0, s: 0, l: 0 };
-//   let baseColor;
-//   // console.log("yo this is id " + id);
-//   if (id === 1) {
-//       baseColor = new THREE.Color("#69b3a2");
-//   } else {
-//       baseColor = new THREE.Color("#ff6347");
-//   }
-//   baseColor.getHSL(hsl);
-//   const scaleFactor = 2;
-//   const offsetX = 0;
-//   const offsetY = 1;
-//   const offsetZ = 1;
-//   data.forEach(entry => {
-//       if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
-//           const dof = parseData(entry.Data);
-//           if (dof) {
-//               const x = dof[0] * scaleFactor + offsetX;
-//               const y = dof[1] * scaleFactor + offsetY;
-//               const z = dof[2] * scaleFactor + offsetZ;
-//               positions.push(x, y, z);
-//               const lightness = isHighlight ? 0.5 : 0.8;
-//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
-//               colors.push(color.r, color.g, color.b);
-//           }
-//       }
-//   });
-
-//   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-//   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-//   const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
-//   const lineMesh = new THREE.Line(geometry, material);
-//   return lineMesh;
-// }
-
-// function createLineMovement(data, id, isHighlight = false) {
-//   // Assuming THREE.LineGeometry behaves similarly to THREE.BufferGeometry
-//   const geometry = new THREE.LineGeometry(); // Use LineGeometry
-//   // const geometry = new LineGeometry();
-//   const positions = [];
-//   const colors = [];
-//   const hsl = { h: 0, s: 0, l: 0 };
-//   let baseColor;
-  
-//   if (id === 1) {
-//       baseColor = new THREE.Color("#69b3a2");
-//   } else {
-//       baseColor = new THREE.Color("#ff6347");
-//   }
-//   baseColor.getHSL(hsl);
-//   const scaleFactor = 2;
-//   const offsetX = 0;
-//   const offsetY = 1;
-//   const offsetZ = 1;
-  
-//   data.forEach(entry => {
-//       if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
-//           const dof = parseData(entry.Data); // Ensure this function returns an array of numbers
-//           if (dof) {
-//               const x = dof[0] * scaleFactor + offsetX;
-//               const y = dof[1] * scaleFactor + offsetY;
-//               const z = dof[2] * scaleFactor + offsetZ;
-//               positions.push(x, y, z);
-//               const lightness = isHighlight ? 0.5 : 0.8;
-//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
-//               // console.log("here");
-//               colors.push(color.r, color.g, color.b);
-//           }
-//       }
-//   });
-
-//   // Assuming setPositions and setColors methods are available or equivalent in your LineGeometry
-//   geometry.setPositions(positions); // Adjusted for LineGeometry if it has a direct method
-//   geometry.setColors(colors); // Adjusted for LineGeometry if it has a direct method
-
-//   const material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
-//   const lineMesh = new THREE.Line(geometry, material);
-//   return lineMesh;
-// }
-
-
-
-function createLineMovement(data, id, speechFlag, isHighlight = false) {
+function createLineMovement(data, id, speechFlag, xrInteractionFlag, isHighlight = false ) {
   const geometry = new LineGeometry(); // Use the LineGeometry for line data
   const positions = [];
   const colors = []; 
@@ -384,12 +322,9 @@ function createLineMovement(data, id, speechFlag, isHighlight = false) {
 
   geometry.setPositions(positions.flat()); // Flatten the positions array for LineGeometry
   geometry.setColors(baseColor);
-  if (speechFlag) { linewidth = 4 ; }
-  // if (speechFlag && id == 2 ) 
-  // {
-  //   console.log("here with speechflahAHAAA " + speechFlag );
-  //   console.log("AND WITH TRANSCRIPTIOPN TEXTTTTT" + data);
-  // }
+  if (noneEnabled) { linewidth = 1; }
+  if (speechFlag && speechEnabled) { linewidth = 4 ; }
+  if (xrInteractionFlag && xrInteractionEnabled) { linewidth = 4 ; }
   const material = new LineMaterial({
     // vertexColors: true,
     linewidth: linewidth, // Width of the line
@@ -652,40 +587,27 @@ function createSpheresSpeech(data, id, isHighlight = false) {
 
 
 async function initializeScene() {
-  // await Promise.all([loadAvatarModel(), loadRoomModel()]);
   await Promise.all([loadRoomModel()]);
-  // Fetch both datasets concurrently
-  const responses = await Promise.all([
+  const jsonFiles = await Promise.all([
       fetch('file1.json').then(response => response.json()), // Load the first file
       fetch('file1Transformed_emptySpeech.json').then(response => response.json())  // Load the second file
   ]);
   const avatarArray = await Promise.all([
     loadAvatarModel('Stickman.glb'),
-    loadAvatarModel('Stickman.glb') // Assuming both avatars use the same model; replace with different models if necessary
+    loadAvatarModel('Stickman.glb') 
 ]);
 
-  avatars = [avatarArray[0], avatarArray[1]];
-  // Each dataset is sorted by Timestamp
-  const jsonData1 = responses[0].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-  const jsonData2 = responses[1].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-  jsonDatas = [jsonData1, jsonData2];
-  // meshes.push(createPointsMovement(jsonData1,1));
-  // meshes.push(createPointsMovement(jsonData2,2));
-  meshes.push(createLineMovement(jsonData1,1));
-  meshes.push(createLineMovement(jsonData2,2));
-  interactionMeshes.push(createSpheresInteraction(jsonData1,1));
-  interactionMeshes.push(createSpheresInteraction(jsonData2,2));
-  // speechMeshes.push(createSpheresSpeech(jsonData1,1));
-  // speechMeshes.push(createSpheresSpeech(jsonData2,2));
-    speechMeshes.push(createPointsSpeech(jsonData1,1));
-  speechMeshes.push(createPointsSpeech(jsonData2,2));
-  
-
-
-
-
+  globalState.avatars = [avatarArray[0], avatarArray[1]];
+  const jsonData1 = jsonFiles[0].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+  const jsonData2 = jsonFiles[1].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+  globalState.jsonDatas = [jsonData1, jsonData2];
+  for (let i = 0; i < globalState.jsonDatas.length; i++) {
+    globalState.meshes.push(createLineMovement(globalState.jsonDatas[i], i+1, false, false));
+    globalState.interactionMeshes.push(createSpheresInteraction(globalState.jsonDatas[i],i+1 ));
+    globalState.speechMeshes.push(createPointsSpeech(globalState.jsonDatas[i],i+1 ));
+}
   // Initialize the slider based on the combined range of both datasets, not done
-  createTimeSlider(jsonDatas);
+  createTimeSlider(globalState.jsonDatas);
 
   fitCameraToObject(camera, scene, 1.2, controls);
 
@@ -724,13 +646,27 @@ function findClosestDataEntry(data, timestamp) {
   });
 }
 
-function updateVisualization(currTimeStamp, startTimeStamp, endTimeStamp, data, mesh, interactionMesh, speechMesh, avatar) {
-  if (!avatar) {
+function updateVisualization(currTimeStamp) {
+  // function updateVisualization(currTimeStamp, startTimeStamp, endTimeStamp, data, mesh, interactionMesh, speechMesh, avatar) {
+  // const startTimeStamp = globalState.startTimeStamp ; 
+  // const endTimeStamp = globalState.endTimeStamp ;
+  const {startTimeStamp, endTimeStamp} = globalState;
+  //zainab have to do the dataindex here 
+  const avatar = globalState.avatars[0];
+  const data = globalState.jsonDatas[0];
+  const mesh = globalState.meshes[0];
+  const interactionMesh = globalState.interactionMeshes[0];
+  const speechMesh = globalState.speechMeshes[0];
+  console.log(`Current Start: ${new Date(currTimeStamp)}, StartTime : ${new Date(startTimeStamp)} EndTime : ${new Date(endTimeStamp)}`);
+
+  // avatar = globalState.avatars[0]
+   if (!avatar) {
       console.error('The avatar has not been loaded.');
       return;
   }
-  const startTime = startTimeStamp ;
-  const endTime = endTimeStamp ;
+  // const startTime = startTimeStamp ;
+  // const endTime = endTimeStamp ;
+ 
   const intervalData = data.filter(entry => {
     const entryTime = new Date(entry.Timestamp).getTime();
     return entryTime >= startTimeStamp && entryTime <= endTimeStamp;
@@ -738,6 +674,7 @@ function updateVisualization(currTimeStamp, startTimeStamp, endTimeStamp, data, 
 // console.log(`Interval Start: ${new Date(startTimeStamp)}, Interval End: ${new Date(endTimeStamp)}`);
 
 if (intervalData.length === 0) {
+  // console.log(" r u ehre?");
   return;
 }
   const { validData, validDataInteraction, validDataSpeech } = filterDataByType(intervalData);
@@ -766,13 +703,13 @@ if (intervalData.length === 0) {
       const offsetY = 1;
       const offsetZ = 1;
       let id ;
-      if (jsonDatas[0] === data ) { id = 1 ;} 
+      if (globalState.jsonDatas[0] === data ) { id = 1 ;} 
       else { id = 2 };
 
       // Create and add new points geometry to the scene
       // const newMesh = createPointsMovement(currentData,id);
       // const newMesh = createLineMovement(currentData,id);
-      const newMesh = createLineMovement(validData, id, validDataSpeech.length > 0);
+      const newMesh = createLineMovement(validData, id, validDataSpeech.length > 0, validDataInteraction.length > 0);
       // console.log("Movement Mesh Properties:", newMesh.position, newMesh.scale, newMesh.visible);
       const newInteractionMesh = createSpheresInteraction(currentDataInteraction,id);
       // const newSpeechMesh = createSpheresSpeech(currentDataSpeech,id);
@@ -785,10 +722,6 @@ if (intervalData.length === 0) {
         scene.add(sphere);
     });
     
-  //   newSpeechMesh.forEach(sphere => {
-  //     scene.add(sphere);
-  // });
-  // scene.add(newSpeechMesh); zainab
   const dof = parseData(closestData.data);
   const [x, y, z,pitch, yaw, roll] = parseData(closestData.Data);
   avatar.position.x = x * scaleFactor + offsetX;
@@ -807,23 +740,30 @@ function formatTime(timestamp) {
 }
 
 
+function updateLineThickness(){
+  console.log("im heree in update line thiekcnes ");
+  
+}
+
 function createTimeSlider(data) {
   // const timestamps = data.map(entry => new Date(entry.Timestamp).getTime());
   // const startTime = Math.min(...timestamps);
   // const endTime = Math.max(...timestamps);
-  const globalStartTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  const globalEndTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  const globalStartTime = Math.min(...globalStartTimes);
+  const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  globalState.globalStartTime = Math.min(...globalStartTimes);
+  const globalStartTime = globalState.globalStartTime ;
   const somePadding = 5000;
-  const globalEndTime = Math.max(...globalEndTimes) + somePadding ; 
+  globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding ; 
+  const globalEndTime = globalState.globalEndTime;
   // const paddedEndtime = globalEndTime + somePadding ; 
   const totalTime = globalEndTime - globalStartTime; 
-  const intervalDuration = totalTime / bins; 
+  globalState.intervalDuration = totalTime / globalState.bins; 
   // console.log("yo these are the bins " + bins );
-  console.log(`this is script.js start time: ${new Date(globalStartTime)} and endtime : ${new Date(globalEndTime)} ` );
-  console.log("this is interval duration from script " + intervalDuration);
-  const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-  intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(globalStartTime + i * intervalDuration));
+  // console.log(`this is script.js start time: ${new Date(globalStartTime)} and endtime : ${new Date(globalEndTime)} ` );
+  // console.log("this is interval duration from script " + intervalDuration);
+  const duration = (globalEndTime- globalStartTime ) / 1000 / 60;
+  globalState.intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(globalStartTime+ i * globalState.intervalDuration));
   
   const slider = d3.select('#slider-container').append('input')
       .attr('type', 'range')
@@ -832,10 +772,10 @@ function createTimeSlider(data) {
       .attr('step', 'any')
       .on('input', function() {
           const elapsedMinutes = +this.value;
-          currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+          globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
           const binIndex = Math.floor((currentTimestamp) / intervalDuration);
-          const startTimeStamp = globalStartTime + (binIndex * intervalDuration);
-          const endTimeStamp = startTimeStamp + intervalDuration;
+          globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+          globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
          
           // console.log(`Global Start Time (UTC): ${new Date(startTimeStamp)}`);
           // console.log(`Global End Time (UTC): ${new Date(endTimeStamp)}`);
@@ -844,9 +784,9 @@ function createTimeSlider(data) {
             updatePlayPauseButton();
           }
           isAnimating = false; // Optionally pause animation
-          const timestamp = globalStartTime + currentTimestamp;
+          const timestamp = globalState.globalStartTime + currentTimestamp;
           jsonDatas.forEach((data, index) => {
-            updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+            updateVisualization(timestamp);
           });
           updateTimeDisplay(timestamp, globalStartTime);
           animateTemporalView(timestamp);
@@ -856,19 +796,20 @@ function createTimeSlider(data) {
   slider.on('input', function() {
     const elapsedMinutes = +this.value;
     currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-    const binIndex = Math.floor((currentTimestamp) / intervalDuration);
-    const startTimeStamp = globalStartTime + (binIndex * intervalDuration);
-    const endTimeStamp = startTimeStamp + intervalDuration;
+    const binIndex = Math.floor((currentTimestamp) / globalState.intervalDuration);
+    const startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+    const endTimeStamp = startTimeStamp + globalState.intervalDuration;
     if (isAnimating) {
       toggleAnimation(); 
       updatePlayPauseButton();
     }
     isAnimating = false; // Optionally pause animation
-    const timestamp = globalStartTime + currentTimestamp;
-    jsonDatas.forEach((data, index) => {
-      updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+    const timestamp = globalState.globalStartTime + currentTimestamp;
+    globalState.jsonDatas.forEach((data, index) => {
+      updateVisualization(timestamp);
+      // updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
     });
-    updateTimeDisplay(timestamp, globalStartTime);
+    updateTimeDisplay(timestamp, globalState.globalStartTime);
     animateTemporalView(timestamp); 
 });
 }
