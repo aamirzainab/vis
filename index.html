@@ -3,16 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial Visualizer</title>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; }
-        #slider { position: absolute; top: 10px; left: 10px; }
-    </style>
+    <title>Prototype Dashboard</title>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <div id="slider"></div>
-    <div id="timeDisplay"></div>
+    <div id="spatial-view">
+        <!-- <div id="toolbar" class="toolbar">
+            <div class="toggle">
+                <input type="checkbox" id="toggle-speech">
+                <label for="toggle-speech">Speech</label>
+            </div>
+            <div class="toggle">
+                <input type="checkbox" id="toggle-movement" checked>
+                <label for="toggle-movement">Movement</label>
+            </div>
+            <div class="toggle">
+                <input type="checkbox" id="toggle-absolute-time">
+                <label for="toggle-absolute-time">Absolute Time</label>
+            </div>
+        </div>     -->
+    </div>
+    <div id="slider-container">
+        <div id="playPauseButton" class="play-pause-icon">
+        </div>
+        <div id="timeDisplay">00:00:00</div>
+    </div>
+    <div id="temporal-view">
+        <div id="shared-axis-container">
+            <svg id="shared-axis"></svg>
+        </div>
+        <label for="binsDropdown">Select number of bins:</label>
+                <select id="binsDropdown">
+                <option value="5"  selected>5</option>
+                <option value="10" >10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <!-- Add more options as needed -->
+                </select>
+        <div id="interaction-plot-container">
+            <svg id="interaction-plot"></svg>
+        </div>
+        <div id="speech-plot-container">
+            <svg id="speech-plot"></svg>
+        </div>
+    </div>
     <script type="module" src="src/script.js"></script>
 </body>
 </html>
+
+

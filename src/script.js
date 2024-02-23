@@ -1,132 +1,795 @@
-// Import statements
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
+import { GLTFLoader } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js";
+// import { loadAndPlotTemporal, updateTemporalView, updateTemporalPlotSize } from "./temporal.js"
+import {loadAndPlotTemporal, animateTemporalView} from "./temporal.js"
 
-// Scene setup
+
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff); // Set the background to white
+const spatialView = document.getElementById('spatial-view');
+// const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+camera.position.set(0, 10, 10);
+camera.updateProjectionMatrix();
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 
-// OrbitControls setup
+renderer.setSize(spatialView.width, spatialView.height);
+// renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('spatial-view').appendChild(renderer.domElement);
+
+
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableZoom = true; 
 
-// Lighting setup
+// To re-enable zoom when the mouse is over the canvas 
+renderer.domElement.addEventListener('mouseenter', function() {
+  controls.enableZoom = true; 
+});
+
+renderer.domElement.addEventListener('mouseleave', function() {
+  controls.enableZoom = false; 
+}); 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(0, 1, 0);
 scene.add(directionalLight);
 
-// Camera positioning
-camera.position.set(0, 5, 10);
-controls.update();
+let avatarLoaded = false;
+let roomLoaded = false;
+let movementPointsMesh; 
 
-// Grid helper for a 3D grid (size, divisions)
-const gridHelper = new THREE.GridHelper(100, 100);
-scene.add(gridHelper);
+function fitCameraToObject(camera, object) {
+  const boundingBox = new THREE.Box3().setFromObject(object);
+  const center = boundingBox.getCenter(new THREE.Vector3());
+  const size = boundingBox.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov / 2));
+  cameraZ *= 0.5; 
 
-// Base color for all points
-const baseColor = new THREE.Color(0x0000ff); // Blue color
+  camera.position.set(center.x, center.y, center.z + cameraZ);
+  camera.position.z = center.z + cameraZ;
+  camera.position.y += 10; 
 
-// Parse the data string into an array of numbers
-function parseData(dataString) {
-  return dataString ? dataString.split(',').map(Number) : null;
+  const aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = aspect;
+  camera.lookAt(center);
+  camera.near = cameraZ / 100;
+  camera.far = cameraZ * 100;
+  camera.updateProjectionMatrix();
 }
 
-function createPointsGeometry(data, isHighlight = false) {
+controls.update();
+
+const gridHelper = new THREE.GridHelper(10, 10);
+gridHelper.position.y = -1; 
+scene.add(gridHelper);
+
+// const baseColor = new THREE.Color(0x0000ff); 
+
+// let pointsMesh;
+// let avatar;
+let isAnimating = false;
+let currentTimestamp = 0; // Start Timestamp, global..scared 
+const animationStep = 50; // Animation speed 
+let jsonDatas = null;
+let roomMesh;
+let meshes = [];
+let avatars = []
+let interactionMeshes = []
+let speechMeshes = []
+
+
+async function loadAvatarModel(filename) {
+    const loader = new GLTFLoader();
+    const gltf = await loader.loadAsync(filename); 
+    const avatar = gltf.scene;
+    avatar.scale.set(1, 1, 1); 
+    scene.add(avatar);
+    avatarLoaded = true;
+    return avatar;
+}
+
+async function loadRoomModel() {
+    const loader = new GLTFLoader();
+    try {
+        const gltf = await loader.loadAsync('room132.glb'); 
+        roomMesh = gltf.scene;
+        roomMesh.scale.set(1, 1, 1); 
+        // scene.add(roomMesh);
+    } catch (error) {
+        console.error('Error loading the room model:', error);
+    }
+    roomLoaded = true;
+}
+
+function parseData(dataString) {
+  // console.log("Data being parsed:", dataString);
+    return dataString ? dataString.split(',').map(Number) : [];
+}
+// function parseDataInteraction(dataString){
+//   const { x, y, z } = data.Data;
+
+// }
+
+function toggleAnimation() {
+  isAnimating = !isAnimating;
+  updatePlayPauseButton();
+  if (isAnimating) {
+    animateVisualization();
+  }
+}
+
+function updatePlayPauseButton() {
+  const playIcon = document.getElementById('playIcon');
+  const pauseIcon = document.getElementById('pauseIcon');
+  
+  if (isAnimating) {
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+  } else {
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+  }
+}
+
+
+// document.getElementById('toggle-speech').addEventListener('change', function() {
+//   if (this.checked) {
+//     // Speech functionality enabled
+//     console.log('Speech functionality enabled');
+//   } else {
+//     // Speech functionality disabled
+//     console.log('Speech functionality disabled');
+//   }
+// });
+
+
+// document.getElementById('toggle-absolute-time').addEventListener('change', function() {
+//   if (this.checked) {
+//     // Absolute time functionality enabled
+//     console.log('Absolute time functionality enabled');
+//   } else {
+//     // Absolute time functionality disabled
+//     console.log('Absolute time functionality disabled');
+//   }
+// });
+
+function animateVisualization() {
+  if (!isAnimating || jsonDatas.length === 0) return;
+  const startTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  const endTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  const startTime = Math.min(...startTimes);
+  const endTime = Math.max(...endTimes);
+  const totalDuration = endTime - startTime;
+
+  const nextTimestamp = startTime + currentTimestamp;
+  if (currentTimestamp < totalDuration) {
+    const currentAbsoluteTime = startTime + currentTimestamp;
+
+    // Update visualization for each dataset
+    // should be a for loop 
+    updateVisualization(currentAbsoluteTime, jsonDatas[0], meshes[0],interactionMeshes[0], speechMeshes[0], avatars[0]);
+    updateVisualization(currentAbsoluteTime, jsonDatas[1], meshes[1], interactionMeshes[1],speechMeshes[1], avatars[1]);
+
+    updateTimeDisplay(currentAbsoluteTime, startTime);
+    animateTemporalView(nextTimestamp); // This might need adjustment to handle multiple datasets
+
+    const slider = document.querySelector('#slider-container input[type=range]');
+    if (slider) {
+      slider.value = (currentTimestamp / 1000 / 60).toFixed(2); // Convert to minutes and update the slider
+    }
+    currentTimestamp += animationStep;
+    requestAnimationFrame(animateVisualization);
+  } else {
+    isAnimating = false;
+    currentTimestamp = 0; // Reset currentTimestamp if you want to loop
+  }
+}
+
+
+function createPointsMovement(data, id, isHighlight = false) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
+    const hsl = { h: 0, s: 0, l: 0 };
+    let baseColor ;
+    // console.log("yo this is id " + id);
+    if (id === 1 ) {baseColor = new THREE.Color("#69b3a2"); }
+    else { baseColor = new THREE.Color("#ff6347") ; }
+    baseColor.getHSL(hsl); 
+    const scaleFactor = 2;
+    const offsetX = 0; 
+    const offsetY = 1;
+    const offsetZ = 1;
+    data.forEach(entry => {
+        if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+            const dof = parseData(entry.Data);
+            if (dof) {
+              const x = dof[0] * scaleFactor + offsetX;
+              const y = dof[1] * scaleFactor + offsetY;
+              const z = dof[2] * scaleFactor + offsetZ;
+              // console.log()
+              positions.push(x,y,z);
+              const lightness = isHighlight ? 0.5 : 0.8;
+              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+              colors.push(color.r, color.g, color.b);
+            }
+        }
+    });
+  
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    // if (id == 1 ) {geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    // else { geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+     const material = new THREE.PointsMaterial({ size: 0.1, vertexColors: true, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
+    //pointsMesh = new THREE.Points(geometry, material);
+    const pointsMesh = new THREE.Points(geometry, material);
+   
+    // scene.add(pointsMesh);
+    return pointsMesh;
+}
+
+
+function createLineMovement(data, id, isHighlight = false) {
   const geometry = new THREE.BufferGeometry();
   const positions = [];
   const colors = [];
-  
   const hsl = { h: 0, s: 0, l: 0 };
-  baseColor.getHSL(hsl); // Get HSL values from the base color
-
+  let baseColor;
+  // console.log("yo this is id " + id);
+  if (id === 1) {
+      baseColor = new THREE.Color("#69b3a2");
+  } else {
+      baseColor = new THREE.Color("#ff6347");
+  }
+  baseColor.getHSL(hsl);
+  const scaleFactor = 2;
+  const offsetX = 0;
+  const offsetY = 1;
+  const offsetZ = 1;
   data.forEach(entry => {
-    if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
-      const dof = parseData(entry.Data);
-      if (dof) {
-        positions.push(dof[0], dof[1], dof[2]);
-        // Adjust the lightness based on whether the point is highlighted
-        const lightness = isHighlight ? 0.5 : 0.8;
-        const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
-        colors.push(color.r, color.g, color.b);
+      if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+          const dof = parseData(entry.Data);
+          if (dof) {
+              const x = dof[0] * scaleFactor + offsetX;
+              const y = dof[1] * scaleFactor + offsetY;
+              const z = dof[2] * scaleFactor + offsetZ;
+              positions.push(x, y, z);
+              const lightness = isHighlight ? 0.5 : 0.8;
+              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+              colors.push(color.r, color.g, color.b);
+          }
       }
-    }
   });
 
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const material = new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
-  return new THREE.Points(geometry, material);
+
+  const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, linewidth: 100, opacity: isHighlight ? 1.0 : 0.5 });
+  const lineMesh = new THREE.Line(geometry, material);
+  return lineMesh;
 }
 
-// Global variable for the points mesh
-let pointsMesh;
 
-// Load JSON data, create points, and add them to the scene
-async function loadJsonData() {
-  const response = await fetch('file.json');
-  const jsonData = await response.json();
-  jsonData.sort((a, b) => a.Timestamp - b.Timestamp);
-  pointsMesh = createPointsGeometry(jsonData);
-  scene.add(pointsMesh);
-  createTimeSlider(jsonData);
-}
-
-loadJsonData();
-
-// Create the time slider and time display
-function createTimeSlider(data) {
-  const timestamps = data.map(entry => entry.Timestamp);
-  const slider = d3.select('#slider').append('input')
-    .attr('type', 'range')
-    .attr('min', d3.min(timestamps))
-    .attr('max', d3.max(timestamps))
-    .attr('step', 'any')
-    .on('input', function() {
-      const timestamp = +this.value;
-      updateVisualization(timestamp, data);
-      updateTimeDisplay(timestamp);
+function createPointsSpeech(data,id,isHighlight = false){
+  const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
+    const hsl = { h: 0, s: 0, l: 0 };
+    let baseColor ;
+    // console.log("yo this is id " + id);
+    if (id === 1) {
+      baseColor = new THREE.Color("#f7fcb9");
+  } else {
+      baseColor = new THREE.Color("#fde0dd");
+  }
+    baseColor.getHSL(hsl); 
+    const scaleFactor = 2;
+    const offsetX = 0; 
+    const offsetY = 1;
+    const offsetZ = 1;
+    data.forEach(entry => {
+      if (entry.TrackingType !== "NoneType" && 
+          entry.FeatureType !== "NoneType" && 
+          entry.TrackingType !== 'XRContent' &&
+          entry.TranscriptionText !== undefined &&
+          entry.TranscriptionText !== null &&
+          entry.TranscriptionText.trim() !== ''
+      ){
+          let dof ; 
+          let x,y,z;
+          if (typeof entry.Data === 'string' ) { 
+            dof = parseData( entry.Data );
+            x = dof[0];
+            y = dof[1];
+            z = dof[2];
+           }
+          else {
+            dof = entry.Data ; 
+            x = dof.x; 
+            y = dof.y ;
+            z = dof.z
+          }
+              x = x*scaleFactor + offsetX;
+              y = y * scaleFactor + offsetY;
+              z = z * scaleFactor + offsetZ;
+              console.log(`creating point here at x: ${x}, y: ${y} , z:${z}`);
+              positions.push(x,y,z);
+              const lightness = isHighlight ? 0.5 : 0.8;
+              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+              colors.push(color.r, color.g, color.b);
+        }
     });
   
-  // Create a time display
-  d3.select('#timeDisplay').text(new Date(d3.min(timestamps)).toUTCString());
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    // if (id == 1 ) {geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    // else { geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    // isHighlight ? 1.0 : 0.5
+     const material = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 0.5  });
+    //pointsMesh = new THREE.Points(geometry, material);
+    const pointsMesh = new THREE.Points(geometry, material);
+    return pointsMesh;
 }
 
-// Update the visualization based on the timestamp
-function updateVisualization(timestamp, data) {
-  const currentData = data.filter(entry => entry.Timestamp <= timestamp);
-  const highlightData = data.filter(entry => entry.Timestamp === timestamp);
+function createPointsInteraction(data,id,isHighlight = false) {
+  // const geometry = new THREE.BufferGeometry();
+   const geometry = new THREE.SphereGeometry();
+    const positions = [];
+    const colors = [];
+    const hsl = { h: 0, s: 0, l: 0 };
+    let baseColor ;
+    // console.log("yo this is id " + id);
+    if (id == 1 ) {baseColor = new THREE.Color("#756bb1"); }
+    else { baseColor = new THREE.Color("#dd1c77") ; }
+    baseColor.getHSL(hsl); 
+    const scaleFactor = 2;
+    const offsetX = 0; 
+    const offsetY = 1;
+    const offsetZ = 1;
+    data.forEach(entry => {
+        if (entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction') {
+            // const dof = parseData(entry.Data);
+            const dof = entry.Data;
+            // console.log("this is dofx " + dof.x );
 
-  // Remove old points from the scene
-  if (pointsMesh) {
-    scene.remove(pointsMesh);
+            if (dof) {
+              // const x = dof.normalized.x * scaleFactor + offsetX;
+              // const y = dof.normalized.y * scaleFactor + offsetY;
+              // const z = dof.normalized.z * scaleFactor + offsetZ;
+              const x = dof.x * scaleFactor + offsetX;
+              const y = dof.y * scaleFactor + offsetY;
+              const z = dof.z * scaleFactor + offsetZ;
+              // console.log("This is x,y,z " + x + "," + y + "," + z);
+              // console.log()
+              positions.push(x,y,z);
+              const lightness = isHighlight ? 0.5 : 0.8;
+              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+              colors.push(color.r, color.g, color.b);
+            }
+        }
+    });
+    // console.log("hey this is positions " + positions);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    // if (id == 1 ) {geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    // else { geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));}
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({ size: 1, vertexColors: true, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
+    //  const material = new THREE.PointsMaterial({ size: 0.1, vertexColors: true});
+    //pointsMesh = new THREE.Points(geometry, material);
+    const pointsMesh = new THREE.Points(geometry, material);
+    return pointsMesh;
+
+}
+
+function createSpheresInteraction(data, id, isHighlight = false) {
+  const spheres = []; // Array to hold all the sphere meshes
+  const hsl = { h: 0, s: 0, l: 0 };
+  let baseColor;
+  if (id === 1) {
+      baseColor = new THREE.Color("#756bb1");
+  } else {
+      baseColor = new THREE.Color("#dd1c77");
   }
+  baseColor.getHSL(hsl);
+  const scaleFactor = 2;
+  const offsetX = 0;
+  const offsetY = 1;
+  const offsetZ = 1;
+  const sphereRadius = 0.1; // Adjust the radius of the spheres as needed
+  const segments = 16; // Number of segments; increase for smoother spheres
+
+  data.forEach(entry => {
+      if (entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction') {
+          const dof = entry.Data;
+          if (dof) {
+              const x = dof.x * scaleFactor + offsetX;
+              const y = dof.y * scaleFactor + offsetY;
+              const z = dof.z * scaleFactor + offsetZ;
+              const geometry = new THREE.SphereGeometry(sphereRadius, segments, segments);
+              const lightness = isHighlight ? 0.5 : 0.8;
+              const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+              const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
+              const sphereMesh = new THREE.Mesh(geometry, material);
+              sphereMesh.position.set(x, y, z);
+              // console.log(`creating sphere here at x: ${x}, y: ${y} , z:${z}`);
+              spheres.push(sphereMesh); // Add the sphere mesh to the array
+          }
+      }
+  });
+  return spheres; // Return an array of sphere meshes
+}
+
+// function createSpheresSpeech(data,id,isHighlight = false){
+//   const spheres = []; // Array to hold all the sphere meshes
+//   const hsl = { h: 0, s: 0, l: 0 };
+//   let baseColor;
+//   if (id === 1) {
+//       baseColor = new THREE.Color("#f7fcb9");
+//   } else {
+//       baseColor = new THREE.Color("#fde0dd");
+//   }
+//   baseColor.getHSL(hsl);
+//   const scaleFactor = 2;
+//   const offsetX = 0;
+//   const offsetY = 1;
+//   const offsetZ = 1;
+//   const sphereRadius = 0.1; // Adjust the radius of the spheres as needed
+//   const segments = 5; // Number of segments; increase for smoother spheres
+
+//   data.forEach(entry => {
+//       if (entry.TranscriptionText !== undefined && entry.TranscriptionText !== '') {
+//           const dof = entry.Data;
+//           if (dof) {
+//               const x = dof.x * scaleFactor + offsetX;
+//               const y = dof.y * scaleFactor + offsetY;
+//               const z = dof.z * scaleFactor + offsetZ;
+//               const geometry = new THREE.SphereGeometry(sphereRadius, segments, segments);
+//               const lightness = isHighlight ? 0.5 : 0.8;
+//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+//               const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
+//               const sphereMesh = new THREE.Mesh(geometry, material);
+//               sphereMesh.position.set(x, y, z);
+//               console.log("created sphereMesh");
+//               spheres.push(sphereMesh); 
+//           }
+//       }
+//   });
+//   return spheres;
+
+// }
+
+function createSpheresSpeech(data, id, isHighlight = false) {
+    const spheres = []; // Array to hold all the sphere meshes
+    let baseColor;
+    if (id === 1) {
+        baseColor = new THREE.Color("#f7fcb9");
+    } else {
+        baseColor = new THREE.Color("#fde0dd");
+    }
+    const hsl = { h: 0, s: 0, l: 0 };
+    baseColor.getHSL(hsl);
+    const scaleFactor = 2;
+    const offsetX = 0;
+    const offsetY = 1;
+    const offsetZ = 1;
+    const sphereRadius = 0.1; // Adjust the radius of the spheres as needed
+    const segments = 2; // Number of segments; increase for smoother spheres
+
+    // Assuming you want to keep a similar data structure and filtering logic
+    data.forEach(entry => {
+      if (entry.TrackingType !== "NoneType" && 
+      entry.FeatureType !== "NoneType" && 
+      entry.TrackingType !== 'XRContent' &&
+      entry.TranscriptionText !== undefined &&
+      entry.TranscriptionText !== null &&
+      entry.TranscriptionText.trim() !== ''
+  ){
+            // Assuming 'Data' contains position info like in the previous function
+            if (typeof entry.Data === 'string' ) { 
+              dof = parseData( entry.Data );
+              x = dof[0];
+              y = dof[1];
+              z = dof[2];
+             }
+            else {
+              dof = entry.Data ; 
+              x = dof.x; 
+              y = dof.y ;
+              z = dof.z
+            }
+            x = x*scaleFactor + offsetX;
+                y = y * scaleFactor + offsetY;
+                z = z * scaleFactor + offsetZ;
+                const geometry = new THREE.SphereGeometry(sphereRadius, segments, segments);
+                const lightness = isHighlight ? 0.5 : 0.8;
+                const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
+                const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
+                const sphereMesh = new THREE.Mesh(geometry, material);
+                sphereMesh.position.set(x, y, z);
+                spheres.push(sphereMesh);
+            }
+    });
+    return spheres;
+}
+
+
+
+async function initializeScene() {
+  // await Promise.all([loadAvatarModel(), loadRoomModel()]);
+  await Promise.all([loadRoomModel()]);
+  // Fetch both datasets concurrently
+  const responses = await Promise.all([
+      fetch('file1.json').then(response => response.json()), // Load the first file
+      fetch('file1Transformed.json').then(response => response.json())  // Load the second file
+  ]);
+  const avatarArray = await Promise.all([
+    loadAvatarModel('Stickman.glb'),
+    loadAvatarModel('Stickman.glb') // Assuming both avatars use the same model; replace with different models if necessary
+]);
+
+  avatars = [avatarArray[0], avatarArray[1]];
+  // Each dataset is sorted by Timestamp
+  const jsonData1 = responses[0].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+  const jsonData2 = responses[1].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+  jsonDatas = [jsonData1, jsonData2];
+  // meshes.push(createPointsMovement(jsonData1,1));
+  // meshes.push(createPointsMovement(jsonData2,2));
+  meshes.push(createLineMovement(jsonData1,1));
+  meshes.push(createLineMovement(jsonData2,2));
+  interactionMeshes.push(createSpheresInteraction(jsonData1,1));
+  interactionMeshes.push(createSpheresInteraction(jsonData2,2));
+  // speechMeshes.push(createSpheresSpeech(jsonData1,1));
+  // speechMeshes.push(createSpheresSpeech(jsonData2,2));
+    speechMeshes.push(createPointsSpeech(jsonData1,1));
+  speechMeshes.push(createPointsSpeech(jsonData2,2));
   
-  // Add the non-highlighted points
-  pointsMesh = createPointsGeometry(currentData);
-  scene.add(pointsMesh);
 
-  // Add the highlighted points
-  if (highlightData.length > 0) {
-    const highlightMesh = createPointsGeometry(highlightData, true);
-    highlightMesh.material.size = 0.1; // Make highlighted points slightly bigger
-    scene.add(highlightMesh);
-  }
+
+
+
+  // Initialize the slider based on the combined range of both datasets, not done
+  createTimeSlider(jsonDatas);
+
+  fitCameraToObject(camera, scene, 1.2, controls);
+
+  const playPauseButton = document.createElement('div');
+  playPauseButton.id = 'playPauseButton';
+  playPauseButton.innerHTML = `
+<svg id="playIcon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play">
+  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+</svg>
+<svg id="pauseIcon" style="display:none;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pause">
+  <rect x="6" y="4" width="4" height="16"></rect>
+  <rect x="14" y="4" width="4" height="16"></rect>
+</svg>
+`;
+  document.getElementById('slider-container').appendChild(playPauseButton);
+  playPauseButton.addEventListener('click', function() {
+      toggleAnimation(); // Now correctly passing a function reference
+  });
 }
 
-// Update the time display
-function updateTimeDisplay(timestamp) {
+initializeScene();
+
+
+
+function updateVisualization(timestamp, data, mesh, interactionMesh, speechMesh, avatar) {
+  if (!avatar) {
+      console.error('The avatar has not been loaded.');
+      return;
+  }
+  const startTime = new Date(data[0].Timestamp).getTime();
+  const endTime = new Date(data[data.length - 1].Timestamp).getTime();
+//   if (timestamp < startTime || timestamp > endTime) {
+//     // console.log("Hello hiding it?")
+//     avatar.visible = false; // Hide the avatar if outside active range
+//     return;
+// } else {
+//     avatar.visible = true; // Show the avatar if within active range
+// }
+
+  // Filter out entries that do not meet the specific conditions before finding the closest
+  const validData = data.filter(entry => 
+      entry.TrackingType === 'PhysicalDevice' && 
+      entry.FeatureType === 'Transformation' && 
+      typeof entry.Data === 'string'
+  );
+
+  const validDataInteraction = data.filter(entry => 
+    entry.TrackingType === 'XRContent' && 
+    entry.FeatureType === 'Interaction' 
+    // typeof entry.Data === 'string'
+);
+
+const validDataSpeech = data.filter(entry => 
+  entry.TranscriptionText !== undefined && 
+  entry.TranscriptionText !== '' 
+); 
+
+  // (entry.TranscriptionText !== undefined && entry.TranscriptionText !== '') {
+
+  // Find closest entry to the timestamp among the filtered valid entries
+  let closestData = validData.reduce((prev, curr) => {
+      const currTimestamp = new Date(curr.Timestamp).getTime();
+      const prevTimestamp = new Date(prev.Timestamp).getTime();
+      return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
+  }, validData[0]);
+  // console.log("this is validData " + validDataInteraction);
+  let closestDataInteraction = validDataInteraction.reduce((prev, curr) => {
+    const currTimestamp = new Date(curr.Timestamp).getTime();
+    const prevTimestamp = new Date(prev.Timestamp).getTime();
+    return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
+}, validDataInteraction[0]);
+
+let closestDataSpeech = validDataSpeech.reduce((prev, curr) => {
+  const currTimestamp = new Date(curr.Timestamp).getTime();
+  const prevTimestamp = new Date(prev.Timestamp).getTime();
+  return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
+}, validDataSpeech[0]);
+  // console.log("this is closestDataInteraction " + closestDataInteraction);
+  if (closestData && validData.length > 0 && closestDataInteraction && validDataInteraction.length > 0 
+    && closestDataSpeech && validDataSpeech.length > 0) {
+    // console.log("here?");
+      const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
+      const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
+      const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
+
+      if (mesh) {
+          scene.remove(mesh);
+      }
+      if (interactionMesh){
+        interactionMesh.forEach(sphere => {
+          scene.remove(sphere);
+      });
+    }
+    if (speechMesh){
+    //   speechMesh.forEach(sphere => {
+    //     scene.remove(sphere);
+    // });
+    scene.remove(speechMesh);
+    }
+        // scene.remove(interactionMesh);
+
+      const scaleFactor = 2;
+      const offsetX = 0; // Adjust these offsets to move points in space
+      const offsetY = 1;
+      const offsetZ = 1;
+      let id ;
+      if (jsonDatas[0] === data ) { id = 1 ;} 
+      else { id = 2 };
+      // Create and add new points geometry to the scene
+      // const newMesh = createPointsMovement(currentData,id);
+      const newMesh = createLineMovement(currentData,id);
+      // console.log("Movement Mesh Properties:", newMesh.position, newMesh.scale, newMesh.visible);
+      const newInteractionMesh = createSpheresInteraction(currentDataInteraction,id);
+      // const newSpeechMesh = createSpheresSpeech(currentDataSpeech,id);
+      const newSpeechMesh = createPointsSpeech(currentDataSpeech,id);
+      // console.log("Interaction Mesh Properties:", newInteractionMesh.position, newInteractionMesh.scale, newInteractionMesh.visible);
+
+      scene.add(newMesh);
+
+      newInteractionMesh.forEach(sphere => {
+        scene.add(sphere);
+    });
+    
+  //   newSpeechMesh.forEach(sphere => {
+  //     scene.add(sphere);
+  // });
+  // scene.add(newSpeechMesh); zainab
+  const dof = parseData(closestData.data);
+  const [x, y, z,pitch, yaw, roll] = parseData(closestData.Data);
+  avatar.position.x = x * scaleFactor + offsetX;
+  avatar.position.y = y * scaleFactor + offsetY;
+  avatar.position.z = z * scaleFactor + offsetZ;
+  avatar.rotation.set(0, 0, 0); // Reset to avoid cumulative rotations
+  const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');   
+  avatar.rotation.set(0, 0, 0);
+  avatar.setRotationFromEuler(euler);
+  } 
+}
+
+function formatTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
+}
+
+
+function createTimeSlider(data) {
+  // const timestamps = data.map(entry => new Date(entry.Timestamp).getTime());
+  // const startTime = Math.min(...timestamps);
+  // const endTime = Math.max(...timestamps);
+  const globalStartTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  const globalEndTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
+  const globalStartTime = Math.min(...globalStartTimes);
+  const globalEndTime = Math.max(...globalEndTimes);
+  
+  const duration = (globalEndTime - globalStartTime) / 1000 / 60;
+
+  const slider = d3.select('#slider-container').append('input')
+      .attr('type', 'range')
+      .attr('min', 0) 
+      .attr('max', duration) 
+      .attr('step', 'any')
+      .on('input', function() {
+          const elapsedMinutes = +this.value;
+          currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+          if (isAnimating) {
+            toggleAnimation(); 
+            updatePlayPauseButton();
+          }
+          isAnimating = false; // Optionally pause animation
+          const timestamp = globalStartTime + currentTimestamp;
+          jsonDatas.forEach((data, index) => {
+            updateVisualization(timestamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
+          });
+          updateTimeDisplay(timestamp, globalStartTime);
+          animateTemporalView(timestamp);
+          // updateVisualization(timestamp, jsonDatas[0],meshes[0],avatars[0]);
+          // updateVisualization(timestamp, jsonDatas[1],meshes[1],avatars[1]);
+          // updateTimeDisplay(timestamp, startTime);
+      });
+  slider.node().value = 0;
+  slider.on('input', function() {
+    const elapsedMinutes = +this.value;
+    currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+    if (isAnimating) {
+      toggleAnimation(); 
+      updatePlayPauseButton();
+    }
+    isAnimating = false; // Optionally pause animation
+    const timestamp = globalStartTime + currentTimestamp;
+    // updateVisualization(timestamp, jsonDatas,meshes);
+    updateVisualization(timestamp, jsonDatas[0], meshes[0],interactionMeshes[0],speechMeshes[0], avatars[0]);
+    updateVisualization(timestamp, jsonDatas[1], meshes[1],interactionMeshes[1],speechMeshes[1], avatars[1]);
+    updateTimeDisplay(timestamp, globalStartTime);
+    animateTemporalView(timestamp); 
+});
+}
+
+function updateTimeDisplay(timestamp, startTime) {
+  const elapsedMs = timestamp - startTime;
+  const elapsedMinutes = Math.floor(elapsedMs / 60000); // Convert to minutes
+  const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000); // Remaining seconds
+  const milliseconds = Math.round((elapsedMs % 1000) / 10); 
+  const date = new Date(timestamp);
+
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+  const milliseconds2 = date.getMilliseconds().toString().padStart(3, '0');
+
   const timeDisplay = document.getElementById('timeDisplay');
   if (timeDisplay) {
-    timeDisplay.textContent = `Time: ${new Date(timestamp).toUTCString()}`;
+    // Format elapsed time as MM:SS:MMM
+    // timeDisplay.textContent = `${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
+    timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
   }
 }
+
+
+camera.updateProjectionMatrix();
+
+function onWindowResize() {
+  const spatialView = document.getElementById('spatial-view');
+  camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
+}
+
+// loadAndPlotTemporalInteraction();
+// loadAndPlotTemporalSpeech();
+loadAndPlotTemporal();
+
+onWindowResize();
+window.addEventListener('resize', onWindowResize, false);
+// window.addEventListener('resize', updateTemporalPlotSize);
 
 function animate() {
   requestAnimationFrame(animate);
@@ -134,5 +797,4 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-
-animate();
+animate();;
