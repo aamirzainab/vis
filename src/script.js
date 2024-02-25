@@ -1,6 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
 import { GLTFLoader } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/GLTFLoader.js";
+import { OBJLoader } from  "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/OBJLoader.js";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js";
 import { LineGeometry } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineMaterial.js';
@@ -9,12 +10,8 @@ import { Line2 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/
 import {loadAndPlotTemporal, animateTemporalView} from "./temporal.js"
 
 
-let bins = 5; 
-window.addEventListener('binSizeChange', function(e) {
-  bins = e.detail; 
-  console.log('Bin size changed to:', e.detail);
-});
-// let intervals ; 
+// let bins = 5; 
+
 let speechEnabled = false  ; 
 let xrInteractionEnabled = false ;
 let noneEnabled = true ; 
@@ -34,10 +31,14 @@ let globalState = {
   endTimeStamp: 0,
   currentDataIndex: -1, 
 };
+window.addEventListener('binSizeChange', function(e) {
+  globalState.bins = e.detail; 
+  console.log('Bin size changed to:', e.detail);
+});
 let isAnimating = false;
-let currentTimestamp = 0; // Start Timestamp, global..scared 
+// let currentTimestamp = 0; // Start Timestamp, global..scared 
 const animationStep = 50; // Animation speed 
-let jsonDatas = null;
+// let jsonDatas = null;
 let roomMesh;
 let meshes = [];
 let avatars = []
@@ -114,13 +115,16 @@ scene.add(gridHelper);
 
 
 async function loadAvatarModel(filename) {
-    const loader = new GLTFLoader();
-    const gltf = await loader.loadAsync(filename); 
-    const avatar = gltf.scene;
-    avatar.scale.set(1, 1, 1); 
-    scene.add(avatar);
-    avatarLoaded = true;
-    return avatar;
+  // const loader = new OBJLoader();
+  const loader = new GLTFLoader();
+  const gltf = await loader.loadAsync(filename); 
+  // const avatar = await loader.loadAsync(filename);
+  const avatar = gltf.scene;
+  avatar.scale.set(1, 1, 1); 
+  // avatar.scale.set(0.01,0.01,0.01);
+  scene.add(avatar);
+  avatarLoaded = true;
+  return avatar;
 }
 
 async function loadRoomModel() {
@@ -147,6 +151,7 @@ function parseData(dataString) {
 
 function toggleAnimation() {
   isAnimating = !isAnimating;
+  console.log("helllo");
   updatePlayPauseButton();
   if (isAnimating) {
     animateVisualization();
@@ -204,41 +209,48 @@ document.getElementById('toggle-xr-interaction').addEventListener('change', func
 });
 
 
-function animateVisualization() {
-  if (!isAnimating || globalState.jsonDatas.length === 0) return;
-  const jsonDatas = globalState.jsonDatas;
-  const startTimes = jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  const endTimes = jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  globalState.globalStartTime = Math.min(...startTimes);
-  const somePadding = 5000;
-  globalState.globalEndTime = Math.max(...endTimes) + somePadding;
-  const totalDuration = globalState.globalEndTime - globalState.globalStartTime;
-  const intervalDuration = totalDuration / globalState.bins; 
 
-  const nextTimestamp = globalState.globalStartTime + globalState.currentTimestamp;
-  if (globalState.currentTimestamp < totalDuration) {
-    const currentAbsoluteTime = globalState.globalStartTime + globalState.currentTimestamp;
-    const binIndex = Math.floor((currentAbsoluteTime) / intervalDuration);
-    globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+function animateVisualization() {
+  const jsonDatas = globalState.jsonDatas; 
+  if (!isAnimating || jsonDatas.length === 0) return;
+  
+  const globalStartTime = globalState.globalStartTime;
+  const globalEndTime = globalState.globalEndTime;
+  const totalTime = globalEndTime - globalStartTime;
+
+  // Ensure intervalDuration is already correctly set outside this function
+  const nextTimestamp = globalStartTime + globalState.currentTimestamp;
+  
+  if (globalState.currentTimestamp < totalTime) {
+    // const currentPlayerTime = globalStartTime + globalState.currentTimestamp;
+    const elapsedTime = globalState.currentTimestamp;
+    // console.log("Current Player Time: ", new Date(currentPlayerTime));
+    const binIndex = Math.floor(elapsedTime / globalState.intervalDuration);
+    // console.log("Bin Index: ", binIndex);
+    // const binIndex = Math.floor(currentPlayerTime / globalState.intervalDuration);
+    // console.log("this is bin index " + binIndex);
+    globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
     globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-    // should be a for loop 
+
     jsonDatas.forEach((data, index) => {
-      updateVisualization(currentAbsoluteTime);
+      updateVisualization(globalStartTime + elapsedTime);
     });
   
-    updateTimeDisplay(currentAbsoluteTime, globalState.startTime);
-    animateTemporalView(nextTimestamp); // This might need adjustment to handle multiple datasets
+    updateTimeDisplay(globalStartTime + elapsedTime, globalStartTime);
+    animateTemporalView(nextTimestamp);
 
+    // Update the slider value to reflect the current progress
     const slider = document.querySelector('#slider-container input[type=range]');
     if (slider) {
-      slider.value = (currentTimestamp / 1000 / 60).toFixed(2); // Convert to minutes and update the slider
+      slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
     }
-    currentTimestamp += animationStep;
+
+    globalState.currentTimestamp += animationStep;
     requestAnimationFrame(animateVisualization);
   } else {
     isAnimating = false;
-    currentTimestamp = 0; // Reset currentTimestamp if you want to loop
-    toggleAnimation();
+    globalState.currentTimestamp = 0; // Reset for potential restart
+    toggleAnimation(); // Consider if you need to adjust the toggle here
   }
 }
 
@@ -589,13 +601,19 @@ function createSpheresSpeech(data, id, isHighlight = false) {
 async function initializeScene() {
   await Promise.all([loadRoomModel()]);
   const jsonFiles = await Promise.all([
+      fetch('file1.json').then(response => response.json()),
       fetch('file1.json').then(response => response.json()), // Load the first file
-      fetch('file1Transformed_emptySpeech.json').then(response => response.json())  // Load the second file
+      // fetch('file1Transformed_emptySpeech.json').then(response => response.json())  // Load the second file
   ]);
   const avatarArray = await Promise.all([
-    loadAvatarModel('Stickman.glb'),
-    loadAvatarModel('Stickman.glb') 
+    // loadAvatarModel('Stickman.glb'),
+    // loadAvatarModel('Stickman.glb') 
+    loadAvatarModel("ipad_mini_2023/scene.gltf"),
+    // /Users/zainabaamir/Desktop/CVCResearch/vis/ipad_mini_2023/scene.gltf
+    // /Users/zainabaamir/Desktop/CVCResearch/vis/apple_ipad_pro/ipad.gltf
+    loadAvatarModel("ipad_mini_2023/scene.gltf")
 ]);
+
 
   globalState.avatars = [avatarArray[0], avatarArray[1]];
   const jsonData1 = jsonFiles[0].sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
@@ -647,9 +665,6 @@ function findClosestDataEntry(data, timestamp) {
 }
 
 function updateVisualization(currTimeStamp) {
-  // function updateVisualization(currTimeStamp, startTimeStamp, endTimeStamp, data, mesh, interactionMesh, speechMesh, avatar) {
-  // const startTimeStamp = globalState.startTimeStamp ; 
-  // const endTimeStamp = globalState.endTimeStamp ;
   const {startTimeStamp, endTimeStamp} = globalState;
   //zainab have to do the dataindex here 
   const avatar = globalState.avatars[0];
@@ -657,9 +672,8 @@ function updateVisualization(currTimeStamp) {
   const mesh = globalState.meshes[0];
   const interactionMesh = globalState.interactionMeshes[0];
   const speechMesh = globalState.speechMeshes[0];
-  console.log(`Current Start: ${new Date(currTimeStamp)}, StartTime : ${new Date(startTimeStamp)} EndTime : ${new Date(endTimeStamp)}`);
+  // console.log(`Current time: ${new Date(currTimeStamp)}, StartTime : ${new Date(startTimeStamp)} EndTime : ${new Date(endTimeStamp)}`);
 
-  // avatar = globalState.avatars[0]
    if (!avatar) {
       console.error('The avatar has not been loaded.');
       return;
@@ -671,10 +685,8 @@ function updateVisualization(currTimeStamp) {
     const entryTime = new Date(entry.Timestamp).getTime();
     return entryTime >= startTimeStamp && entryTime <= endTimeStamp;
 });
-// console.log(`Interval Start: ${new Date(startTimeStamp)}, Interval End: ${new Date(endTimeStamp)}`);
 
 if (intervalData.length === 0) {
-  // console.log(" r u ehre?");
   return;
 }
   const { validData, validDataInteraction, validDataSpeech } = filterDataByType(intervalData);
@@ -762,8 +774,10 @@ function createTimeSlider(data) {
   // console.log("yo these are the bins " + bins );
   // console.log(`this is script.js start time: ${new Date(globalStartTime)} and endtime : ${new Date(globalEndTime)} ` );
   // console.log("this is interval duration from script " + intervalDuration);
+  // console.log(` StartTime : ${new Date(globalStartTime)} EndTime : ${new Date(globalEndTime)}`);
+
   const duration = (globalEndTime- globalStartTime ) / 1000 / 60;
-  globalState.intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(globalStartTime+ i * globalState.intervalDuration));
+  globalState.intervals = Array.from({ length: globalState.bins + 1 }, (v, i) => new Date(globalStartTime+ i * globalState.intervalDuration));
   
   const slider = d3.select('#slider-container').append('input')
       .attr('type', 'range')
@@ -773,9 +787,11 @@ function createTimeSlider(data) {
       .on('input', function() {
           const elapsedMinutes = +this.value;
           globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-          const binIndex = Math.floor((currentTimestamp) / intervalDuration);
+          const binIndex = Math.floor((globalState.currentTimestamp) / intervalDuration);
           globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+           
           globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+          // console.log(` Sent to function StartTime  : ${new Date(globalState.startTimeStamp )} EndTime : ${new Date(globalState.endTimeStamp )}`);
          
           // console.log(`Global Start Time (UTC): ${new Date(startTimeStamp)}`);
           // console.log(`Global End Time (UTC): ${new Date(endTimeStamp)}`);
@@ -795,19 +811,19 @@ function createTimeSlider(data) {
   slider.node().value = 0;
   slider.on('input', function() {
     const elapsedMinutes = +this.value;
-    currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-    const binIndex = Math.floor((currentTimestamp) / globalState.intervalDuration);
-    const startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-    const endTimeStamp = startTimeStamp + globalState.intervalDuration;
+    globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
+    const binIndex = Math.floor((globalState.currentTimestamp) / globalState.intervalDuration);
+    globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+    globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    // console.log(` Sent to function StartTime  : ${new Date(globalState.startTimeStamp )} EndTime : ${new Date(globalState.endTimeStamp )}`);
     if (isAnimating) {
       toggleAnimation(); 
       updatePlayPauseButton();
     }
     isAnimating = false; // Optionally pause animation
-    const timestamp = globalState.globalStartTime + currentTimestamp;
+    const timestamp = globalState.globalStartTime + globalState.currentTimestamp;
     globalState.jsonDatas.forEach((data, index) => {
       updateVisualization(timestamp);
-      // updateVisualization(timestamp,startTimeStamp,endTimeStamp, data, meshes[index],interactionMeshes[index], speechMeshes[index] ,avatars[index]);
     });
     updateTimeDisplay(timestamp, globalState.globalStartTime);
     animateTemporalView(timestamp); 
