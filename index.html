@@ -17,29 +17,109 @@
                 <input type="radio" id="toggle-speech" name="visualizationOption">
                 <label for="toggle-speech">Speech</label>
             </div>
-            <!-- <div class="toggle">
-                <input type="checkbox" id="toggle-movement" checked>
-                <label for="toggle-movement">Movement</label>
-            </div> -->
-            <!-- <div class="toggle">
-                <input type="checkbox" id="toggle-absolute-time">
-                <label for="toggle-absolute-time">Absolute Time</label>
-            </div> -->
             <div class="toggle">
                 <input type="radio" id="toggle-xr-interaction" name="visualizationOption">
                 <label for="toggle-xr-interaction">XR Interaction</label>
             </div>
-        </div>    
+        </div>
+        <div id="user-toolbar" class="toolbar">
+            <div class="toggle">
+                <input type="checkbox" id="toggle-user0" name="userVisibility" checked>
+                <label for="toggle-user0">User 1</label>
+            </div>
+            <div class="toggle">
+                <input type="checkbox" id="toggle-user1" name="userVisibility" checked>
+                <label for="toggle-user1">User 2</label>
+            </div>
+        </div>
+        <div id="right-toolbar" class="toolbar right"></div>
+    </div>
+    <script>
+        function createListItem(name, isFolder = false, children = []) {
+        const listItem = document.createElement('li');
+        listItem.style.listStyle = 'none';
+        if (isFolder) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = name;
+            checkbox.checked = true ;
+            listItem.appendChild(checkbox);
+
+            const label = document.createElement('label');
+            label.setAttribute('for', name);
+            label.textContent = name;
+            listItem.appendChild(label);
+
+            const subList = document.createElement('ul');
+            children.forEach(child => {
+                subList.appendChild(createListItem(child.name, child.type === "folder", child.children || []));
+            });
+            listItem.appendChild(subList);
+            checkbox.addEventListener('change', function() {
+            const subCheckboxes = subList.querySelectorAll('input[type="checkbox"]');
+            subCheckboxes.forEach(subCheckbox => subCheckbox.checked = this.checked);
+            });           
+        } else {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = name;
+            checkbox.checked = true ;
+
+            const label = document.createElement('label');
+            label.setAttribute('for', name);
+            label.textContent = name;
+
+            listItem.appendChild(checkbox);
+            listItem.appendChild(label);
+        }
+        return listItem;
+    }
+
+    function generateToolbar(folderStructure) {
+        const toolbar = document.getElementById('right-toolbar');
+        const list = document.createElement('ul');
+        Object.keys(folderStructure).forEach(key => {
+            const isFolder = Array.isArray(folderStructure[key]);
+            list.appendChild(createListItem(key, isFolder, folderStructure[key]));
+        });
+        toolbar.appendChild(list);
+        const mainOptions = document.querySelectorAll('.main-option');
+        mainOptions.forEach(mainOption => {
+            mainOption.addEventListener('change', function() {
+                const subOptions = this.parentElement.querySelector('.sub-options-list').querySelectorAll('input[type="checkbox"]');
+                subOptions.forEach(subOption => subOption.checked = this.checked);
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+            fetch('folderStructure.json') 
+                .then(response => response.json())
+                .then(data => {
+                    generateToolbar(data);
+                    const checkedCheckboxes = document.querySelectorAll('#right-toolbar input[type="checkbox"]:checked');
+                })
+                .catch(error => console.error('Error loading folder structure:', error));
+        });
+    </script>
     </div>
     <div id="slider-container">
         <div id="playPauseButton" class="play-pause-icon">
         </div>
-        <div id="timeDisplay">00:00:00</div>
+        <!-- <div id="timeDisplay">00:00:00</div> -->
+        
     </div>
-    <div id="temporal-view">
+    <div id="temporal-view" style="position: relative;">
+        <svg style="position: absolute; top: 0; left: 0; z-index: 10;" width="100%" height="100%">
+            <line id="time-indicator-line" x1="100" y1="24" x2="100" y2="100%" stroke="black" stroke-width="1"></line>
+            <circle id="time-indicator-circle" cx="100" cy="24" r="5" fill="black"></circle>
+
+        </svg>
+        <div id="timeDisplay" style="position: absolute; right: 0;">00:00:00</div>
         <div id="shared-axis-container">
             <svg id="shared-axis"></svg>
         </div>
+        <div id="bin-selection-container" style="padding: 20px;">
         <label for="binsDropdown">Select number of bins:</label>
                 <select id="binsDropdown">
                 <option value="5"  selected>5</option>
@@ -48,6 +128,7 @@
                 <option value="30">30</option>
                 <!-- Add more options as needed -->
                 </select>
+        </div>
         <div id="interaction-plot-container">
             <svg id="interaction-plot"></svg>
         </div>
@@ -56,6 +137,7 @@
         </div>
     </div>
     <script type="module" src="src/script.js"></script>
+    <script type="module" src="src/objToolbar.js"></script>
 </body>
 </html>
 
