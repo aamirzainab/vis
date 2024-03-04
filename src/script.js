@@ -6,9 +6,7 @@ import { OrbitControls } from "https://cdn.skypack.dev/three@0.132.2/examples/js
 import { LineGeometry } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineMaterial.js';
 import { Line2 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
-// import { loadAndPlotTemporal, updateTemporalView, updateTemporalPlotSize } from "./temporal.js"
 import {loadAndPlotTemporal, animateTemporalView, getXScale} from "./temporal.js"
-// import { getXScale } from './temporal.js';
 
 let speechEnabled = false  ;
 let xrInteractionEnabled = false ;
@@ -30,7 +28,7 @@ let globalState = {
   currentDataIndex: -1,
   show: []
 };
-
+const opacities = [0.2,0.4,0.6,0.8,1];
 
 window.addEventListener('binSizeChange', function(e) {
   globalState.bins = e.detail;
@@ -48,9 +46,8 @@ let interactionMeshes = []
 let speechMeshes = []
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff); // Set the background to white
+scene.background = new THREE.Color(0xffffff); 
 const spatialView = document.getElementById('spatial-view');
-// const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 camera.position.set(0, 10, 10);
 camera.updateProjectionMatrix();
@@ -58,14 +55,12 @@ camera.updateProjectionMatrix();
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 
 renderer.setSize(spatialView.width, spatialView.height);
-// renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('spatial-view').appendChild(renderer.domElement);
 
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableZoom = true;
 
-// To re-enable zoom when the mouse is over the canvas
 renderer.domElement.addEventListener('mouseenter', function() {
   controls.enableZoom = true;
 });
@@ -110,11 +105,6 @@ const gridHelper = new THREE.GridHelper(10, 10);
 gridHelper.position.y = -1;
 scene.add(gridHelper);
 
-// const baseColor = new THREE.Color(0x0000ff);
-
-// let pointsMesh;
-// let avatar;
-
 
 async function loadAvatarModel(filename) {
   // const loader = new OBJLoader();
@@ -123,7 +113,7 @@ async function loadAvatarModel(filename) {
   const avatar = gltf.scene;
   avatar.scale.set(1, 1, 1);
   avatar.name = filename;
-  console.log(filename);
+  // console.log(filename);
   scene.add(avatar);
   avatarLoaded = true;
   return avatar;
@@ -152,7 +142,6 @@ function parseData(dataString) {
 
 function toggleAnimation() {
   isAnimating = !isAnimating;
-  // console.log("helllo");
   updatePlayPauseButton();
   if (isAnimating) {
     animateVisualization();
@@ -209,7 +198,8 @@ document.getElementById('toggle-xr-interaction').addEventListener('change', func
   }
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+window.onload = function() {
+  // document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('toggle-user0').addEventListener('change', function() {
     globalState.show[0] = this.checked;
   });
@@ -217,7 +207,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('toggle-user1').addEventListener('change', function() {
     globalState.show[1] = this.checked;
   });
-});
+  const objToolbar = document.getElementById('obj-toolbar');
+  const toolbar = document.getElementById('toolbar');
+  const userToolbar = document.getElementById('user-toolbar');
+  const totalHeight = objToolbar.clientHeight + userToolbar.clientHeight + toolbar.clientHeight;
+  objToolbar.style.top = '0';
+  toolbar.style.bottom = '0';
+  userToolbar.style.top =  (toolbar.offsetTop - userToolbar.clientHeight) + 'px';
+  // console.log('User Toolbar Bottom:', userToolbar.offsetTop + userToolbar.clientHeight);
+};
+// });
 
 function showUserData(userID) {
   // if (globalState.meshes[userID]) {
@@ -345,8 +344,8 @@ function createPointsMovement(data, id, isHighlight = false) {
     return pointsMesh;
 }
 
-
-function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity) {
+//dashsize, dashgap
+function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity, dashSize, gapSize) {
   const geometry = new LineGeometry();
   const positions = [];
   const colors = [];
@@ -386,6 +385,9 @@ function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity) {
     color: baseColor, 
     opacity : opacity,
     transparent: true,
+    dashed: false,
+    dashSize: dashSize,
+    gapSize : gapSize,
   });
   material.resolution.set(window.innerWidth, window.innerHeight);
 
@@ -399,7 +401,13 @@ function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity) {
 
 function createFullLine(data, id, currentBinIndex) {
   let lines = [];
-
+  const maxOpacity = 1;
+  const minOpacity = 0.1; 
+  const opacityDropOffRate = 0.2; 
+  const baseDashSize = 0.25;
+  const baseGapSize = 0.01;
+  const dashGapIncreaseFactor = 0.05;
+  const maxGapSize = 0.5; 
   for (let binIndex = 0; binIndex < globalState.bins; binIndex++) {
       const binStartTime = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
       const binEndTime = binStartTime + globalState.intervalDuration;
@@ -408,10 +416,15 @@ function createFullLine(data, id, currentBinIndex) {
           return entryTime >= binStartTime && entryTime < binEndTime;
       });
       const { validData, validDataInteraction, validDataSpeech } = filterDataByType(binData);
-      console.log("hey this is validDatainteraction.kength " + validDataInteraction.length);
-      const opacity = binIndex === currentBinIndex ? 1 : 0.35;
+      const distance = Math.abs(currentBinIndex - binIndex);
+      let opacity = Math.max(maxOpacity - distance * opacityDropOffRate, minOpacity);
+      // opacity = 1 ; 
+      // let dashSize = baseDashSize;
+      let dashSize = baseDashSize + (distance * dashGapIncreaseFactor);
+      let gapSize = Math.min(baseGapSize + (distance * dashGapIncreaseFactor), maxGapSize);
       if (validData.length > 0) {
-          const lineSegment = createLineSegment(validData, id, validDataSpeech.length > 0, validDataInteraction.length > 0, opacity);
+          const lineSegment = createLineSegment(validData, id, validDataSpeech.length > 0, validDataInteraction.length > 0, opacity, dashSize, gapSize);
+          // console.log("came here with opacity " + opacity);
           lines.push(lineSegment);
       }
   }
@@ -707,16 +720,19 @@ async function initializeScene() {
 `;
   document.getElementById('slider-container').appendChild(playPauseButton);
   playPauseButton.addEventListener('click', function() {
-      toggleAnimation(); // Now correctly passing a function reference
+      toggleAnimation(); 
   });
+
+
 }
+
 
 initializeScene();
 
 function filterDataByType(data) {
   const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
   const validDataInteraction = data.filter(entry => entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction');
-  console.log("this is validdatainter" + validDataInteraction);
+  // console.log("this is validdatainter" + validDataInteraction);
   const validDataSpeech = data.filter(entry => entry.TranscriptionText !== undefined && entry.TranscriptionText !== '');
   return { validData, validDataInteraction, validDataSpeech };
 }
@@ -922,8 +938,6 @@ function createTimeSlider(data) {
           });
           animateTemporalView(timestamp);
           updateTimeDisplay(timestamp, globalStartTime);
-          
-          // updateTimeDisplay(timestamp, startTime);
       });
   slider.node().value = 0;
   slider.on('input', function() {
@@ -998,7 +1012,6 @@ function updateTimeDisplay(timestamp, startTime) {
   const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000); // Remaining seconds
   const milliseconds = Math.round((elapsedMs % 1000) / 10);
   const date = new Date(timestamp);
-
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const seconds = date.getSeconds().toString().padStart(2, '0');
@@ -1006,8 +1019,6 @@ function updateTimeDisplay(timestamp, startTime) {
 
   const timeDisplay = document.getElementById('timeDisplay');
   if (timeDisplay) {
-    // Format elapsed time as MM:SS:MMM
-    // timeDisplay.textContent = `${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
     timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
   }
 }

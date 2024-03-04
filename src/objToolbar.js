@@ -1,7 +1,7 @@
 import {getScene} from "./script.js" 
 
 
-document.getElementById('right-toolbar').addEventListener('change', async function(event) {
+document.getElementById('obj-toolbar').addEventListener('change', async function(event) {
   const target = event.target;
   if (target.tagName === 'INPUT' && target.type === 'checkbox') {
       const isChecked = target.checked;
@@ -22,7 +22,7 @@ document.getElementById('right-toolbar').addEventListener('change', async functi
 async function handleChangeOnModel(checkbox) {
   const modelPath = getModelPath(checkbox);
   const isChecked = checkbox.checked;
-  console.log(`Model selected: ${modelPath}, Checked: ${isChecked}`);
+  // console.log(`Model selected: ${modelPath}, Checked: ${isChecked}`);
   const scene = getScene();
   const existingObject = scene.getObjectByName(modelPath);
   if (existingObject) {

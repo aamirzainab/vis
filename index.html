@@ -7,7 +7,13 @@
     <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <div id="spatial-view">
+    <div id="spatial-view"></div>
+        <div id="right-pane">
+            <div class="plot-box" id="plot-box1"></div>
+            <div class="plot-box" id="plot-box2"></div> 
+        </div>
+    <div id="left-pane">
+        <div id="obj-toolbar" class="toolbar obj"></div>
         <div id="toolbar" class="toolbar">
             <div class="toggle">
                 <input type="radio" id="toggle-none" name="visualizationOption" checked>
@@ -31,8 +37,6 @@
                 <input type="checkbox" id="toggle-user1" name="userVisibility" checked>
                 <label for="toggle-user1">User 2</label>
             </div>
-        </div>
-        <div id="right-toolbar" class="toolbar right"></div>
     </div>
     <script>
         function createListItem(name, isFolder = false, children = []) {
@@ -76,7 +80,7 @@
     }
 
     function generateToolbar(folderStructure) {
-        const toolbar = document.getElementById('right-toolbar');
+        const toolbar = document.getElementById('obj-toolbar');
         const list = document.createElement('ul');
         Object.keys(folderStructure).forEach(key => {
             const isFolder = Array.isArray(folderStructure[key]);
@@ -97,7 +101,7 @@
                 .then(response => response.json())
                 .then(data => {
                     generateToolbar(data);
-                    const checkedCheckboxes = document.querySelectorAll('#right-toolbar input[type="checkbox"]:checked');
+                    const checkedCheckboxes = document.querySelectorAll('#obj-toolbar input[type="checkbox"]:checked');
                 })
                 .catch(error => console.error('Error loading folder structure:', error));
         });
@@ -110,11 +114,6 @@
         
     </div>
     <div id="temporal-view" style="position: relative;">
-        <svg style="position: absolute; top: 0; left: 0; z-index: 10;" width="100%" height="100%">
-            <line id="time-indicator-line" x1="100" y1="24" x2="100" y2="100%" stroke="black" stroke-width="1"></line>
-            <circle id="time-indicator-circle" cx="100" cy="24" r="5" fill="black"></circle>
-
-        </svg>
         <div id="timeDisplay" style="position: absolute; right: 0;">00:00:00</div>
         <div id="shared-axis-container">
             <svg id="shared-axis"></svg>
@@ -135,6 +134,10 @@
         <div id="speech-plot-container">
             <svg id="speech-plot"></svg>
         </div>
+        <svg style="position: absolute; top: 0; left: 0; z-index: 1;  pointer-events: none;" width="100%" height="100% ">
+            <line id="time-indicator-line" x1="100" y1="24" x2="100" y2="100%"></line>
+            <circle id="time-indicator-circle" cx="100" cy="24" r="5" fill="black"></circle>
+        </svg>
     </div>
     <script type="module" src="src/script.js"></script>
     <script type="module" src="src/objToolbar.js"></script>

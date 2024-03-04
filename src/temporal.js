@@ -9,6 +9,7 @@ let x;
 let intervalWidth ; 
 let intervals ; 
 var bins = 5; 
+let numUsers = 2 ; 
 
 function changeBinSize(newBinSize) {
   // Create and dispatch a custom event with the new bin size
@@ -78,7 +79,7 @@ export async function loadAndPlotTemporal() {
   const preparedDataInteraction = prepareDataForPlotting(combinedDataInteraction);
   let allCombinedData = [...combinedDataSpeech, ...combinedDataInteraction];
   createSharedAxis(allCombinedData);
-  const aggregatedDataInteraction = aggregateDataByInterval(preparedDataInteraction, intervals);
+  const aggregatedDataInteraction = aggregateDataIntervalInteraction(preparedDataInteraction, intervals);
   const aggregatedDataSpeech = aggregateDataIntervalSpeech(preparedDataSpeech, intervals);
   aggregatedDataSpeech.pop();
 
@@ -103,8 +104,10 @@ function createSharedAxis(data) {
   const sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
   sharedAxisContainer.html(""); 
   const margin = { top: 20, right: 30, bottom: 10, left: 40 };
+  // const viewportWidth = window.innerWidth;
   const scaling = 50 ; 
-  const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right - scaling;
+  // const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right - scaling;
+  const width = window.innerWidth ;
   const startTime = d3.min(data, d => d.parsedStartTime);
   const somePadding = 0;
   const endTime = new Date(d3.max(data, d => d.parsedEndTime).getTime() + somePadding);
@@ -133,61 +136,139 @@ function createSharedAxis(data) {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-     
   const axisGroup = svg.append("g")
     .attr("transform", `translate(0,${margin.top - 15})`)
     .call(xAxis);
 
 }
 
-function aggregateDataByInterval(data, intervals) {
+function aggregateDataIntervalInteraction(data, intervals) {
   const countsPerInterval = intervals.map(interval => ({
-      User1: {},
-      User2: {},
+      User1: {count: {}, events: []},
+      User2: {count: {}, events: []},
       intervalStart: interval,
       intervalEnd: new Date(interval.getTime() + (intervals[1].getTime() - intervals[0].getTime()))
   }));
+  // console.log(countsPerInterval);
 
   data.forEach(d => {
-      const user = d.UserId;
-      const startTime = d.parsedStartTime;
-      for (let i = 0; i < intervals.length - 1; i++) {
-          if (startTime >= intervals[i] && startTime < intervals[i + 1]) {
-              const message = d.Message;
-              if (!countsPerInterval[i][user][message]) {
-                  countsPerInterval[i][user][message] = 1;
-              } else {
-                  countsPerInterval[i][user][message] += 1;
-              }
-          }
-      }
-  });
+    const user = d.UserId;
+    const startTime = new Date(d.parsedStartTime); // Ensuring this is a Date object
+    const endTime = new Date(d.parsedEndTime);
+    // console.log(`Processing: ${user}, Time: ${startTime}`);
+    // console.log("user id " + user );
+
+    for (let i = 0; i < intervals.length - 1; i++) {
+        // console.log(`Checking interval: ${intervals[i]} to ${intervals[i + 1]}`);
+        if (startTime >= intervals[i] && startTime < intervals[i + 1]) {
+            // console.log(`Matched interval for ${user} at ${startTime}`);
+            const message = d.Message;
+            // Assuming correction here for accessing the 'count' object
+            if (!countsPerInterval[i][user].count[message]) {
+                countsPerInterval[i][user].count[message] = 1;
+            } else {
+                countsPerInterval[i][user].count[message] += 1;
+            }
+            // console.log(`Pushing event for ${user}:`, { message: message, timestamp: startTime });
+            countsPerInterval[i][user].events.push({
+                message: message,
+                eventStartTimeStamp : startTime,
+                eventEndTimeStamp: endTime
+            });
+            // Pushing event
+            // countsPerInterval[i][user].events.push({
+            //     message: message,
+            //     timestamp: startTime // Using ISO string for consistency
+            // });
+        }
+    }
+});
+
+  // countsPerInterval.forEach((interval, index) => {
+  //   console.log(`Interval ${index + 1}:`);go
+  //   console.log(`Start: ${interval.intervalStart}, End: ${interval.intervalEnd}`);
+    
+  //   console.log('User1:');
+  //   console.log('Count:', interval.User1.count);
+  //   console.log('Events:');
+  //   interval.User1.events.forEach((event, eventIndex) => {
+  //     console.log(`  Event ${eventIndex + 1}: ${event.message} at ${event.timestamp}`);
+  //   });
+  
+  //   console.log('User2:');
+  //   console.log('Count:', interval.User2.count);
+  //   console.log('Events:');
+  //   interval.User2.events.forEach((event, eventIndex) => {
+  //     console.log(`  Event ${eventIndex + 1}: ${event.message} at ${event.timestamp}`);
+  //   });
+  
+  //   console.log('---------------------------');
+  // });
   return countsPerInterval;
 }
+
+// function aggregateDataIntervalSpeech(data, intervals) {
+//   const dataPerInterval = intervals.map(interval => ({
+//     intervalStart: interval,
+//     intervalEnd: new Date(interval.getTime() + (intervals[1].getTime() - intervals[0].getTime())),
+//     dataPoints: []
+//   }));
+
+//   data.forEach(d => {
+//     const startTime = d.StartTime;
+//     for (let i = 0; i < dataPerInterval.length; i++) {
+//       if (startTime >= dataPerInterval[i].intervalStart && startTime < dataPerInterval[i].intervalEnd) {
+//         dataPerInterval[i].dataPoints.push(d);
+//         break; 
+//       }
+//     }
+//   });
+//   return dataPerInterval;
+// }
 
 function aggregateDataIntervalSpeech(data, intervals) {
   const dataPerInterval = intervals.map(interval => ({
     intervalStart: interval,
     intervalEnd: new Date(interval.getTime() + (intervals[1].getTime() - intervals[0].getTime())),
-    dataPoints: []
+    User1: { events: [] }, // Initialize events array for User1
+    User2: { events: [] }  // Initialize events array for User2
   }));
 
   data.forEach(d => {
-    const startTime = d.StartTime;
+    const user = d.UserId;
+    const startTime = new Date(d.StartTime);
+    const endTime = new Date(d.EndTime);
+
     for (let i = 0; i < dataPerInterval.length; i++) {
       if (startTime >= dataPerInterval[i].intervalStart && startTime < dataPerInterval[i].intervalEnd) {
-        dataPerInterval[i].dataPoints.push(d);
-        break; 
+        const transcriptionText = d.TranscriptionText; 
+        // Push event to the respective user's events array
+        dataPerInterval[i][user].events.push({
+          transcriptionText: transcriptionText,
+          eventStartTimeStamp: startTime,
+          eventEndTimeStamp: endTime
+        });
+        break; // Exit loop once the interval is found
       }
     }
   });
-  // dataPerInterval.forEach((interval, index) => {
+  //  dataPerInterval.forEach((interval, index) => {
   //   console.log(`Interval ${index + 1}:`);
-  //   console.log(interval.dataPoints);
-  //   console.log("----------------------");
+  //   console.log(`Start: ${interval.intervalStart}, End: ${interval.intervalEnd}`);
+  
+  //   console.log('User2:');
+  //   console.log('Count:', interval.User2.count);
+  //   console.log('Events:');
+  //   interval.User2.events.forEach((event, eventIndex) => {
+  //     console.log(`  Event ${eventIndex + 1}: saying this  ${event.transcriptionText} starting at this time  ${event.eventStartTimeStamp}`);
+  //   });
+  
+  //   console.log('---------------------------');
   // });
+
   return dataPerInterval;
 }
+
 
 
 
@@ -196,9 +277,13 @@ function createPlotAggregatedSpeech(aggregatedData) {
   const plotContainer = d3.select("#speech-plot-container");
   plotContainer.html("");
   const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
-  const margin = { top: 30, right: 40, bottom: 10, left: 40 };
-  const width = spatialViewWidth - margin.left - margin.right;
-  const height = 150 - margin.top - margin.bottom;
+  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
+  // const margin = { top: 30, right: 40, bottom: 10, left: 40 };
+  const margin = { top: 0, right: 40, bottom: 0, left: 40 };
+  // const width = spatialViewWidth - margin.left - margin.right;
+  const width = window.innerWidth;
+  // const height = temporalViewHeight/2 - margin.top - margin.bottom;
+  const height = 100 ; 
   const svg = plotContainer.append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom) 
@@ -209,80 +294,88 @@ function createPlotAggregatedSpeech(aggregatedData) {
       .domain(["User1", "User2"])
       .range(["#31a354", "#c51b8a"]);
 
-  const barHeight = height / 4; // Example calculation for bar height
-  // const activeIntervalsSpeech = aggregatedData.filter(intervalData => {
-  //   return intervalData.dataPoints.length > 0;
-  // });
+  const barHeight = height / 4; 
 
-    aggregatedData.forEach((intervalData, intervalIndex) => {
-    ['User1', 'User2'].forEach((user, userIndex) => {
-      const barWidth = x(intervalData.intervalEnd) - x(intervalData.intervalStart);
-      let yPos; 
-      let color; 
-      if (userIndex === 0) {
-        yPos = (height / 2) - barHeight - 5 ;
-      } else {
-        yPos = (height / 2); 
+  aggregatedData.forEach((intervalData, intervalIndex) => {
+  ['User1', 'User2'].forEach((user, userIndex) => {
+    const barWidth = x(intervalData.intervalEnd) - x(intervalData.intervalStart);
+    if (intervalData[user] && intervalData[user].events && intervalData[user].events.length > 0) {
+      // Then, check if any of these events have non-empty transcription text
+      const hasNonEmptyTranscriptionText = intervalData[user].events.some(event => event.transcriptionText.trim() !== '');
+
+      if (hasNonEmptyTranscriptionText) {
+    // if (intervalData[user].some(event => event.transcriptionText.trim() !== '')) {
+    let yPos; 
+    let color; 
+    if (userIndex === 0) {
+      yPos = (height / 2) - barHeight - 5 ;
+    } else {
+      yPos = (height / 2); 
+    }
+    color = colorScale(userIndex +  1);
+    const xPos = x(intervalData.intervalStart) ; 
+    svg.append("rect")
+    .attr("class", `speech-rect user-${userIndex}`)
+    .data([{ ...intervalData, userIndex }])
+    // .data([{parsedStartTime: intervalData.intervalStart, parsedEndTime: intervalData.intervalEnd}]) 
+        // .attr("x", x(intervalData.intervalStart))
+        .attr("x",xPos)
+        .attr("y", yPos)
+        .attr("width", barWidth)
+        .attr("height", barHeight) // Use fixed bar height
+        .attr("fill", color);
+        // .attr("stroke", "black") 
+        // .attr("stroke-width", 2); 
+    const textYPos = yPos + barHeight / 2;
+    
+    svg.append("text")
+        .attr("x", x(intervalData.intervalStart) + barWidth/2)
+        // .style("text-anchor", "middle")
+        .attr("y", textYPos)
+        // .text(intervalData[user].events.map(event => `${event.transcriptionText}`))
+        // .text(intervalData[user].map(([message, count]) => `${message} (${count})`).join(", "))
+        // .text("SPEECH")
+        .attr("fill", "contrastColor") // Ensure text color is visible
+        .style("font-size", "10px")
+        .attr("dominant-baseline", "middle"); // Center text vertically within the bar
       }
-      color = colorScale(userIndex +  1);
-      const xPos = x(intervalData.intervalStart) ; 
-      // const xPos = x((intervalIndex+1) * intervalWidth);
-      // console.log(`SPEECH [Interaction] Interval ${intervalIndex}: Start = ${intervalData.intervalStart}, End = ${intervalData.intervalEnd}, xPos = ${xPos}, barWidth = ${barWidth}`);
-      // c
-      svg.append("rect")
-      .attr("class", `speech-rect user-${userIndex}`)
-      .data([{parsedStartTime: intervalData.intervalStart, parsedEndTime: intervalData.intervalEnd}]) 
-          // .attr("x", x(intervalData.intervalStart))
-          .attr("x",xPos)
-          .attr("y", yPos)
-          .attr("width", barWidth)
-          .attr("height", barHeight) // Use fixed bar height
-          .attr("fill", color);
-          // .attr("stroke", "black") 
-          // .attr("stroke-width", 2); 
-      const textYPos = yPos + barHeight / 2;
-     
-      svg.append("text")
-          .attr("x", x(intervalData.intervalStart) + barWidth/2)
-          // .style("text-anchor", "middle")
-          .attr("y", textYPos)
-          // .text(intervalData[user].map(([message, count]) => `${message} (${count})`).join(", "))
-          .text("SPEECH")
-          .attr("fill", "contrastColor") // Ensure text color is visible
-          .style("font-size", "10px")
-          .attr("dominant-baseline", "middle"); // Center text vertically within the bar
-
+    }
     });
   });
 
   const text = "VERBAL COMMUNICATION";
-  const padding = 10; // Adjust padding around text
-  const textHeight = 150; // Approximate or calculate the height of the text
-  const textWidth = 60; //
-  const rectX = -height / 2 - textHeight / 2 - padding; // Adjust for the rotation
-  const rectY = -margin.left - textWidth / 2 - padding; // Adjust for the rotation
-  const rectWidth = textWidth + 2 * padding;
-  const rectHeight = textHeight + 2 * padding;
-  // Add a rectangle (box) for the background
+  const textHeight = 200; 
+  const textWidth = 60; 
+  const rectX = -height / 2 - textHeight / 2 ; 
+  const rectY = -margin.left - textWidth / 2 ; 
+  const rectWidth = textWidth ;
+  const rectHeight = textHeight ;
+ 
   svg.append("rect")
     .attr("class", "title-rect")
     .attr("x", rectX)
-    .attr("y", rectY - 10) // Slightly adjust the rectangle's position
-    .attr("width", rectHeight + 10) // Width and height are swapped due to rotation, with a little extra for padding
+    .attr("y", rectY ) 
+    .attr("width", rectHeight ) 
     .attr("height", rectWidth)
     .attr("transform", "rotate(-90)")
-    .style("fill", "lightblue"); // Customize the fill and style as needed
-
-  // Add the text, rotated similarly to the rectangle
+    .style("fill", "lightblue");
   svg.append("text")
   .attr("class", "title-text")
     .attr("transform", "rotate(-90)")
     .attr("y", 0 - margin.left)
     .attr("x", 0 - (height / 2))
     .attr("dy", "1em")
+    .attr("dominant-baseline", "middle")
     .style("text-anchor", "middle")
-    .style("font-size", "13px")
+    .style("font-size", "9.5")
     .text(text);
+    d3.select("#speech-plot-container").on("click", function(event) {
+      var clickedElement = d3.select(event.target);
+      if(clickedElement.node().tagName === "rect") {
+        var rectData = clickedElement.data();
+        plotMagnifiedData(rectData);
+      }
+    });
 }
 
 
@@ -291,26 +384,31 @@ function createPlotAggregatedInteractions(aggregatedData) {
   const plotContainer = d3.select("#interaction-plot-container");
   plotContainer.html("");
   const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
-  const margin = { top: 20, right: 40, bottom: 30, left: 30 };
+  // const margin = { top: 20, right: 40, bottom: 30, left: 30 };
+  const margin = { top: 0, right: 40, bottom: 0, left: 30 };
   const fixedHeight = 100; // Example fixed height
-  const width = spatialViewWidth - margin.left - margin.right;
+  // console.log("this is fixed height" + fixedHeight);
+  // const width = spatialViewWidth - margin.left - margin.right;
+  const width = window.innerWidth;
   let maxInteractions = 0;
   const activeIntervals = aggregatedData.filter(intervalData => {
     const totalInteractions = ['User1', 'User2'].reduce((acc, user) => {
-        return acc + Object.values(intervalData[user]).reduce((sum, count) => sum + count, 0);
+      const userCounts = intervalData[user].count;
+      const userTotal = Object.values(userCounts).reduce((sum, count) => sum + count, 0);
+        return acc + userTotal;
     }, 0);
     return totalInteractions > 0;
   });
   activeIntervals.forEach(intervalData => {
     ['User1', 'User2'].forEach(user => {
-        const interactions = Object.values(intervalData[user]).reduce((sum, count) => sum + count, 0);
+        const interactions = Object.values(intervalData[user].count).reduce((sum, count) => sum + count, 0);
         maxInteractions = Math.max(maxInteractions, interactions);
     });
   });
 
   const svg = plotContainer.append("svg")
       .attr("width", width + margin.left + margin.right)
-      .attr("height", fixedHeight + margin.top + margin.bottom) // Use fixed height here
+      .attr("height", fixedHeight + margin.top + margin.bottom) 
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -318,25 +416,25 @@ function createPlotAggregatedInteractions(aggregatedData) {
       .domain(["User1", "User2"])
       .range(["#f7fcb9", "#fde0dd"]);
 
-  const barHeight = fixedHeight / 4; // Example calculation for bar height
+  const barHeight = fixedHeight / 4; 
 
   activeIntervals.forEach((intervalData, intervalIndex) => {
     ['User1', 'User2'].forEach((user, userIndex) => {
       const barWidth = x(intervalData.intervalEnd) - x(intervalData.intervalStart);
-      // const barWidth = x(intervalData.intervalEnd) - x(intervalData.intervalStart);
       const xPos = x(intervalData.intervalStart) -2   ;
-      // console.log(`INTERAXCTION : [Interaction] Interval ${intervalIndex}: Start = ${intervalData.intervalStart}, End = ${intervalData.intervalEnd}, xPos = ${xPos}, barWidth = ${barWidth}`);
-      // console.log("this is my xpos " + xPos);
-      let totalInteractionsPerInterval = 0 ; 
-          const messages = intervalData[user];
-          let messageTexts = Object.entries(messages).map(([message, count]) => `INTERACTION (${count})`).join(", ");
-          const interactions = Object.values(intervalData[user]).reduce((sum, count) => sum + count, 0);
-          totalInteractionsPerInterval += interactions;
+      let totalInteractionsPerInterval = Object.values(intervalData[user].count).reduce((sum, count) => sum + count, 0);
+          // const messages = intervalData[user];
+          // let messageTexts = Object.entries(messages).map(([message, count]) => `INTERACTION (${count})`).join(", ");
+          // const interactions = Object.values(intervalData[user]).reduce((sum, count) => sum + count, 0);
+          // totalInteractionsPerInterval += interactions;
+          let messageTexts = Object.entries(intervalData[user].count)
+          .map(([message, count]) => `${message} (${count})`)
+          .join(", ");
           if (messageTexts !== "") {
       let yPos;
       let color;
       if (userIndex === 0) {
-        yPos = (fixedHeight / 2) - barHeight - 5; // Adjust spacing and position as needed
+        yPos = (fixedHeight / 2) - barHeight - 5; 
         color = d3.interpolateRgb(colorScale(user), "#31a354")(totalInteractionsPerInterval / maxInteractions);
 
       } else {
@@ -346,7 +444,9 @@ function createPlotAggregatedInteractions(aggregatedData) {
 
       svg.append("rect")
       .attr("class", `interaction-rect user-${userIndex}`)
-      .data([{parsedStartTime: intervalData.intervalStart, parsedEndTime: intervalData.intervalEnd}]) 
+      // .data([intervalData])
+      .data([{ ...intervalData, userIndex }])
+      // .data([{parsedStartTime: intervalData.intervalStart, parsedEndTime: intervalData.intervalEnd}]) 
           .attr("x", xPos  )
           .attr("y", yPos)
           .attr("width", barWidth)
@@ -357,52 +457,151 @@ function createPlotAggregatedInteractions(aggregatedData) {
       const textYPos = yPos + barHeight / 2 ;
       const textXPos = 10 ;
 
-      svg.append("text")
-          .attr("x", x(intervalData.intervalStart) + textXPos)
-          .attr("y", textYPos)
-          // .text(intervalData[user].map(([message, count]) => `${message} (${count})`).join(", "))
-          .text(messageTexts)
-          .attr("fill", "contrastColor") // Ensure text color is visible
-          .style("font-size", "10px")
-          // .style("text-anchor", "middle")
-          .attr("dominant-baseline", "middle"); // Center text vertically within the bar
+      // svg.append("text")
+      //     .attr("x", x(intervalData.intervalStart) + textXPos)
+      //     .attr("y", textYPos)
+      //     // .text(intervalData[user].map(([message, count]) => `${message} (${count})`).join(", "))
+      //     .text(messageTexts)
+      //     .attr("fill", "contrastColor") // Ensure text color is visible
+      //     .style("font-size", "10px")
+      //     // .style("text-anchor", "middle")
+      //     .attr("dominant-baseline", "middle"); // Center text vertically within the bar
     }
     });
   });
   const text = "XR INTERACTION";
-  const padding = 10; 
+  // const padding = 10; 
   const textHeight = 100; 
   const textWidth = 60; 
-
-  // Adjust for the rotation
-  const rectX = -fixedHeight / 2 - textHeight / 2 - padding;
-  const rectY = -margin.left - textWidth / 2 - padding;
-
-  // Width and height are adjusted for the longer text
-  const rectWidth = textWidth + 2 * padding;
-  const rectHeight = textHeight + 2 * padding;
-
-  // Add a rectangle (box) for the background
+  const rectX = -fixedHeight / 2 - textHeight / 2 ;
+  const rectY = -margin.left - textWidth / 2 ;
+  const rectWidth = textWidth ;
+  const rectHeight = textHeight;
   svg.append("rect")
     .attr("class", "title-rect")
     .attr("x", rectX)
-    .attr("y", rectY - 10) // Slightly adjust the rectangle's position
-    .attr("width", rectHeight + 10) // Width and height are swapped due to rotation, with a little extra for padding
+    .attr("y", rectY ) // Slightly adjust the rectangle's position
+    .attr("width", rectHeight) // Width and height are swapped due to rotation, with a little extra for padding
     .attr("height", rectWidth)
     .attr("transform", "rotate(-90)")
-    .style("fill", "lightgreen"); // Customize the fill and style as needed
-
-  // Add the text, rotated similarly to the rectangle
+    .style("fill", "lightgreen"); 
   svg.append("text")
   .attr("class", "title-text")
     .attr("transform", "rotate(-90)")
     .attr("y", 0 - margin.left)
     .attr("x", 0 - (fixedHeight / 2))
     .attr("dy", "1em")
+    .attr("dominant-baseline", "middle")
     .style("text-anchor", "middle")
-    .style("font-size", "13px")
+    .style("font-size", "9.5")
     .text(text);
+    d3.select("#interaction-plot-container").on("click", function(event) {
+      var clickedElement = d3.select(event.target);
+      // console.log("Clicked on a specific rect in interaction?");
+      if(clickedElement.node().tagName === "rect") {
+        // console.log("Rect clicked:", clickedElement.node());
+        var rectData = clickedElement.data();
+        // console.log("Data bound to the clicked rect:", rectData);
+        // console.log("this is rectData len " + rectData.length);
+        plotMagnifiedData(rectData);
+      }
+    });
+    
 }
+
+function plotMagnifiedData(rectData) {
+  // Extract user index from the rectData
+  const userIndex = rectData[0].userIndex;
+  const userIDString = "User" + (userIndex + 1); 
+  const userEvents = rectData[0][userIDString].events;
+
+  let allEvents = [];
+  userEvents.forEach(event => {
+    allEvents.push(new Date(event.eventStartTimeStamp).getTime());
+    allEvents.push(new Date(event.eventEndTimeStamp).getTime());
+  });
+  
+  let earliestTimestamp = new Date(Math.min(...allEvents));
+  let latestTimestamp = new Date(Math.max(...allEvents));
+  // if (latestTimestamp - earliestTimestamp < 1000) { // Less than 1 second difference
+  if (latestTimestamp === earliestTimestamp){
+    console.log("here");
+    earliestTimestamp = new Date(earliestTimestamp.setSeconds(0, 0)); 
+    latestTimestamp = new Date(earliestTimestamp); 
+    latestTimestamp = new Date(latestTimestamp.setSeconds(59, 0)); 
+  }
+  // console.log("timestanps" + earliestTimestamp);
+  // console.log(latestTimestamp);
+  const plotBox2 = d3.select("#plot-box2").html("");
+  const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+  const width = plotBox2.node().getBoundingClientRect().width - margin.left - margin.right;
+  const height = 100; // Fixed height for simplicity
+  const rectHeight = 20; // Height of rectangles
+  const offset = 10;
+  const rectYPosition = margin.top + 20;
+  
+
+  const svg = d3.select("#plot-box2").html("") // Clear any existing content
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+ 
+
+  const timeRange = latestTimestamp - earliestTimestamp;
+  console.log(timeRange);
+  const stepSize = timeRange / 4; 
+
+   const tickValues = [earliestTimestamp];
+  for (let i = 1; i <= 3; i++) {
+    tickValues.push(new Date(earliestTimestamp.getTime() + stepSize * i));
+  }
+
+  tickValues.push(latestTimestamp);
+
+  const xScale = d3.scaleTime()
+    .domain([earliestTimestamp, latestTimestamp])
+    .range([0, width]);
+
+
+  const timeFormat = d3.timeFormat("%M:%S");
+
+  const xAxis = d3.axisTop(xScale)
+    .tickValues(tickValues)
+    .tickFormat(timeFormat);
+
+  svg.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", `translate(0,${margin.top})`)
+    .call(xAxis)
+    .selectAll("text")
+    .style("font-size", "7px"); 
+
+    userEvents.forEach(event => {
+      const startTime = new Date(event.eventStartTimeStamp).getTime();
+      const endTime = new Date(event.eventEndTimeStamp).getTime();
+      let duration = endTime - startTime; // Duration in ms
+    
+      
+      if (duration === 0 ) { duration = 1000; }
+      console.log("this is duration " + duration);
+        console.log(new Date(startTime));
+      console.log(new Date (endTime));
+      svg.append("rect")
+        .attr("x", xScale(new Date(startTime)))
+        .attr("width", xScale(new Date(startTime + duration)) - xScale(new Date(startTime)))
+        .attr("y", rectYPosition) 
+        .attr("height", rectHeight) 
+        .attr('stroke', 'black') 
+  .attr('stroke-width', '1')
+        .attr("fill", "#69b3a2"); 
+    });
+
+
+}
+
 
 
 function prepareDataForPlotting(data) {
@@ -508,10 +707,7 @@ svg.append("text")
 
 
 function createPlotSpeech(data) {
-  // const parentTemporalView = d3.select("#temporal-view");
-
   const temporalViewContainer = d3.select("#temporal-view");
-  // const plotContainer = temporalViewContainer.select("#speech-plot-container");
   const plotContainer = d3.select("#speech-plot-container");
   
   plotContainer.html("");
@@ -610,14 +806,25 @@ svg.append("text")
   .attr("text-anchor", "middle")
   .attr("font-size", "12px")
   .attr("fill", "contrastColor"); 
+  d3.select("#speech-plot-container").on("click", function(event) {
+    // Directly use the event parameter to access the clicked element.
+    var clickedElement = d3.select(event.target);
+    console.log("Clicked on a specific rect in speech?");
+    if(clickedElement.node().tagName === "rect") {
+      // console.log("Rect clicked:", clickedElement.node());
+      var rectData = clickedElement.data();
+      console.log("Data bound to the clicked rect:", rectData);
+    }
+  });
 
 }
 
 
 function createLine(currentTimeStamp) {
   const svg = d3.select("#temporal-view");
-  const margin = { top: 20, right: 30, bottom: 10, left: 40 };
+  const margin = { top: 0, right: 30, bottom: 0, left: 40 };
   const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
+  
   const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const y1 = 24 ;
 
@@ -634,8 +841,8 @@ function createLine(currentTimeStamp) {
   if (circle.empty()) {
       circle = svg.append('circle')
           .attr('id', 'time-indicator-circle')
-          .attr('r', 5) // Radius of the circle, adjust as needed
-          .style('fill', 'black'); // Fill color of the circle
+          .attr('r', 5) 
+          .style('fill', 'black'); 
   }
 
 
@@ -659,12 +866,14 @@ function createLine(currentTimeStamp) {
   }
 
 
+  // console.log("this is y2 " + height);
+
   line.attr('x1', xPosition)
     .attr('x2', xPosition)
     .attr('y1', y1) 
     .attr('y2', height)
     .style('stroke', 'black')
-    .style('stroke-width', '2')
+    .style('stroke-width', '3')
     .style('opacity', 1)
     .call(drag);
     circle.attr('cx', xPosition)
@@ -680,10 +889,18 @@ export function animateTemporalView(currentTimestamp) {
       const allTexts = svg.selectAll("text:not(.title-text)").style("opacity", 0.2);
       
       allRects.each(function(d, i) {
-        if( d != undefined){
-        
-          const start = d.parsedStartTime.getTime();
-          const end = d.parsedEndTime.getTime(); 
+        if( d !== undefined){
+          console.log(d);
+          // const start = new Date(d.eventStartTimeStamp).getTime(); 
+          // const end = new Date(d.eventEndTimeStamp).getTime();
+         
+          //zainab please come here and fix this 
+
+          // console.log("this is d[0] " + d.length );
+          //zainab please come here and sort it out 
+          const start = d.intervalStart.getTime();
+          const end = d.intervalEnd.getTime(); 
+          console.log("this is start " + start );
           if (currentTimestamp >= start && currentTimestamp < end) {
 
               d3.select(this).style("opacity", 1); 
@@ -699,8 +916,8 @@ export function animateTemporalView(currentTimestamp) {
           interactionRects.each(function(d, i) {
             if( d != undefined){
               const roundedTimestamp = Math.round(currentTimestamp);
-              const start = d.parsedStartTime.getTime();
-              const end = d.parsedEndTime.getTime();
+              const start = d.intervalStart.getTime();
+              const end = d.intervalEnd.getTime();
               let diff1 = currentTimestamp - start;
               diff1 = Math.abs((diff1 % 1000) / 10);
               let diff2 = end - currentTimestamp;
@@ -723,8 +940,8 @@ function animateGroupedInteractions(currentTimeStamp){
   const allInteractionRects = interactionSvg.selectAll("rect.interaction-rect");
   allInteractionRects.each(function(d, i) {
     if( d != undefined ){
-    const start = d.parsedStartTime.getTime();
-          const end = d.parsedEndTime.getTime(); 
+    const start = d.intervalStart.getTime();
+          const end = d.intervalEnd.getTime(); 
           if (currentTimeStamp >= start && currentTimeStamp < end) {
               d3.select(this).style("opacity", 1); 
               // d3.select(allTexts.nodes()[i]).style("opacity", 1); 

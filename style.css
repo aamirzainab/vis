@@ -4,73 +4,128 @@ html, body {
     display: flex;
     flex-direction: column;
 }
+
+#right-pane {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 25%; /* Set the width for the left pane */
+    height: 60vh; /* Match the height of the spatial-view */
+    background-color: #f9f9f9;
+    z-index: 100;
+    overflow-y: auto; /* Allows scrolling for overflow content */
+    box-shadow: 2px 0 4px rgba(0,0,0,0.2);
+    padding-bottom: 20px; /* Provide some padding at the bottom */
+}
+
 #spatial-view {
     position: relative;
     /* border: 1px solid red; */
+    margin-left: 10%; /* Adjust based on the width of #obj-toolbar */
+    margin-right: 15%; /* Adjust based on the width of #user-toolbar */
     height: 65vh; /* Adjust if necessary to account for toolbar height */
     overflow-y: scroll;
     flex-grow: 1;
     padding-top: 100px; /* Add padding to top to prevent toolbar overlap */
 }
 
-#toolbar {
-    position: fixed;
-    top: 0;
-    /* left: 0; */
-    right:0;
-    height:90px;
-    background-color: #f9f9f9;
-    /* border: 1px solid #ccc; */
-    font-size: 0.9em; 
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    z-index: 100; 
-}
 
-#user-toolbar {    
-    position: fixed;
-    right:0;
-    height:90px;
-    background-color: #f9f9f9;
-    font-size: 0.9em; 
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    z-index: 100; 
-}
-
-.toolbar.right  {
+#left-pane {
     position: fixed;
     top: 0;
     left: 0;
-    /* right:0; */
-    /* height:90px; */
-    background-color: #f9f9f9;
-    /* font-size: 0.9em; */
-    /* border: 1px solid #ccc; */
-    /* padding: 10px; */
+    width: 10%; /* Set the width for the left pane */
+    height: 60vh; /* Match the height of the spatial-view */
+    /* background-color: #f9f9f9; */
+    z-index: 100;
+    overflow-y: auto; /* Allows scrolling for overflow content */
+    padding-bottom: 20px;
+}
+#right-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.plot-box {
+    flex: 1;
+    width: 100%;
+    /* border: 1px solid red;  */
+    /* margin-bottom: 10px; Optional: Add spacing between plot boxes */
+}
+
+.toolbar {
+    position: absolute;
+    width: 100%; /* This should now work correctly */
+    padding: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    z-index: 100; 
+    background-color: #f9f9f9;
+    z-index: 101; 
+    /* Adjust if necessary for stacking */
+    font-size: 0.9em;
+    margin-bottom: 10px; 
+    margin-left: 0;
 }
 
-.options-list, .sub-options-list {
-    padding-left: 0; /* Removes default indentation */
+#obj-toolbar {
+    position: absolute;
+    top: 0;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* z-index: 101;  */
+    /* Slightly higher to ensure it stacks on top if overlapping */
+    list-style-type: none; /* Removes default list styling */
+    padding-left: 0;
+    margin-left: 0;
+}
+#obj-toolbar ul {
+    list-style-type: none; /* Ensures sub-lists also have no bullet points */
+    padding-left: 0; /* Start with no padding for the base list */
+    margin-left: 0; /* Ensures list starts flush with the toolbar's edge */
 }
 
-.options-list > li {
-    margin-bottom: 10px; /* Spacing between primary options */
+#obj-toolbar li {
+    list-style-type: none; 
+    padding: 0; 
+    margin: 0; 
+}
+#obj-toolbar li ul {
+    padding-left: 10px; 
 }
 
-.sub-options-list {
-    padding-left: 20px; /* Indent sub-options for hierarchy */
-    margin-top: 5px; /* Space between the option label and its sub-options */
+#obj-toolbar input[type="checkbox"]  {
+    margin-left: 0px; 
+    /* Space between checkbox and label */
+    vertical-align: middle;
+}
+#obj-toolbar label {
+    margin-left: 0px; /* Adjust this value to decrease or increase the space */
 }
 
-.sub-options-list li {
-    margin-bottom: 5px; /* Spacing between sub-options */
+
+#toolbar {
+    position: absolute;
+    bottom:0;
+    /* top: 30%;  */
+    /* Adjust this value based on the actual height of #obj-toolbar */
+    background-color: #f9f9f9;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* z-index: 102;  */
+    /* Ensuring this toolbar is above #obj-toolbar */
+    margin-left: 0;
 }
 
-.sub-options-list label {
-    margin-left: 5px; /* Space between checkbox and label */
+#user-toolbar {
+    position: absolute;
+    /* top: calc(30% + 90px);  */
+    /* Start this toolbar right after #toolbar */
+    /* width: 100%; This toolbar also matches the width of the left-pane */
+    background-color: #f9f9f9;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* z-index: 103; */
+     /* Highest to ensure it's on top of the stack */
+    margin-left: 0;
 }
 
 #toolbar .toggle {
@@ -84,6 +139,30 @@ html, body {
 #toolbar input[type="checkbox"] {
     margin-right: 5px;
 }
+#visualization-container {
+    display: flex;
+    justify-content: flex-end; /* Aligns children to the right */
+    /* padding-right: 100px; Adjust based on your toolbar width to avoid overlap */
+    /* margin-top: 20px; Or adjust as needed */
+}
+
+#plots-container {
+    width: calc(100% - 100px); /* Adjust based on your toolbar width */
+}
+
+#info-vis-plot1-container, #info-vis-plot2-container {
+    border: 1px solid #ccc; /* Adds a border around each plot container */
+    padding: 10px; /* Adds padding inside the containers */
+    margin-bottom: 20px; /* Adds space between the containers */
+}
+
+#info-vis-plot1, #info-vis-plot2 {
+    /* width: 100%;  */
+    /* Ensures the SVGs fill the container */
+    min-height: 200px; /* Gives a minimum height to the SVGs */
+    background-color: #f0f0f0; /* Gives a background color to easily differentiate the plots */
+}
+
 #slider-container {
     display: flex; /* Aligns the slider and playPauseButton horizontally */
     align-items: center; /* Centers items vertically */
@@ -114,41 +193,34 @@ html, body {
     order: 1;
     position: absolute; 
     right: 0;
+    /* top: -10; */
 }
 #temporal-view {
     /* display: flex; */
-    /* border: 1px solid red; */
+    height: 35vh;
     position: relative;
     flex-direction: column;
     /* justify-content: start; */
     align-items: center;
     /* width: 100%; */
 }
-
+#time-indicator-line, #time-indicator-circle {
+    pointer-events: auto; /* Ensure line and circle can be interacted with */
+  }
+  
 #shared-axis-container{
-    /* border: 1px solid red; */
     min-height: 20px; 
 }
-/* #bin-selection-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    margin-left: 20px; 
-    font-size: 0.8em; 
-} */
 
 #bin-selection-container {
     position: absolute; /* Makes the positioning relative to #temporal-view */
-    top: 30px; /* Distance from the top of #temporal-view */
+    top: 35px; /* Distance from the top of #temporal-view */
     right: 10px; /* Distance from the right, adjust based on your layout preference */
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px;
     font-size: 0.9em; 
     background-color: #f9f9f9; /* Optional: adds a background color */
-    /* border: 1px solid #ccc;  */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
     z-index: 101; /* Ensures it's above other elements, adjust as necessary */
 }
