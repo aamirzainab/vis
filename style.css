@@ -4,38 +4,75 @@ html, body {
     display: flex;
     flex-direction: column;
 }
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+#top-toolbar {
+    background-color: #f9f9f9; /* Change as per your color theme */
+    padding: 10px 20px; /* Padding around the toolbar */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    position: fixed; /* Fixed at the top */
+    width: 100%; /* Full width */
+    /* z-index: 1000; Ensure it's above all other content */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+#top-toolbar ul {
+    list-style: none; /* Remove default list styling */
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+    display: flex; /* Arrange items in a row */
+    justify-content: flex-start; /* Align items to the start */
+}
+
+#top-toolbar li {
+    margin-right: 20px; /* Space between items */
+}
+
+#top-toolbar a {
+    text-decoration: none; /* No underline */
+    color: #333; /* Text color */
+    /* font-weight: bold; */
+    transition: color 0.3s; /* Transition for hover effect */
+}
+
+#top-toolbar a:hover {
+    color: #898e93; /* Color change on hover */
+}
+
 
 #right-pane {
     position: fixed;
-    top: 0;
+    /* top: 2%; */
+    top: 0 ; 
     right: 0;
-    width: 25%; /* Set the width for the left pane */
-    height: 60vh; /* Match the height of the spatial-view */
+    width: 25%; 
+    height: 62vh; 
     background-color: #f9f9f9;
     z-index: 100;
-    overflow-y: auto; /* Allows scrolling for overflow content */
+    /* overflow-y: auto; Allows scrolling for overflow content */
     box-shadow: 2px 0 4px rgba(0,0,0,0.2);
     padding-bottom: 20px; /* Provide some padding at the bottom */
 }
 
 #spatial-view {
     position: relative;
-    /* border: 1px solid red; */
-    margin-left: 10%; /* Adjust based on the width of #obj-toolbar */
-    margin-right: 15%; /* Adjust based on the width of #user-toolbar */
+    margin-left: 10%; 
+    margin-right: 25%;
+    width: 65%;
     height: 65vh; /* Adjust if necessary to account for toolbar height */
     overflow-y: scroll;
     flex-grow: 1;
-    padding-top: 100px; /* Add padding to top to prevent toolbar overlap */
+    /* padding-top: 100px; Add padding to top to prevent toolbar overlap */
 }
 
 
 #left-pane {
     position: fixed;
-    top: 0;
+    top: 2%;
     left: 0;
     width: 10%; /* Set the width for the left pane */
-    height: 60vh; /* Match the height of the spatial-view */
+    height: 62vh; /* Match the height of the spatial-view */
     /* background-color: #f9f9f9; */
     z-index: 100;
     overflow-y: auto; /* Allows scrolling for overflow content */
@@ -55,16 +92,17 @@ html, body {
 
 .toolbar {
     position: absolute;
-    width: 100%; /* This should now work correctly */
+    width: 100%; 
     padding: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     background-color: #f9f9f9;
     z-index: 101; 
-    /* Adjust if necessary for stacking */
     font-size: 0.9em;
     margin-bottom: 10px; 
     margin-left: 0;
 }
+
+
 
 #obj-toolbar {
     position: absolute;
@@ -146,32 +184,14 @@ html, body {
     /* margin-top: 20px; Or adjust as needed */
 }
 
-#plots-container {
-    width: calc(100% - 100px); /* Adjust based on your toolbar width */
-}
-
-#info-vis-plot1-container, #info-vis-plot2-container {
-    border: 1px solid #ccc; /* Adds a border around each plot container */
-    padding: 10px; /* Adds padding inside the containers */
-    margin-bottom: 20px; /* Adds space between the containers */
-}
-
-#info-vis-plot1, #info-vis-plot2 {
-    /* width: 100%;  */
-    /* Ensures the SVGs fill the container */
-    min-height: 200px; /* Gives a minimum height to the SVGs */
-    background-color: #f0f0f0; /* Gives a background color to easily differentiate the plots */
-}
-
 #slider-container {
     display: flex; /* Aligns the slider and playPauseButton horizontally */
     align-items: center; /* Centers items vertically */
     width: 100%; 
 }
 #slider-container input[type=range] {
-    flex-grow: 1; /* Allows the slider to fill the available space */
-    margin: 0 10px; /* Adds space around the slider */
-    /* border: 1px solid red; */
+    flex-grow: 1; 
+    margin: 0 10px; 
 }
 #playPauseButton {
     flex:none;
@@ -179,7 +199,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 20px; /* Adjust space between the button and the slider */
+    margin-right: 25px; /* Adjust space between the button and the slider */
     order: -1;
 }
 
@@ -188,12 +208,20 @@ html, body {
     height: 24px; 
     flex-shrink: 0; /* Prevents icon from resizing */
 }
-#timeDisplay {
-    padding: 5px 10px; /* Padding around the time display */
-    order: 1;
-    position: absolute; 
+
+
+/* #timeDisplay { */
+    /* padding: 5px 10px; Padding around the time display */
+    /* order: 1; */
+    /* position: absolute; 
     right: 0;
-    /* top: -10; */
+} */
+#timeDisplay {
+    position: absolute; /* Position it absolutely within #temporal-view */
+    top: 0; /* Adjust this value to align with the top of the shared-axis-container, if needed */
+    right: 0; /* Align it to the right edge of #temporal-view */
+    padding: 5px 10px; /* Existing styles */
+    z-index: 2; /* Ensure it's above the shared-axis-container */
 }
 #temporal-view {
     /* display: flex; */
@@ -204,38 +232,56 @@ html, body {
     align-items: center;
     /* width: 100%; */
 }
+
 #time-indicator-line, #time-indicator-circle {
     pointer-events: auto; /* Ensure line and circle can be interacted with */
   }
-  
 #shared-axis-container{
     min-height: 20px; 
 }
-
 #bin-selection-container {
+    padding: 20px;
     position: absolute; /* Makes the positioning relative to #temporal-view */
     top: 35px; /* Distance from the top of #temporal-view */
-    right: 10px; /* Distance from the right, adjust based on your layout preference */
+    right: 0px; /* Distance from the right, adjust based on your layout preference */
     display: flex;
     flex-direction: column;
     align-items: center;
     font-size: 0.9em; 
-    background-color: #f9f9f9; /* Optional: adds a background color */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-    z-index: 101; /* Ensures it's above other elements, adjust as necessary */
+    z-index: 101;
 }
-
-/* #binsDropdown {
-    padding: 5px;
-    margin-top: 5px;
-    font-size: 0.8em; 
-} */
-
-/* #interaction-plot-container, #speech-plot-container { */
-    /* border: 1px solid red; */
-    /* width: 100%; */
-    /* min-height: 20px; or whatever height is appropriate for your content */
-    /* height:100px; */
-    /* height:10px; */
-    /* margin-bottom: 10px; */
-/* } */
+  #bin-selection-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  #binsDropdown {
+    padding: 10px;
+    background-color: #e0e0e0;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  #binsDropdown:focus {
+    outline: none;
+    background-color: #bdbdbd;
+  }
+  
+  #binsDropdown option {
+    padding: 10px;
+    background-color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  #binsDropdown option:hover {
+    background-color: #eeeeee;
+  }
+  
+  #binsDropdown option:checked {
+    background-color: #90caf9;
+  }
