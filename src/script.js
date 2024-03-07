@@ -40,8 +40,9 @@ const hsl = {
 };
 
 const colorScale = d3.scaleOrdinal()
-    .domain([0, 1, 2])
-    .range(["#31a354", "#c51b8a", "#2b8cbe"]);
+  .domain([0,1,2])
+  .range(["#1b9e77", "#d95f02", "#7570b3"]);
+
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -248,6 +249,7 @@ window.onload = function() {
     const playPauseButtonHeight = playPauseButton.offsetHeight;
     const timeDisplay = document.getElementById('timeDisplay');
     timeDisplay.style.top = (playPauseButton.offsetTop - playPauseButtonHeight) + 'px';
+
 };
 
 
@@ -683,7 +685,8 @@ async function initializeScene() {
         toggleAnimation();
     });
 
-
+    const { users, links } = processMovementData();
+    // plotTwoNetworkChart(users,links);
 }
 
 
@@ -842,6 +845,109 @@ function updateLineThickness() {
             });
         }
     });
+}
+
+function processMovementData() {
+  const jsonDatas = globalState.jsonDatas;
+  let users = []; // Will store positions
+  const scaleFactor = 1;
+  const offsetX = 0, offsetY = 0; // Assuming 2D visualization for simplicity
+
+  // Initialize users with empty paths
+  for (let i = 0; i < 2; i++) {
+    users.push({ id: i, path: [] });
+  }
+
+  jsonDatas.forEach((userDatas, userId) => {
+    if (userId < 2) { 
+      userDatas.forEach(entry => {
+        if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
+          const dof = parseData(entry.Data);
+          if (dof) {
+            const x = dof[0] * scaleFactor + offsetX;
+            const y = dof[1] * scaleFactor + offsetY;
+            users[userId].path.push({ x: x, y: y });
+          }
+        }
+      });
+    }
+  });
+
+  let links = [{
+    source: 0, // Assuming user 0 is the source
+    target: 1, // Assuming user 1 is the target
+    type: 'relationship'
+  }];
+
+  return { users, links };
+}
+
+
+function plotTwoNetworkChart(users, links) {
+  const plotBox1 = d3.select("#plot-box1").html(""); 
+  const margin = { top: 20, right: 50, bottom: 20, left: 100 };
+  const width =  plotBox1.node().getBoundingClientRect().width - margin.left - margin.right; 
+  const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom; 
+  
+  const svg = plotBox1.append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  const xScale = d3.scaleLinear()
+    .domain([d3.min(users.flatMap(u => u.path.map(p => p.x))), d3.max(users.flatMap(u => u.path.map(p => p.x)))])
+    .range([0, width]);
+  const yScale = d3.scaleLinear()
+    .domain([d3.min(users.flatMap(u => u.path.map(p => p.y))), d3.max(users.flatMap(u => u.path.map(p => p.y)))])
+    .range([height, 0]);
+
+  users.forEach(user => {
+    let pathData = "M" + user.path.map(p => `${xScale(p.x)},${yScale(p.y)}`).join("L");
+    svg.append("path")
+      .attr("d", pathData)
+      .attr("fill", "none")
+      .attr("stroke", user.id === 0 ? "#ff0000" : "#0000ff")
+      .attr("stroke-width", 2); 
+  });
+
+  const link = svg.append("line")
+    .attr("class", "link")
+    .style("stroke-width", 2) 
+    .style("stroke", "#999");
+
+  function updateLink() {
+    const lastPosUser0 = users[0].path[users[0].path.length - 1];
+    const lastPosUser1 = users[1].path[users[1].path.length - 1];
+
+    link
+      .attr("x1", xScale(lastPosUser0.x))
+      .attr("y1", yScale(lastPosUser0.y))
+      .attr("x2", xScale(lastPosUser1.x))
+      .attr("y2", yScale(lastPosUser1.y));
+  }
+
+  updateLink();
+  let i = 0;
+  function animateLink() {
+    if (i < users[0].path.length && i < users[1].path.length) {
+      const posUser0 = users[0].path[i];
+      const posUser1 = users[1].path[i];
+
+      link
+        .transition()
+        .duration(10) // Adjust duration for smoother or faster animation
+        .attr("x1", xScale(posUser0.x))
+        .attr("y1", yScale(posUser0.y))
+        .attr("x2", xScale(posUser1.x))
+        .attr("y2", yScale(posUser1.y))
+        .on("end", animateLink); // Loop the animation
+
+      i++;
+    }
+  }
+
+  animateLink(); // Start the animation
 }
 
 

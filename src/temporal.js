@@ -14,9 +14,10 @@ let intervalWidth;
 let intervals;
 var bins = 5;
 let numUsers = 2;
+
 const colorScale = d3.scaleOrdinal()
-    .domain([0, 1, 2])
-    .range(["#31a354", "#c51b8a", "#2b8cbe"]);
+  .domain([0,1,2])
+  .range(["#1b9e77", "#d95f02", "#7570b3"]);
 
 
 function changeBinSize(newBinSize) {
@@ -95,6 +96,11 @@ export async function loadAndPlotTemporal() {
         createLine(startingPointLine);
         // createPlotSpeech(preparedData);
         // createPlotInteraction(preparedDataTemp);
+        const simpleDataSpeech = aggregateSpeechData(preparedDataSpeech);
+        // plotOneBarchart(simpleDataSpeech);
+        // plotThreeLineplot();
+        const simpleDataInteractions = aggregateXRInteractions(preparedDataInteraction);
+        // plotFourSpiderChart(simpleDataSpeech, simpleDataInteractions);
 
     } catch (error) {
         console.error("Error loading or processing the JSON data", error);
@@ -228,24 +234,56 @@ function aggregateDataIntervalInteraction(data, intervals) {
     return countsPerInterval;
 }
 
-// function aggregateDataIntervalSpeech(data, intervals) {
-//   const dataPerInterval = intervals.map(interval => ({
-//     intervalStart: interval,
-//     intervalEnd: new Date(interval.getTime() + (intervals[1].getTime() - intervals[0].getTime())),
-//     dataPoints: []
-//   }));
 
-//   data.forEach(d => {
-//     const startTime = d.StartTime;
-//     for (let i = 0; i < dataPerInterval.length; i++) {
-//       if (startTime >= dataPerInterval[i].intervalStart && startTime < dataPerInterval[i].intervalEnd) {
-//         dataPerInterval[i].dataPoints.push(d);
-//         break;
-//       }
-//     }
-//   });
-//   return dataPerInterval;
-// }
+
+function aggregateSpeechData(data) {
+  let aggregatedData = {};
+
+  data.forEach(d => {
+      const userId = d.UserId;
+      const startTime = new Date(d.StartTime);
+      const endTime = new Date(d.EndTime);
+      const duration = endTime - startTime;
+      const wordCount = d.TranscriptionText.split(' ').length;
+      if (!aggregatedData[userId]) {
+          aggregatedData[userId] = {
+              events: []
+          };
+      }
+
+      // Push event data into user's events array
+      aggregatedData[userId].events.push({
+          transcriptionText: d.TranscriptionText,
+          startTime: startTime,
+          endTime: endTime,
+          duration: duration,
+          wordCount: wordCount
+      });
+  });
+
+  return aggregatedData;
+}
+
+function aggregateXRInteractions(data) {
+  let aggregatedData = {};
+
+  data.forEach(d => {
+    const userId = d.UserId;
+    const interactionType = d.Message; // Assuming 'Message' indicates interaction type
+    // Initialize user data structure if not already present
+    if (!aggregatedData[userId]) {
+      aggregatedData[userId] = { xrInteractions: {} };
+    }
+    // Count interactions by type
+    if (!aggregatedData[userId].xrInteractions[interactionType]) {
+      aggregatedData[userId].xrInteractions[interactionType] = 1;
+    } else {
+      aggregatedData[userId].xrInteractions[interactionType] += 1;
+    }
+  });
+
+  return aggregatedData;
+}
 
 function aggregateDataIntervalSpeech(data, intervals) {
     const dataPerInterval = intervals.map(interval => ({
@@ -271,7 +309,10 @@ function aggregateDataIntervalSpeech(data, intervals) {
                 dataPerInterval[i][user].events.push({
                     transcriptionText: transcriptionText,
                     eventStartTimeStamp: startTime,
-                    eventEndTimeStamp: endTime
+                    eventEndTimeStamp: endTime,
+                    duration: endTime - startTime,
+                    wordCount: transcriptionText.split(' ').length, 
+
                 });
                 break; // Exit loop once the interval is found
             }
@@ -285,7 +326,8 @@ function aggregateDataIntervalSpeech(data, intervals) {
     //   console.log('Count:', interval.User2.count);
     //   console.log('Events:');
     //   interval.User2.events.forEach((event, eventIndex) => {
-    //     console.log(`  Event ${eventIndex + 1}: saying this  ${event.transcriptionText} starting at this time  ${event.eventStartTimeStamp}`);
+    //     console.log(`  Event ${eventIndex + 1}: saying this  ${event.transcriptionText} starting at this time  ${event.eventStartTimeStamp}
+    //     with word count   ${event.wordCount} and duration ${event.duration}`);
     //   });
 
     //   console.log('---------------------------');
@@ -461,20 +503,15 @@ function createPlotAggregatedInteractions(aggregatedData) {
         .attr("height", fixedHeight + margin.top + margin.bottom)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const colorScale = d3.scaleOrdinal()
-        .domain(["User1", "User2"])
-        .range(["#f7fcb9", "#fde0dd"]);
+    const localColorScale = d3.scaleOrdinal()
+    .domain(["User1", "User2"])
+    .range(["#80cbc4", "#ffcc80"]);
 
     activeIntervals.forEach((intervalData, intervalIndex) => {
         ['User1', 'User2'].forEach((user, userIndex) => {
             const barWidth = x(intervalData.intervalEnd) - x(intervalData.intervalStart);
             const xPos = x(intervalData.intervalStart) - 2;
             let totalInteractionsPerInterval = Object.values(intervalData[user].count).reduce((sum, count) => sum + count, 0);
-            // const messages = intervalData[user];
-            // let messageTexts = Object.entries(messages).map(([message, count]) => `INTERACTION (${count})`).join(", ");
-            // const interactions = Object.values(intervalData[user]).reduce((sum, count) => sum + count, 0);
-            // totalInteractionsPerInterval += interactions;
             let messageTexts = Object.entries(intervalData[user].count)
                 .map(([message, count]) => `${message} (${count})`)
                 .join(", ");
@@ -483,11 +520,11 @@ function createPlotAggregatedInteractions(aggregatedData) {
                 let color;
                 if (userIndex === 0) {
                     yPos = (fixedHeight / 2) - barHeight - 5;
-                    color = d3.interpolateRgb(colorScale(user), "#31a354")(totalInteractionsPerInterval / maxInteractions);
+                    color = d3.interpolateRgb(localColorScale(user), colorScale(userIndex))(totalInteractionsPerInterval / maxInteractions);
 
                 } else {
                     yPos = (fixedHeight / 2) + 5; // Adjust spacing and position as needed
-                    color = d3.interpolateRgb(colorScale(user), "#c51b8a")(totalInteractionsPerInterval / maxInteractions);
+                    color = d3.interpolateRgb(localColorScale(user), colorScale(userIndex))(totalInteractionsPerInterval / maxInteractions);
                 }
 
                 svg.append("rect")
@@ -640,6 +677,7 @@ function plotMagnifiedDataSpeech(rectData) {
         .attr("class", "tooltip")
         .style("position", "absolute")
         .style("background-color", "white")
+        .style("max-width", "300px")
         .style("border", "1px solid #777")
         .style("border-radius", "5px")
         .style("padding", "10px")
@@ -664,10 +702,34 @@ function plotMagnifiedDataSpeech(rectData) {
             .on("mouseover", function(event) {
                 const svgRect = svg.node().getBoundingClientRect();
                 const [tooltipX, tooltipY] = [event.pageX, event.pageY];
+                console.log(dataEvent.transcriptionText);
                 tooltip.html(dataEvent.transcriptionText)
-                    .style("opacity", 1)
-                    .style("left", tooltipX + "px")
-                    .style("top", tooltipY + "px");
+                .style("opacity", 1)
+                .style("visibility", "hidden"); // Make tooltip invisible but still take up space for measurement
+                const tooltipWidth = tooltip.node().getBoundingClientRect().width;
+                const tooltipHeight = tooltip.node().getBoundingClientRect().height;
+                const padding = 20; // Add some padding from the window edges
+                let adjustedX = tooltipX + padding;
+                let adjustedY = tooltipY + padding;
+            
+                // Adjust X position if tooltip goes beyond the right edge of the window
+                if (tooltipX + tooltipWidth + padding > window.innerWidth) {
+                    adjustedX = window.innerWidth - tooltipWidth - padding;
+                }
+            
+                // Adjust Y position if tooltip goes beyond the bottom edge of the window
+                if (tooltipY + tooltipHeight + padding > window.innerHeight) {
+                    adjustedY = window.innerHeight - tooltipHeight - padding;
+                }
+            
+                // Update tooltip position with adjustments
+                tooltip.style("left", adjustedX + "px")
+                    .style("top", adjustedY + "px")
+                    .style("visibility", "visible"); // Make tooltip visible again
+                // tooltip.html(dataEvent.transcriptionText)
+                //     .style("opacity", 1)
+                //     .style("left", tooltipX + "px")
+                //     .style("top", tooltipY + "px");
             })
             .on("mouseout", function() {
                 tooltip.style("opacity", 0);
@@ -740,10 +802,11 @@ function plotMagnifiedDataInteraction(rectData) {
         .style("fill", "#666");
 
 
-    const tooltip = d3.select("body").append("div")
+        const tooltip = d3.select("body").append("div")
         .attr("class", "tooltip")
         .style("position", "absolute")
         .style("background-color", "white")
+        .style("max-width", "300px")
         .style("border", "1px solid #777")
         .style("border-radius", "5px")
         .style("padding", "10px")
@@ -751,7 +814,6 @@ function plotMagnifiedDataInteraction(rectData) {
         .style("opacity", 0)
         .style("z-index", "1000")
         .style("white-space", "normal");
-
 
     const circleRadius = 10;
     const circleYPosition = margin.top + 20;
@@ -767,23 +829,221 @@ function plotMagnifiedDataInteraction(rectData) {
                 const svgRect = svg.node().getBoundingClientRect();
                 // const [eventX, eventY] = [event.pageX, event.pageY];
                 const [tooltipX, tooltipY] = [event.pageX, event.pageY];
-                // const tooltipX = parseFloat(visibleCircle.attr("cx")) + svgRect.left + window.pageXOffset;
-                // const tooltipY = parseFloat(visibleCircle.attr("cy")) + svgRect.top + window.pageYOffset - circleRadius - 20;
+                // const mess = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris sit amet mattis erat. Quisque laoreet metus id fermentum ultricies. Proin ultricies dignissim volutpat. Ut vulputate odio vel orci pharetra, eu varius dolor pretium. Aliquam dictum risus ac risus placerat luctus. In lacinia mi turpis, nec dapibus sapien fermentum quis. Pellentesque et ornare tortor. Fusce efficitur elit et ligula ultricies, in condimentum neque convallis. Duis pellentesque, mauris sit amet rutrum imperdiet, urna arcu tempus purus, ac pretium erat odio eget justo. Etiam sollicitudin elit nec diam ullamcorper euismod. Nunc non diam ut dolor porttitor cursus vitae quis ipsum. Maecenas eu enim pharetra, laoreet ex et, iaculis velit. Proin velit risus, rutrum non ipsum ut, fermentum lobortis diam";
                 tooltip.html(dataEvent.message)
-                    .style("opacity", 1)
-                    .style("left", tooltipX + "px")
-                    .style("top", tooltipY + "px");
-            })
-            .on("mouseout", function() {
+                .style("opacity", 1)
+                .style("visibility", "hidden"); 
+                const tooltipWidth = tooltip.node().getBoundingClientRect().width;
+                const tooltipHeight = tooltip.node().getBoundingClientRect().height;
+                const padding = 20; 
+                let adjustedX = tooltipX + padding;
+                let adjustedY = tooltipY + padding;
+                if (tooltipX + tooltipWidth + padding > window.innerWidth) {
+                    adjustedX = window.innerWidth - tooltipWidth - padding;
+                }
+                if (tooltipY + tooltipHeight + padding > window.innerHeight) {
+                    adjustedY = window.innerHeight - tooltipHeight - padding;
+                }
+                tooltip.style("left", adjustedX + "px")
+                .style("top", adjustedY + "px")
+                .style("visibility", "visible"); // Make tooltip visible again
+                  })
+                  .on("mouseout", function() {
+                  tooltip.style("opacity", 0)
+                        .style("visibility", "hidden"); // Hide tooltip
+                  })           
+                  .on("mouseout", function() {
                 tooltip.style("opacity", 0);
             });
+          })
+      }
 
-    });
+
+
+function plotOneBarchart(data) {
+  // Flatten data structure to an array suitable for plotting
+  const dataArray = Object.keys(data).flatMap(userId =>
+    data[userId].events.map(event => ({
+      ...event,
+      userId,
+      time: new Date(event.startTime) // Ensure startTime is a Date object
+    }))
+  );
+
+  // const timeExtents = d3.extent(dataArray, d => d.time);
+  const plotBox1 = d3.select("#plot-box1").html("");
+  const margin = {
+    top: 20,
+    right:50,
+    bottom: 20,
+    left: 50
+    };
+    const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
+  // const svg = plotBox1.append("svg")
+  //     .attr("width", width + margin.left + margin.right)
+  //     .attr("height", height + margin.top + margin.bottom)
+  //     .append("g")
+  //     .attr("transform", `translate(${margin.left},${margin.top})`);
+  
+  // X and Y axis setup
+  // const x = d3.scaleTime().domain(timeExtents).range([0, width]);
+  // const y = d3.scaleLinear().range([height, 0]);
+  // const color = d3.scaleOrdinal(d3.schemeCategory10);
+  let currentMetric = "duration";
+  const updateButtonText = () => {
+    const metricText = currentMetric === "duration" ? "Duration" : "Word Count";
+    button.text(` ${metricText}`); 
+  };
+
+  // Button for toggling metric
+  const container = d3.select("#plot-box1");
+  const button = container.append("button")
+  .text("Metric") // Set the button text
+      .attr("class", "toggle-view") // Optionally set a class for styling
+      .on("click", function() {
+        currentMetric = (currentMetric === "duration") ? "wordCount" : "duration";
+        updateChart(currentMetric);
+        updateButtonText();
+          
+      });
+
+      updateButtonText();
+      const svg = plotBox1.append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+      const timeExtents = d3.extent(dataArray.flatMap(d => [d.startTime, d.endTime]));
+
+      const x = d3.scaleTime()
+        .domain(timeExtents)
+        .range([0, width]);
+
+      const xAxis = d3.axisBottom(x)
+        .tickFormat(d3.timeFormat("%M:%S"));
+
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(xAxis);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(dataArray, d => d[currentMetric])])
+        .range([height, 0]);
+    
+      svg.append("g")
+        .call(d3.axisLeft(y));
+    
+      const color = d3.scaleOrdinal(d3.schemeCategory10);
+    
+      function updateChart(metric) {
+      y.domain([0, d3.max(dataArray, d => d[metric])]);
+      svg.selectAll(".y.axis").call(d3.axisLeft(y)); 
+    
+      let bars = svg.selectAll(".bar").data(dataArray);
+    
+      bars.enter().append("rect")
+          .attr("class", "bar")
+        .merge(bars)
+          .transition().duration(750)
+          .attr("x", d => x(d.time))
+          .attr("y", d => y(d[metric]))
+          .attr("width", 10) // Fixed width for each bar
+          .attr("height", d => height - y(d[metric]))
+          .attr("fill", d => color(d.userId));
+    
+      bars.exit().remove();
+      }
+      updateChart(currentMetric);
 }
 
-function plotOneBarchart(rectData) {
-    console.log("plot bar chart here ");
+
+function plotThreeLineplot() {
+  const data = [
+      { date: new Date(2020, 0, 1), value: 30 },
+      { date: new Date(2020, 1, 1), value: 50 },
+      { date: new Date(2020, 2, 1), value: 45 },
+      { date: new Date(2020, 3, 1), value: 70 },
+      { date: new Date(2020, 4, 1), value: 60 }
+  ];
+  const plotBox1 = d3.select("#plot-box1").html("");
+  const margin = {top: 20, right: 30, bottom: 30, left: 50};
+  const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
+  const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+  const svg = d3.select("#plot-box1").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleTime()
+      .domain(d3.extent(data, d => d.date))
+      .range([0, width]);
+
+     
+  const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.value)])
+      .range([height, 0]);
+
+  const xAxis = d3.axisBottom(x).tickFormat(d3.timeFormat("%m/%d"));
+  svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(xAxis);
+
+  svg.append("g")
+      .call(d3.axisLeft(y));
+
+  const line = d3.line()
+      .x(d => x(d.date))
+      .y(d => y(d.value));
+
+  svg.append("path")
+      .datum(data)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5)
+      .attr("d", line);
 }
+
+
+function plotFourSpiderChart(speechData, interactionData) {
+  // Example data structure for the spider chart
+  const data = [
+    {axis: "Speech", value: 0.59},
+    {axis: "Movement", value: 0.82},
+    {axis: "XR Interaction", value: 0.72}
+    // Add more axes/metrics if necessary
+  ];
+  const plotBox1 = d3.select("#plot-box1").html("");
+  const margin = {top: 20, right: 30, bottom: 30, left: 50};
+  const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
+  const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
+  // const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
+  // const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
+// const svg = plotBox1.append("svg")
+  // Configuration for the Radar chart, including size, axes, and more
+  const config = {
+    w: width, // Width of the circle
+    h: height, // Height of the circle
+    maxValue: 1.0, // The maximum value on the scale
+    levels: 5, // How many levels or inner circles should be drawn
+    ExtraWidthX: 300 // Extra width for the legend
+  };
+
+  // Select the div where the chart will be rendered
+
+  // Append an SVG for the chart
+  const svg = plotBox1.append("svg")
+    .attr("width", config.w + config.ExtraWidthX)
+    .attr("height", config.h)
+    .append("g");
+
+  // RadarChart.draw() is a hypothetical function you'd replace with your radar chart drawing logic
+  // This would involve calculating the positions for each axis, drawing the axes, the outer shape and the datapoints
+  RadarChart.draw("#plot-box1", data, config);
+}
+
 
 
 function prepareDataForPlotting(data) {
@@ -814,11 +1074,6 @@ function createPlotInteraction(data) {
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Define a color scale for the interaction bars
-    const colorScale = d3.scaleOrdinal()
-        .domain(["User1", "User2"])
-        .range(["#69b3a2", "#ff6347"]);
 
 
     const text = "XR INTERACTION";
@@ -952,10 +1207,6 @@ function createPlotSpeech(data) {
         .style("text-anchor", "middle")
         .style("font-size", "13px")
         .text(text);
-
-    const colorScale = d3.scaleOrdinal()
-        .domain(["User1", "User2"])
-        .range(["#69b3a2", "#ff6347"]);
 
     const barGroups = svg.selectAll(".textBarGroup")
         .data(data)
