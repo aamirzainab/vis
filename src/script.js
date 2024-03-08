@@ -6,11 +6,7 @@ import {OrbitControls} from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/
 import {LineGeometry} from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineGeometry.js';
 import {LineMaterial} from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineMaterial.js';
 import {Line2} from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
-import {
-    loadAndPlotTemporal,
-    animateTemporalView,
-    getXScale
-} from "./temporal.js"
+import {loadAndPlotTemporal,animateTemporalView,getXScale} from "./temporal.js"
 
 let speechEnabled = false;
 let xrInteractionEnabled = false;
@@ -31,13 +27,19 @@ let globalState = {
     startTimeStamp: 0,
     endTimeStamp: 0,
     currentDataIndex: -1,
-    show: []
+    show: [],
 };
 const hsl = {
     h: 0,
     s: 0,
     l: 0
 };
+let occulusData = {
+  occulusFile : undefined, 
+  occulusAvatar : undefined,
+  occulusLeftController : undefined, 
+  occulusRightController : undefined
+} 
 
 const colorScale = d3.scaleOrdinal()
   .domain([0,1,2])
@@ -52,9 +54,7 @@ window.addEventListener('binSizeChange', function(e) {
     console.log('Bin size changed to:', e.detail);
 });
 let isAnimating = false;
-// let currentTimestamp = 0; // Start Timestamp, global..scared
-const animationStep = 100; // Animation speed
-// let jsonDatas = null;
+const animationStep = 500; // Animation speed
 let roomMesh;
 let meshes = [];
 let avatars = []
@@ -130,6 +130,7 @@ async function loadAvatarModel(filename) {
     const avatar = gltf.scene;
     avatar.scale.set(1, 1, 1);
     avatar.name = filename;
+    console.log(avatar.name);
     scene.add(avatar);
     avatarLoaded = true;
     return avatar;
@@ -241,7 +242,6 @@ window.onload = function() {
     const toolbar = document.getElementById('toolbar');
     const userToolbar = document.getElementById('user-toolbar');
     const totalHeight = objToolbar.clientHeight + userToolbar.clientHeight + toolbar.clientHeight;
-    // console.log("objToolbar.bottom " + objToolbar.style.bottom);
     objToolbar.style.top = '0';
     toolbar.style.bottom = '0';
     userToolbar.style.top = (toolbar.offsetTop - userToolbar.clientHeight) + 'px';
@@ -308,6 +308,7 @@ function animateVisualization() {
         globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
         jsonDatas.forEach((data, index) => {
             updateVisualization(nextTimestamp, index);
+            updateVisualizationOcculus(nextTimestamp);
         });
 
         updateTimeDisplay(nextTimestamp, globalStartTime);
@@ -323,7 +324,7 @@ function animateVisualization() {
     } else {
         isAnimating = false;
         globalState.currentTimestamp = 0; // Reset for restart
-        toggleAnimation(); // Adjusting toggle here?
+        toggleAnimation();
     }
 }
 
@@ -346,7 +347,6 @@ function createPointsMovement(data, id, isHighlight = false) {
                 const x = dof[0] * scaleFactor + offsetX;
                 const y = dof[1] * scaleFactor + offsetY;
                 const z = dof[2] * scaleFactor + offsetZ;
-                // console.log()
                 positions.push(x, y, z);
                 const lightness = isHighlight ? 0.5 : 0.8;
                 const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
@@ -367,8 +367,7 @@ function createPointsMovement(data, id, isHighlight = false) {
     return pointsMesh;
 }
 
-//dashsize, dashgap
-function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity, dashSize, gapSize) {
+function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity, dashSize, gapSize ) {
     const geometry = new LineGeometry();
     const positions = [];
     const colors = [];
@@ -418,6 +417,9 @@ function createLineSegment(data, id, speechFlag, xrInteractionFlag, opacity, das
     return line;
 }
 
+
+
+
 function createFullLine(data, id, currentBinIndex) {
     let lines = [];
     const maxOpacity = 1;
@@ -441,13 +443,10 @@ function createFullLine(data, id, currentBinIndex) {
         } = filterDataByType(binData);
         const distance = Math.abs(currentBinIndex - binIndex);
         let opacity = Math.max(maxOpacity - distance * opacityDropOffRate, minOpacity);
-        // opacity = 1 ; 
-        // let dashSize = baseDashSize;
         let dashSize = baseDashSize + (distance * dashGapIncreaseFactor);
         let gapSize = Math.min(baseGapSize + (distance * dashGapIncreaseFactor), maxGapSize);
         if (validData.length > 0) {
             const lineSegment = createLineSegment(validData, id, validDataSpeech.length > 0, validDataInteraction.length > 0, opacity, dashSize, gapSize);
-            // console.log("came here with opacity " + opacity);
             lines.push(lineSegment);
         }
     }
@@ -455,8 +454,74 @@ function createFullLine(data, id, currentBinIndex) {
 }
 
 
+
+function createFullLineOcculus(data, id, currentBinIndex) {
+  const lines = [];
+  const opacitySettings = { maxOpacity: 1, minOpacity: 0.1, dropOffRate: 0.2 };
+  const dashGapSettings = { baseDashSize: 0.25, baseGapSize: 0.01, increaseFactor: 0.05, maxGapSize: 0.5 };
+
+  for (let binIndex = 0; binIndex < globalState.bins; binIndex++) {
+    const binStartTime = globalState.globalStartTime + binIndex * globalState.intervalDuration;
+    const binEndTime = binStartTime + globalState.intervalDuration;
+    const binData = data.filter(entry => {
+      const entryTime = new Date(entry.Timestamp).getTime();
+      return entryTime >= binStartTime && entryTime < binEndTime;
+    });
+
+    const distance = Math.abs(currentBinIndex - binIndex);
+    const opacity = Math.max(opacitySettings.maxOpacity - distance * opacitySettings.dropOffRate, opacitySettings.minOpacity);
+    const dashSize = dashGapSettings.baseDashSize + distance * dashGapSettings.increaseFactor;
+    const gapSize = Math.min(dashGapSettings.baseGapSize + distance * dashGapSettings.increaseFactor, dashGapSettings.maxGapSize);
+
+    const displayLines = [], leftControllerLines = [], rightControllerLines = [];
+    binData.forEach(entry => {
+      const lineSegment = createLineSegmentOcculus(entry, id, opacity, dashSize, gapSize, entry.TrackingType);
+      if (entry.TrackingType === 'PhysicalXRDisplay') displayLines.push(lineSegment);
+      else if (entry.TrackingType === 'PhysicalXRController_L') leftControllerLines.push(lineSegment);
+      else if (entry.TrackingType === 'PhysicalXRController_R') rightControllerLines.push(lineSegment);
+    });
+
+    lines.push(...displayLines, ...leftControllerLines, ...rightControllerLines);
+  }
+
+  return lines;
+}
+
+function createLineSegmentOcculus(data, id, opacity, dashSize, gapSize, trackingType) {
+  const geometry = new LineGeometry();
+  const positions = [], colors = [];
+  let colorShade = colorScale(id);
+  let baseColor = new THREE.Color(colorShade);
+  const linewidth = 2, scaleFactor = 2;
+  const offset = { x: 0, y: 1, z: 1 };
+
+  data.forEach(entry => {
+    if (entry.TrackingType === trackingType && entry.DataType === 'Transformation') {
+      const dof = parseData(entry.Data);
+      if (dof) {
+        positions.push(dof[0] * scaleFactor + offset.x, dof[1] * scaleFactor + offset.y, dof[2] * scaleFactor + offset.z);
+        const color = new THREE.Color().setHSL(baseColor.getHSL().h, baseColor.getHSL().s, opacity);
+        colors.push(color.r, color.g, color.b);
+      }
+    }
+  });
+
+  geometry.setPositions(positions);
+  geometry.setColors(colors);
+
+  let material = new LineMaterial({
+    linewidth, color: baseColor, opacity, transparent: true, dashSize, gapSize,
+  });
+  material.resolution.set(window.innerWidth, window.innerHeight);
+
+  const line = new Line2(geometry, material);
+  line.computeLineDistances();
+
+  return line;
+}
+
+
 function createPointsInteraction(data, id, isHighlight = false) {
-    // const geometry = new THREE.BufferGeometry();
     const geometry = new THREE.SphereGeometry();
     const positions = [];
     const colors = [];
@@ -469,12 +534,8 @@ function createPointsInteraction(data, id, isHighlight = false) {
     const offsetZ = 1;
     data.forEach(entry => {
         if (entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction') {
-            // const dof = parseData(entry.Data);
             const dof = entry.Data;
             if (dof) {
-                // const x = dof.normalized.x * scaleFactor + offsetX;
-                // const y = dof.normalized.y * scaleFactor + offsetY;
-                // const z = dof.normalized.z * scaleFactor + offsetZ;
                 const x = dof.x * scaleFactor + offsetX;
                 const y = dof.y * scaleFactor + offsetY;
                 const z = dof.z * scaleFactor + offsetZ;
@@ -503,13 +564,6 @@ function createSpheresInteraction(data, id, isHighlight = false) {
     let colorShade = colorScale(id);
     let baseColor = new THREE.Color(colorShade);
     baseColor.getHSL(hsl);
-
-    // if (id === 1) {
-    //     baseColor = new THREE.Color("#756bb1");
-    // } else {
-    //     baseColor = new THREE.Color("#dd1c77");
-    // }
-
     const scaleFactor = 2;
     const offsetX = 0;
     const offsetY = 1;
@@ -538,47 +592,8 @@ function createSpheresInteraction(data, id, isHighlight = false) {
             }
         }
     });
-    return spheres; // Return an array of sphere meshes
+    return spheres; // Returns array of sphere meshes
 }
-
-// function createSpheresSpeech(data,id,isHighlight = false){
-//   const spheres = []; // Array to hold all the sphere meshes
-//   let baseColor;
-//   if (id === 1) {
-//       baseColor = new THREE.Color("#f7fcb9");
-//   } else {
-//       baseColor = new THREE.Color("#fde0dd");
-//   }
-//   baseColor.getHSL(hsl);
-//   const scaleFactor = 2;
-//   const offsetX = 0;
-//   const offsetY = 1;
-//   const offsetZ = 1;
-//   const sphereRadius = 0.1; // Adjust the radius of the spheres as needed
-//   const segments = 5; // Number of segments; increase for smoother spheres
-
-//   data.forEach(entry => {
-//       if (entry.TranscriptionText !== undefined && entry.TranscriptionText !== '') {
-//           const dof = entry.Data;
-//           if (dof) {
-//               const x = dof.x * scaleFactor + offsetX;
-//               const y = dof.y * scaleFactor + offsetY;
-//               const z = dof.z * scaleFactor + offsetZ;
-//               const geometry = new THREE.SphereGeometry(sphereRadius, segments, segments);
-//               const lightness = isHighlight ? 0.5 : 0.8;
-//               const color = new THREE.Color().setHSL(hsl.h, hsl.s, lightness);
-//               const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: isHighlight ? 1.0 : 0.5 });
-//               const sphereMesh = new THREE.Mesh(geometry, material);
-//               sphereMesh.position.set(x, y, z);
-//               spheres.push(sphereMesh);
-//           }
-//       }
-//   });
-//   return spheres;
-
-// }
-
-
 
 function createSpheresSpeech(data, id, isHighlight = false) {
     const spheres = []; // Array to hold all the sphere meshes
@@ -591,10 +606,9 @@ function createSpheresSpeech(data, id, isHighlight = false) {
     const offsetX = 0;
     const offsetY = 1;
     const offsetZ = 1;
-    const sphereRadius = 0.1; // Adjust the radius of the spheres as needed
+    const sphereRadius = 0.1; 
     const segments = 2; // Number of segments; increase for smoother spheres
 
-    // Assuming you want to keep a similar data structure and filtering logic
     data.forEach(entry => {
         if (entry.TrackingType !== "NoneType" &&
             entry.FeatureType !== "NoneType" &&
@@ -603,7 +617,6 @@ function createSpheresSpeech(data, id, isHighlight = false) {
             entry.TranscriptionText !== null &&
             entry.TranscriptionText.trim() !== ''
         ) {
-            // Assuming 'Data' contains position info like in the previous function
             if (typeof entry.Data === 'string') {
                 dof = parseData(entry.Data);
                 x = dof[0];
@@ -641,17 +654,25 @@ async function initializeScene() {
     const jsonFiles = await Promise.all([
         fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
         fetch('file1.json').then(response => response.json()),
-        // fetch('lol.json').then(response => response.json()),
         fetch('file1TransformedUser3.json').then(response => response.json()),
     ]);
     const avatarArray = await Promise.all([
         loadAvatarModel("RealWorld/ipad_user1.glb"),
         loadAvatarModel("RealWorld/ipad_user2.glb"),
         loadAvatarModel("RealWorld/ipad_user3.glb"),
+        
     ]);
-
-
     globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
+
+    occulusData.occulusFile = await Promise.all([
+      fetch('occulusFile.json').then(response => response.json()),
+    ]);
+    occulusData.occulusFile = Object.values(occulusData.occulusFile[0]);
+    occulusData.occulusAvatar = await loadAvatarModel("oculus_quest_2.glb");
+    occulusData.occulusLeftController = await  loadAvatarModel("oculus_controller_left.glb");
+    occulusData.occulusRightController =  await  loadAvatarModel("oculus_controller_right.glb");
+
+    occulusData.occulusFile = Object.values(occulusData.occulusFile ).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
 
     jsonFiles.forEach((jsonData, index) => {
         const sortedData = jsonData.sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
@@ -663,10 +684,10 @@ async function initializeScene() {
         // globalState.speechMeshes[index] = createPointsSpeech(sortedData, index);
         globalState.show[index] = true;
     });
+     createFullLineOcculus(occulusData.occulusFile,0,0);
 
-    // createTimeSlider(globalState.jsonDatas);
-    setTimes(globalState.jsonDatas);
-
+    // setTimes(globalState.jsonDatas);
+    setTimes(occulusData.occulusFile);
     fitCameraToObject(camera, scene, 1.2, controls);
 
     const playPauseButton = document.createElement('div');
@@ -686,7 +707,7 @@ async function initializeScene() {
     });
 
     const { users, links } = processMovementData();
-    // plotTwoNetworkChart(users,links);
+    plotTwoNetworkChart(users,links);
 }
 
 
@@ -724,15 +745,12 @@ function updateVisualization(currTimeStamp, userID) {
     const mesh = globalState.meshes[userID];
     const interactionMesh = globalState.interactionMeshes[userID];
     const speechMesh = globalState.speechMeshes[userID];
-
     if (!avatar) {
         console.error('The avatar has not been loaded.');
         return;
     }
-
     const intervalData = data.filter(entry => {
         const entryTime = new Date(entry.Timestamp).getTime();
-        // return entryTime >= startTimeStamp && entryTime <= endTimeStamp;
         return entryTime <= endTimeStamp;
     });
 
@@ -745,12 +763,8 @@ function updateVisualization(currTimeStamp, userID) {
         validDataSpeech
     } = filterDataByType(intervalData);
     const closestData = findClosestDataEntry(validData, currTimeStamp);
-    // const binIndexClosestData = Math.floor(((closestData.Timestamp) - globalState.globalStartTime) / globalState.intervalDuration);
     const closestDataInteraction = findClosestDataEntry(validDataInteraction, currTimeStamp);
     const closestDataSpeech = findClosestDataEntry(validDataSpeech, currTimeStamp);
-
-    // if (closestData && validData.length > 0 && closestDataInteraction && validDataInteraction.length > 0
-    //   && closestDataSpeech && validDataSpeech.length > 0) {
     const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
     const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
     const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
@@ -762,12 +776,16 @@ function updateVisualization(currTimeStamp, userID) {
     const offsetZ = 1;
     const newMesh = createFullLine(intervalData, userID, binIndex);
     globalState.meshes[userID] = newMesh;
+    const occulusMeshes = createFullLineOcculus(intervalData, 0);
+    occulusMeshes.forEach(datasetLines => {
+        datasetLines.forEach(line => {
+            scene.add(line);
+        });
+    });
     const newInteractionMesh = createSpheresInteraction(currentDataInteraction, userID);
     globalState.interactionMeshes[userID] = newInteractionMesh;
     const newSpeechMesh = undefined;
-    // const newSpeechMesh = createPointsSpeech(currentDataSpeech,userID);
     globalState.speechMeshes[userID] = newSpeechMesh;
-    // console.log("Interaction Mesh Properties:", newInteractionMesh.position, newInteractionMesh.scale, newInteractionMesh.visible);
     updateLineThickness();
     if (globalState.show[userID]) {
         showUserData(userID);
@@ -783,6 +801,64 @@ function updateVisualization(currTimeStamp, userID) {
     const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
     avatar.rotation.set(0, 0, 0);
     avatar.setRotationFromEuler(euler);
+}
+
+function updateVisualizationOcculus(currTimeStamp){
+  const validData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRDisplay' 
+  && entry.DataType === 'Transformation');
+  // console.log(validData);
+  const closestData = findClosestDataEntry(validData, currTimeStamp);
+    if (closestData !== null )
+    {
+      const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
+      const scaleFactor = 2;
+      const offsetX = 0;
+      const offsetY = 1;
+      const offsetZ = 1;
+      occulusData.occulusAvatar.position.x = x * scaleFactor + offsetX;
+      occulusData.occulusAvatar.position.y = y * scaleFactor + offsetY;
+      occulusData.occulusAvatar.position.z = z * scaleFactor + offsetZ;
+      occulusData.occulusAvatar.rotation.set(0, 0, 0); 
+      const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
+      occulusData.occulusAvatar.setRotationFromEuler(euler);
+    }
+    const validRightControllerData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRController_R'
+    && entry.DataType === 'Transformation' && typeof entry.Data === 'string');
+    const validLeftControllerData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRController_L'
+    && entry.DataType === 'Transformation' && typeof entry.Data === 'string');
+    console.log(validRightControllerData);
+    updateControllerVisualization(validRightControllerData, currTimeStamp, 'right');
+    updateControllerVisualization(validLeftControllerData, currTimeStamp, 'left');
+
+}
+
+
+function updateControllerVisualization(controllerData, currTimeStamp, side) {
+  const closestData = findClosestDataEntry(controllerData, currTimeStamp);
+  if (closestData !== null) {
+      const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
+      const scaleFactor = 2;
+      const offsetX = 0;
+      const offsetY = 1;
+      const offsetZ = 1;
+      if ( side === 'left' ) {
+        occulusData.occulusLeftController.position.x = x * scaleFactor + offsetX;
+        occulusData.occulusLeftController.position.y = y * scaleFactor + offsetY;
+        occulusData.occulusLeftController.position.z = z * scaleFactor + offsetZ;
+        occulusData.occulusLeftController.rotation.set(0, 0, 0); 
+        const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
+        occulusData.occulusLeftController.setRotationFromEuler(euler);
+      }
+      else if (side === 'right')
+      {
+        occulusData.occulusRightController.position.x = x * scaleFactor + offsetX;
+        occulusData.occulusRightController.position.y = y * scaleFactor + offsetY;
+        occulusData.occulusRightController.position.z = z * scaleFactor + offsetZ;
+        occulusData.occulusRightController.rotation.set(0, 0, 0); 
+        const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
+        occulusData.occulusRightController.setRotationFromEuler(euler);
+      }
+  }
 }
 
 function clearPreviousObjects(userID) {
@@ -802,7 +878,6 @@ function clearPreviousObjects(userID) {
         globalState.interactionMeshes[userID] = [];
     }
 
-    // Clear the user-specific speech meshes
     if (globalState.speechMeshes[userID]) {
         scene.remove(globalState.speechMeshes[userID]);
         globalState.speechMeshes[userID] = null;
@@ -849,24 +924,21 @@ function updateLineThickness() {
 
 function processMovementData() {
   const jsonDatas = globalState.jsonDatas;
-  let users = []; // Will store positions
-  const scaleFactor = 1;
-  const offsetX = 0, offsetY = 0; // Assuming 2D visualization for simplicity
+  let users = []; 
 
-  // Initialize users with empty paths
   for (let i = 0; i < 2; i++) {
     users.push({ id: i, path: [] });
   }
-
   jsonDatas.forEach((userDatas, userId) => {
     if (userId < 2) { 
       userDatas.forEach(entry => {
         if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
           const dof = parseData(entry.Data);
           if (dof) {
-            const x = dof[0] * scaleFactor + offsetX;
-            const y = dof[1] * scaleFactor + offsetY;
-            users[userId].path.push({ x: x, y: y });
+            const x = dof[0]
+            const y = dof[1]
+            const z = dof[2] 
+            users[userId].path.push({ x: x, y: y, z: z });
           }
         }
       });
@@ -936,7 +1008,7 @@ function plotTwoNetworkChart(users, links) {
 
       link
         .transition()
-        .duration(10) // Adjust duration for smoother or faster animation
+        .duration(10) // Adjust duration for faster animation
         .attr("x1", xScale(posUser0.x))
         .attr("y1", yScale(posUser0.y))
         .attr("x2", xScale(posUser1.x))
@@ -947,33 +1019,50 @@ function plotTwoNetworkChart(users, links) {
     }
   }
 
-  animateLink(); // Start the animation
+  animateLink(); 
 }
 
 
 
-function setTimes(data) {
-    const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-    const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-    globalState.globalStartTime = Math.min(...globalStartTimes);
-    const globalStartTime = globalState.globalStartTime;
-    const somePadding = 0;
-    globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-    const globalEndTime = globalState.globalEndTime;
-    // console.log("this is fgloablend time " + new Date(globalEndTime));
-    const totalTime = globalEndTime - globalStartTime;
-    globalState.intervalDuration = totalTime / globalState.bins;
-    const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-    globalState.intervals = Array.from({
-        length: globalState.bins + 1
-    }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
+// function setTimes(data) {
+//     const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
+//     const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
+//     globalState.globalStartTime = Math.min(...globalStartTimes);
+//     const globalStartTime = globalState.globalStartTime;
+//     const somePadding = 0;
+//     globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
+//     const globalEndTime = globalState.globalEndTime;
+//     const totalTime = globalEndTime - globalStartTime;
+//     globalState.intervalDuration = totalTime / globalState.bins;
+//     const duration = (globalEndTime - globalStartTime) / 1000 / 60;
+//     globalState.intervals = Array.from({
+//         length: globalState.bins + 1
+//     }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
 
+// }
+
+function setTimes(occulusData) {
+  console.log(occulusData);
+  const globalStartTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
+  const globalEndTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
+  
+  globalState.globalStartTime = Math.min(...globalStartTimes);
+  const globalStartTime = globalState.globalStartTime;
+  const somePadding = 0;
+  globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
+  // console.log(" this is start time " + new Date(globalState.globalStartTime));
+  // console.log(" this is end time " + new Date(globalState.globalEndTime));
+  const globalEndTime = globalState.globalEndTime;
+  const totalTime = globalEndTime - globalStartTime;
+  globalState.intervalDuration = totalTime / globalState.bins;
+  const duration = (globalEndTime - globalStartTime) / 1000 / 60;
+  globalState.intervals = Array.from({
+      length: globalState.bins + 1
+  }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
 }
+
 
 function createTimeSlider(data) {
-    // const timestamps = data.map(entry => new Date(entry.Timestamp).getTime());
-    // const startTime = Math.min(...timestamps);
-    // const endTime = Math.max(...timestamps);
     const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
     const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
     globalState.globalStartTime = Math.min(...globalStartTimes);
@@ -982,20 +1071,13 @@ function createTimeSlider(data) {
     globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
 
     const globalEndTime = globalState.globalEndTime;
-    // const paddedEndtime = globalEndTime + somePadding ;
     const totalTime = globalEndTime - globalStartTime;
     globalState.intervalDuration = totalTime / globalState.bins;
-    // console.log("yo these are the bins " + bins );
-    // console.log(`this is script.js start time: ${new Date(globalStartTime)} and endtime : ${new Date(globalEndTime)} ` );
-    // console.log("this is interval duration from script " + intervalDuration);
-    // console.log(` StartTime : ${new Date(globalStartTime)} EndTime : ${new Date(globalEndTime)}`);
-    // console.log(` this is end time script  ${new Date(globalEndTime)} `);
 
     const duration = (globalEndTime - globalStartTime) / 1000 / 60;
     globalState.intervals = Array.from({
         length: globalState.bins + 1
     }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-    // globalState.intervals = Array.from({ length: globalState.bins  }, (v, i) => new Date(globalStartTime+ i * globalState.intervalDuration));
 
     const slider = d3.select('#slider-container').append('input')
         .attr('type', 'range')
@@ -1017,6 +1099,7 @@ function createTimeSlider(data) {
             const timestamp = globalState.globalStartTime + currentTimestamp;
             jsonDatas.forEach((data, index) => {
                 updateVisualization(timestamp, index);
+                updateVisualizationOcculus(timestamp);
             });
             animateTemporalView(timestamp);
             updateTimeDisplay(timestamp, globalStartTime);
@@ -1028,16 +1111,16 @@ function createTimeSlider(data) {
         const binIndex = Math.floor((globalState.currentTimestamp) / globalState.intervalDuration);
         globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
         globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-        // console.log(` Sent to function StartTime  : ${new Date(globalState.startTimeStamp )} EndTime : ${new Date(globalState.endTimeStamp )}`);
         if (isAnimating) {
             toggleAnimation();
             updatePlayPauseButton();
         }
         isAnimating = false; // Optionally pause animation
         const timestamp = globalState.globalStartTime + globalState.currentTimestamp;
-        globalState.currentTimestamp = timestamp; // zainab come here 
+        globalState.currentTimestamp = timestamp; 
         globalState.jsonDatas.forEach((data, index) => {
             updateVisualization(timestamp, index);
+            updateVisualizationOcculus(timestamp);
         });
         updateTimeDisplay(timestamp, globalState.globalStartTime);
         animateTemporalView(timestamp);
@@ -1056,21 +1139,15 @@ export function dragged(event, d) {
     const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
     const width = parseInt(svg.style("width")) - margin.right - margin.left;
     const x = getXScale();
-    // console.log("Drag event:", event.x);
-    // let newXPosition = Math.max(0, Math.min(event.x, width));
     let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
     let newTimestamp = x.invert(newXPosition);
     d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
     d3.select('#time-indicator-circle')
         .attr('cx', newXPosition + margin.left);
-    // const newTimestamp = x.invert(newXPosition);
-    // const lastTimestamp = new Date(globalState.endTimeStamp); // Assuming this is the last timestamp
     if (newTimestamp > new Date(globalState.globalEndTime)) {
         newTimestamp = new Date(globalState.globalEndTime);
-        newXPosition = x(newTimestamp); // Recalculate newXPosition based on corrected timestamp
+        newXPosition = x(newTimestamp); 
     }
-
-    // console.log("this is new Timestamp " + newTimestamp);
 
     // Update the global state's current timestamp based on the line's new position
     globalState.currentTimestamp = newTimestamp.getTime() - globalState.globalStartTime;
@@ -1084,10 +1161,9 @@ export function dragged(event, d) {
         updatePlayPauseButton();
     }
     isAnimating = false;
-    // const timestamp = globalState.globalStartTime + currentTimestamp;
-    // Update visualizations similarly to the slider's input event
     globalState.jsonDatas.forEach((data, index) => {
         updateVisualization(newTimestamp.getTime(), index);
+        updateVisualizationOcculus(newTimestamp.getTime());
     });
     animateTemporalView(newTimestamp.getTime());
     updateTimeDisplay(newTimestamp.getTime(), globalState.globalStartTime);
@@ -1120,8 +1196,6 @@ function onWindowResize() {
     renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
 }
 
-// loadAndPlotTemporalInteraction();
-// loadAndPlotTemporalSpeech();
 loadAndPlotTemporal();
 
 onWindowResize();

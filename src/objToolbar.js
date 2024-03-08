@@ -6,7 +6,6 @@ document.getElementById('obj-toolbar').addEventListener('change', async function
   if (target.tagName === 'INPUT' && target.type === 'checkbox') {
       const isChecked = target.checked;
       
-      // If the checkbox is for a folder, set all children's checked state to match
       if (isFolderCheckbox(target)) {
           const childCheckboxes = getChildCheckboxes(target);
           for (let checkbox of childCheckboxes) {
@@ -22,7 +21,6 @@ document.getElementById('obj-toolbar').addEventListener('change', async function
 async function handleChangeOnModel(checkbox) {
   const modelPath = getModelPath(checkbox);
   const isChecked = checkbox.checked;
-  // console.log(`Model selected: ${modelPath}, Checked: ${isChecked}`);
   const scene = getScene();
   const existingObject = scene.getObjectByName(modelPath);
   if (existingObject) {
@@ -50,8 +48,6 @@ function getChildCheckboxes(checkbox) {
 function getModelPath(checkbox) {
   let pathComponents = [];
   let currentElement = checkbox;
-
-  // Climb up the DOM tree to build the path
   while (currentElement && currentElement.id !== 'right-toolbar') {
       if (currentElement.tagName === 'LI' && currentElement.querySelector('label')) {
           const label = currentElement.querySelector('label').textContent.trim();
@@ -59,8 +55,6 @@ function getModelPath(checkbox) {
       }
       currentElement = currentElement.parentNode;
   }
-
-  // Join the path components
   return pathComponents.join('/');
 }
 
