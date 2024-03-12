@@ -11,7 +11,7 @@ import {loadAndPlotTemporal,animateTemporalView,getXScale} from "./temporal.js"
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
-let numUsers = 3;
+let numUsers = 2;
 let globalState = {
     currentTimestamp: 0,
     bins: 5,
@@ -54,7 +54,7 @@ window.addEventListener('binSizeChange', function(e) {
     console.log('Bin size changed to:', e.detail);
 });
 let isAnimating = false;
-const animationStep = 500; // Animation speed
+const animationStep = 100; 
 let roomMesh;
 let meshes = [];
 let avatars = []
@@ -234,9 +234,10 @@ window.onload = function() {
     document.getElementById('toggle-user1').addEventListener('change', function() {
         globalState.show[1] = this.checked;
     });
-    document.getElementById('toggle-user2').addEventListener('change', function() {
-        globalState.show[2] = this.checked;
-    });
+
+    // document.getElementById('toggle-user2').addEventListener('change', function() {
+    //     globalState.show[2] = this.checked;
+    // });
 
     const objToolbar = document.getElementById('obj-toolbar');
     const toolbar = document.getElementById('toolbar');
@@ -308,7 +309,7 @@ function animateVisualization() {
         globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
         jsonDatas.forEach((data, index) => {
             updateVisualization(nextTimestamp, index);
-            updateVisualizationOcculus(nextTimestamp);
+            // updateVisualizationOcculus(nextTimestamp);
         });
 
         updateTimeDisplay(nextTimestamp, globalStartTime);
@@ -654,23 +655,24 @@ async function initializeScene() {
     const jsonFiles = await Promise.all([
         fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
         fetch('file1.json').then(response => response.json()),
-        fetch('file1TransformedUser3.json').then(response => response.json()),
+        // fetch('file1TransformedUser3.json').then(response => response.json()),
     ]);
     const avatarArray = await Promise.all([
         loadAvatarModel("RealWorld/ipad_user1.glb"),
         loadAvatarModel("RealWorld/ipad_user2.glb"),
-        loadAvatarModel("RealWorld/ipad_user3.glb"),
+        // loadAvatarModel("RealWorld/ipad_user3.glb"),
         
     ]);
-    globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
+    // globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
+    globalState.avatars = [ avatarArray[0], avatarArray[1]];
 
     occulusData.occulusFile = await Promise.all([
       fetch('occulusFile.json').then(response => response.json()),
     ]);
     occulusData.occulusFile = Object.values(occulusData.occulusFile[0]);
-    occulusData.occulusAvatar = await loadAvatarModel("oculus_quest_2.glb");
-    occulusData.occulusLeftController = await  loadAvatarModel("oculus_controller_left.glb");
-    occulusData.occulusRightController =  await  loadAvatarModel("oculus_controller_right.glb");
+    // occulusData.occulusAvatar = await loadAvatarModel("oculus_quest_2.glb");
+    // occulusData.occulusLeftController = await  loadAvatarModel("oculus_controller_left.glb");
+    // occulusData.occulusRightController =  await  loadAvatarModel("oculus_controller_right.glb");
 
     occulusData.occulusFile = Object.values(occulusData.occulusFile ).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
 
@@ -684,10 +686,10 @@ async function initializeScene() {
         // globalState.speechMeshes[index] = createPointsSpeech(sortedData, index);
         globalState.show[index] = true;
     });
-     createFullLineOcculus(occulusData.occulusFile,0,0);
+    //  createFullLineOcculus(occulusData.occulusFile,0,0);
 
-    // setTimes(globalState.jsonDatas);
-    setTimes(occulusData.occulusFile);
+    setTimes(globalState.jsonDatas);
+    // setTimes(occulusData.occulusFile);
     fitCameraToObject(camera, scene, 1.2, controls);
 
     const playPauseButton = document.createElement('div');
@@ -776,12 +778,12 @@ function updateVisualization(currTimeStamp, userID) {
     const offsetZ = 1;
     const newMesh = createFullLine(intervalData, userID, binIndex);
     globalState.meshes[userID] = newMesh;
-    const occulusMeshes = createFullLineOcculus(intervalData, 0);
-    occulusMeshes.forEach(datasetLines => {
-        datasetLines.forEach(line => {
-            scene.add(line);
-        });
-    });
+    // const occulusMeshes = createFullLineOcculus(intervalData, 0);
+    // occulusMeshes.forEach(datasetLines => {
+    //     datasetLines.forEach(line => {
+    //         scene.add(line);
+    //     });
+    // });
     const newInteractionMesh = createSpheresInteraction(currentDataInteraction, userID);
     globalState.interactionMeshes[userID] = newInteractionMesh;
     const newSpeechMesh = undefined;
@@ -826,7 +828,7 @@ function updateVisualizationOcculus(currTimeStamp){
     && entry.DataType === 'Transformation' && typeof entry.Data === 'string');
     const validLeftControllerData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRController_L'
     && entry.DataType === 'Transformation' && typeof entry.Data === 'string');
-    console.log(validRightControllerData);
+    // console.log(validRightControllerData);
     updateControllerVisualization(validRightControllerData, currTimeStamp, 'right');
     updateControllerVisualization(validLeftControllerData, currTimeStamp, 'left');
 
@@ -1024,42 +1026,41 @@ function plotTwoNetworkChart(users, links) {
 
 
 
-// function setTimes(data) {
-//     const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-//     const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-//     globalState.globalStartTime = Math.min(...globalStartTimes);
-//     const globalStartTime = globalState.globalStartTime;
-//     const somePadding = 0;
-//     globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-//     const globalEndTime = globalState.globalEndTime;
-//     const totalTime = globalEndTime - globalStartTime;
-//     globalState.intervalDuration = totalTime / globalState.bins;
-//     const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-//     globalState.intervals = Array.from({
-//         length: globalState.bins + 1
-//     }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
+function setTimes(data) {
+    const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
+    const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
+    globalState.globalStartTime = Math.min(...globalStartTimes);
+    const globalStartTime = globalState.globalStartTime;
+    const somePadding = 0;
+    globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
+    const globalEndTime = globalState.globalEndTime;
+    const totalTime = globalEndTime - globalStartTime;
+    globalState.intervalDuration = totalTime / globalState.bins;
+    const duration = (globalEndTime - globalStartTime) / 1000 / 60;
+    globalState.intervals = Array.from({
+        length: globalState.bins + 1
+    }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
 
-// }
-
-function setTimes(occulusData) {
-  console.log(occulusData);
-  const globalStartTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
-  const globalEndTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
-  
-  globalState.globalStartTime = Math.min(...globalStartTimes);
-  const globalStartTime = globalState.globalStartTime;
-  const somePadding = 0;
-  globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-  // console.log(" this is start time " + new Date(globalState.globalStartTime));
-  // console.log(" this is end time " + new Date(globalState.globalEndTime));
-  const globalEndTime = globalState.globalEndTime;
-  const totalTime = globalEndTime - globalStartTime;
-  globalState.intervalDuration = totalTime / globalState.bins;
-  const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-  globalState.intervals = Array.from({
-      length: globalState.bins + 1
-  }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
 }
+
+// function setTimes(occulusData) {
+//   const globalStartTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
+//   const globalEndTimes = occulusData.map(entry => new Date(entry.Timestamp).getTime());
+  
+//   globalState.globalStartTime = Math.min(...globalStartTimes);
+//   const globalStartTime = globalState.globalStartTime;
+//   const somePadding = 0;
+//   globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
+//   // console.log(" this is start time " + new Date(globalState.globalStartTime));
+//   // console.log(" this is end time " + new Date(globalState.globalEndTime));
+//   const globalEndTime = globalState.globalEndTime;
+//   const totalTime = globalEndTime - globalStartTime;
+//   globalState.intervalDuration = totalTime / globalState.bins;
+//   const duration = (globalEndTime - globalStartTime) / 1000 / 60;
+//   globalState.intervals = Array.from({
+//       length: globalState.bins + 1
+//   }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
+// }
 
 
 function createTimeSlider(data) {
@@ -1099,7 +1100,7 @@ function createTimeSlider(data) {
             const timestamp = globalState.globalStartTime + currentTimestamp;
             jsonDatas.forEach((data, index) => {
                 updateVisualization(timestamp, index);
-                updateVisualizationOcculus(timestamp);
+                // updateVisualizationOcculus(timestamp);
             });
             animateTemporalView(timestamp);
             updateTimeDisplay(timestamp, globalStartTime);
@@ -1120,7 +1121,7 @@ function createTimeSlider(data) {
         globalState.currentTimestamp = timestamp; 
         globalState.jsonDatas.forEach((data, index) => {
             updateVisualization(timestamp, index);
-            updateVisualizationOcculus(timestamp);
+            // updateVisualizationOcculus(timestamp);
         });
         updateTimeDisplay(timestamp, globalState.globalStartTime);
         animateTemporalView(timestamp);
@@ -1162,8 +1163,10 @@ export function dragged(event, d) {
     }
     isAnimating = false;
     globalState.jsonDatas.forEach((data, index) => {
+      console.log("inidex " + index);
         updateVisualization(newTimestamp.getTime(), index);
-        updateVisualizationOcculus(newTimestamp.getTime());
+
+        // updateVisualizationOcculus(newTimestamp.getTime());
     });
     animateTemporalView(newTimestamp.getTime());
     updateTimeDisplay(newTimestamp.getTime(), globalState.globalStartTime);
