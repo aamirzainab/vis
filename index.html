@@ -7,20 +7,17 @@
     <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <!-- <div id="top-toolbar" class="toolbar"> -->
-        <!-- <ul> -->
-            <!-- <li><a href="#file">File</a></li> -->
-            <!-- <li><a href="#help">Help</a></li> -->
-            <!-- <li><a href="#spatial-data-viewer">Spatial Data Viewer</a></li> -->
-            <!-- <li><a href="#raw-data-viewer">Raw Data Viewer</a></li> -->
-        <!-- </ul> -->
-    <!-- </div> -->
+
     <div id="spatial-view"></div>
+        <div id="range-display"></div>
         <div id="right-pane">
             <div class="plot-box" id="plot-box1"></div>
             <div class="plot-box" id="plot-box2"></div> 
+            <div class="plot-box" id="plot-box3"></div> 
         </div>
     <div id="left-pane">
+        <div id="hier-toolbar" class="toolbar hier"></div>
+        <div id="speech-box"></div>
         <div id="obj-toolbar" class="toolbar obj"></div>
         <div id="toolbar" class="toolbar">
             <div class="toggle">
@@ -117,13 +114,9 @@
                 })
                 .catch(error => console.error('Error loading folder structure:', error));
         });
+
     </script>
     </div>
-    <!-- <div id="slider-container">
-        <div id="playPauseButton" class="play-pause-icon">
-        </div>
-        <div id="timeDisplay">00:00:00</div>
-    </div> -->
     <div id="temporal-view" style="position: relative;">
         <div id="slider-container">
             <div id="playPauseButton" class="play-pause-icon">
@@ -135,24 +128,55 @@
         <div id="shared-axis-container">
             <svg id="shared-axis"></svg>
         </div>
-        <div id="bin-selection-container">
-        <label for="binsDropdown">Number of Bins</label>
-                <select id="binsDropdown">
+
+        <div id="bin-selection-container" class="dropdown">
+            <button class="dropbtn" onclick="myFunction()">Sample Size
+                <!-- Icon can be added here if needed -->
+            </button>
+            <select id="binsDropdown">
                 <option value="5"  selected>5</option>
                 <option value="10" >10</option>
                 <option value="20">20</option>
                 <option value="30">30</option>
-                </select>
-        </div>
-        <div id="interaction-plot-container">
-            <svg id="interaction-plot"></svg>
+            </select>
         </div>
         <div id="speech-plot-container">
             <svg id="speech-plot"></svg>
         </div>
-        <svg style="position: absolute; top: 25; left: 0; z-index: 1;  pointer-events: none;" width="100%" height="100% ">
-            <line id="time-indicator-line" x1="100" y1="24" x2="100" y2="100%"></line>
-            <circle id="time-indicator-circle" cx="100" cy="24" r="5" fill="black"></circle>
+        <script>
+            // Function to toggle the dropdown visibility
+            function myFunction() {
+                var dropdown = document.getElementById("binsDropdown");
+                if (dropdown.style.display === "block") {
+                    dropdown.style.display = "none";
+                } else {
+                    dropdown.style.display = "block";
+                }
+            }
+
+            function selectSize(size) {
+                var dropbtn = document.querySelector("#bin-selection-container .dropbtn");
+                dropbtn.textContent = "Sample Size - " + size; 
+                myFunction(); 
+            }
+            window.onclick = function(event) {
+                if (!event.target.matches('.dropbtn')) {
+                    var dropdowns = document.getElementsByClassName("dropdown-content");
+                    for (var i = 0; i < dropdowns.length; i++) {
+                        var openDropdown = dropdowns[i];
+                        if (openDropdown.style.display === "block") {
+                            openDropdown.style.display = "none";
+                        }
+                    }
+                }
+            }
+        </script>
+        <svg id= "indicator-svg" style="position: absolute; top: 25; left: 0; z-index: 1; " width="100%" height="100%">
+            <!-- pointer-events: none; -->
+            <line id="time-indicator-line1" x1="100" y1="28" x2="100" y2="100%"></line>
+            <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#82caeb"></circle>
+            <line id="time-indicator-line2" x1="100" y1="28" x2="100" y2="100%"></line>
+            <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#82caeb"></circle>
         </svg>
     </div>
     <script type="module" src="src/script.js"></script>
