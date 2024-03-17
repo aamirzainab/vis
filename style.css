@@ -70,6 +70,8 @@ html, body {
 
 #temporal-view {
     height: 35%;
+    overflow-x: auto;
+    display: block;
 }
 
 .toolbar, #obj-toolbar, #toolbar, #user-toolbar, #bin-selection-container {
@@ -94,6 +96,7 @@ html, body {
     display: flex;
     align-items: center;
     width: 100%;
+    display: none; 
 }
 
 #slider-container input[type=range], #playPauseButton {
@@ -107,24 +110,70 @@ html, body {
     height: 24px;
 }
  #speech-plot-container {
+        /* overflow-x: scroll; */
       padding: 10px; 
       top:0;
 }
 
-#bin-selection-container {
+#shared-axis-container {
+    position: relative; /* If it's not already relative, make it relative */
+    top: 50px; /* Adjust the top value as needed to push it down */
+    max-width: 100%;
+}
+
+#controls-container {
+    display: flex;
+    align-items: center;
     position: absolute;
-    top: 0px; /* Align it vertically */
-    left: 0px; /* Place it to the right within the parent container */
-    border: 1px solid #ccc; /* A light grey border as in the screenshot */
-    border-radius: 4px; /* Slightly rounded corners for the container */
-    background-color: #fff; /* A white background for the dropdown */
-    padding: 5px 10px; /* Some padding around the text and arrow */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* A subtle shadow for depth */
-    cursor: pointer; /* Change the cursor to indicate it's a dropdown */
-    display: flex; /* Align the label and dropdown arrow */
-    align-items: center; /* Center them vertically */
-    justify-content: space-between; /* Put space between the label and arrow */
-    width: auto; /* Set to auto, or specify a width */
+    top: 0; 
+    z-index: 10;
+}
+
+
+#bin-selection-container, #time-extent-toggle {
+    position: relative;
+    margin-right: 10px; /* Space between controls */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#time-extent-toggle input[type="radio"] {
+    display: none; /* Hide the default radio button */
+}
+
+#time-extent-toggle label {
+    cursor: pointer;
+    padding: 5px 15px; /* Padding for label */
+    background-color: #f9f9f9; /* Default background color */
+    margin-left: -1px; /* Overlap the borders slightly */
+}
+
+#time-extent-toggle input[type="radio"]:checked + label {
+    background-color: #4892dc; /* Highlight color for selected option */
+    color: white; /* Text color for selected option */
+}
+
+
+#bin-selection-container {
+    /* position: absolute; */
+    /* top: 0px; Align it vertically */
+    /* left: 0px; Place it to the right within the parent container */
+    /* border: 1px solid #ccc; A light grey border as in the screenshot */
+    /* border-radius: 4px; Slightly rounded corners for the container */
+    /* background-color: #fff; A white background for the dropdown */
+    /* padding: 5px 10px; Some padding around the text and arrow */
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); A subtle shadow for depth */
+    /* cursor: pointer; Change the cursor to indicate it's a dropdown */
+    /* display: flex; Align the label and dropdown arrow */
+    /* align-items: center; Center them vertically */
+    /* justify-content: space-between; Put space between the label and arrow */
+    /* width: auto; Set to auto, or specify a width */
 }
 
 #bin-selection-container select {

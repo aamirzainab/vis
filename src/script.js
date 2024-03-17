@@ -29,11 +29,11 @@ let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 2;
 let x ; 
-var bins = 5;
+// var bins = 5;
 let intervals;
 let globalState = {
 	currentTimestamp: 0,
-	bins: 5,
+	bins: 1,
 	jsonDatas: [],
 	avatars: [],
 	meshes: [],
@@ -50,6 +50,11 @@ let globalState = {
 	lineTimeStamp1: 0,
 	lineTimeStamp2: 0,
   finalData: undefined,
+  dynamicWidth:0,
+  scene: undefined,
+  camera:undefined,
+  renderer:undefined,
+  controls:undefined,
 };
 const userInterestTopic = "Emergency Management";
 
@@ -79,36 +84,36 @@ let avatars = []
 let interactionMeshes = []
 let speechMeshes = []
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
-const spatialView = document.getElementById('spatial-view');
-const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-camera.position.set(0, 10, 10);
-camera.updateProjectionMatrix();
+// const scene = new THREE.Scene();
+// scene.background = new THREE.Color(0xffffff);
+// const spatialView = document.getElementById('spatial-view');
+// const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+// camera.position.set(0, 10, 10);
+// camera.updateProjectionMatrix();
 
-const renderer = new THREE.WebGLRenderer({
-	antialias: true
-});
+// const renderer = new THREE.WebGLRenderer({
+// 	antialias: true
+// });
 
-renderer.setSize(spatialView.width, spatialView.height);
-document.getElementById('spatial-view').appendChild(renderer.domElement);
+// renderer.setSize(spatialView.width, spatialView.height);
+// document.getElementById('spatial-view').appendChild(renderer.domElement);
 
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableZoom = true;
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.enableZoom = true;
 
-renderer.domElement.addEventListener('mouseenter', function() {
-	controls.enableZoom = true;
-});
+// renderer.domElement.addEventListener('mouseenter', function() {
+// 	controls.enableZoom = true;
+// });
 
-renderer.domElement.addEventListener('mouseleave', function() {
-	controls.enableZoom = false;
-});
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(0, 1, 0);
-scene.add(directionalLight);
+// renderer.domElement.addEventListener('mouseleave', function() {
+// 	controls.enableZoom = false;
+// });
+// const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// scene.add(ambientLight);
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+// directionalLight.position.set(0, 1, 0);
+// scene.add(directionalLight);
 
 let avatarLoaded = false;
 let roomLoaded = false;
@@ -119,7 +124,7 @@ function fitCameraToObject(camera, object) {
 	const center = boundingBox.getCenter(new THREE.Vector3());
 	const size = boundingBox.getSize(new THREE.Vector3());
 	const maxDim = Math.max(size.x, size.y, size.z);
-	const fov = camera.fov * (Math.PI / 180);
+	const fov = globalState.camera.fov * (Math.PI / 180);
 	let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov / 2));
 	cameraZ *= 0.5;
 
@@ -128,18 +133,14 @@ function fitCameraToObject(camera, object) {
 	camera.position.y += 10;
 
 	const aspect = window.innerWidth / window.innerHeight;
-	camera.aspect = aspect;
-	camera.lookAt(center);
-	camera.near = cameraZ / 100;
-	camera.far = cameraZ * 100;
-	camera.updateProjectionMatrix();
+	globalState.camera.aspect = aspect;
+	globalState.camera.lookAt(center);
+	globalState.camera.near = cameraZ / 100;
+	globalState.camera.far = cameraZ * 100;
+	globalState.camera.updateProjectionMatrix();
 }
 
-controls.update();
 
-const gridHelper = new THREE.GridHelper(10, 10);
-gridHelper.position.y = -1;
-scene.add(gridHelper);
 
 
 async function loadAvatarModel(filename) {
@@ -149,7 +150,7 @@ async function loadAvatarModel(filename) {
 	avatar.scale.set(1, 1, 1);
 	avatar.name = filename;
 	// console.log(avatar.name);
-	scene.add(avatar);
+	globalState.scene.add(avatar);
 	avatarLoaded = true;
 	return avatar;
 }
@@ -162,7 +163,7 @@ async function loadRoomModel() {
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
 		roomMesh.scale.set(1, 1, 1);
-		scene.add(roomMesh);
+		globalState.scene.add(roomMesh);
 	} catch (error) {
 		console.error('Error loading the room model:', error);
 	}
@@ -175,11 +176,14 @@ function changeBinSize(newBinSize) {
 		detail: newBinSize
 	});
 	updateIntervals(newBinSize);
+  // initializeOrUpdateSpeechBox();
+  console.log("calling create tempporal plot here ");
+  createPlotTemporal();
 	window.dispatchEvent(event);
 }
 
 document.getElementById('binsDropdown').addEventListener('change', function() {
-	bins = parseInt(this.value);
+	// bins = parseInt(this.value);
 	changeBinSize(this.value);
   //zainab do something here?
 });
@@ -259,6 +263,35 @@ document.getElementById('toggle-xr-interaction').addEventListener('change', func
 		console.log(' ');
 	}
 });
+
+d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
+  // When a radio button is changed, retrieve the value
+  var timeExtent = d3.select(this).attr('value');
+  
+  // Log the current selection or do something else with it
+  // console.log("Time Extent selected:", timeExtent);
+  toggleInstanceRange(timeExtent);
+});
+
+function toggleInstanceRange(selectedOption){
+  console.log("selected option " + selectedOption);
+  const line1 = d3.select('#time-indicator-line1');
+  const line2 = d3.select('#time-indicator-line2');
+  const circle1 = d3.select('#time-indicator-circle1');
+  const circle2 = d3.select('#time-indicator-circle2');
+  if (selectedOption === 'Instance')
+  {
+
+    line2.style('display', 'none');
+    circle2.style('display', 'none');
+  }
+  if (selectedOption === 'Range')
+  {
+
+    line2.style('display', 'visible');
+    circle2.style('display', 'visible');
+  }
+}
 
 window.onload = function() {
 	document.getElementById('toggle-user0').addEventListener('change', function() {
@@ -709,7 +742,42 @@ function createSpheresSpeech(data, id, isHighlight = false) {
 
 async function initializeScene() {
 	// await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
+  globalState.scene = new THREE.Scene();
+  globalState.scene.background = new THREE.Color(0xffffff);
+  const spatialView = document.getElementById('spatial-view');
+  globalState.camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+  globalState.camera.position.set(0, 10, 10);
+  globalState.camera.updateProjectionMatrix();
+  
+  globalState.renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+  
+  globalState.renderer.setSize(spatialView.width, spatialView.height);
+  document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
+  
+  
+  globalState.controls = new OrbitControls(globalState.camera, globalState.renderer.domElement);
+  globalState.controls.enableZoom = true;
+  
+  globalState.renderer.domElement.addEventListener('mouseenter', function() {
+    globalState.controls.enableZoom = true;
+  });
+  
+  globalState.renderer.domElement.addEventListener('mouseleave', function() {
+    globalState.controls.enableZoom = false;
+  });
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  globalState.scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(0, 1, 0);
+  globalState.scene.add(directionalLight);
+  
+  globalState.controls.update();
 
+  const gridHelper = new THREE.GridHelper(10, 10);
+  gridHelper.position.y = -1;
+  globalState.scene.add(gridHelper);
 
   const jsonFiles = await Promise.all([
     fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
@@ -737,7 +805,7 @@ jsonFiles.forEach((jsonData, index) => {
 	setTimes(globalState.finalData);
   // setTimes(globalState.jsonDatas);
 
-	fitCameraToObject(camera, scene, 1.2, controls);
+	fitCameraToObject(globalState.camera, globalState.scene, 1.2, globalState.controls);
 
 	const playPauseButton = document.createElement('div');
 	playPauseButton.id = 'playPauseButton';
@@ -942,6 +1010,8 @@ export function updateIntervals() {
 		length: globalState.bins + 1
 	}, (v, i) => new Date(globalState.globalStartTime + i * globalState.intervalDuration));
   createSharedAxis();
+  createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+  createPlotTemporal();
 }
 
 function formatTime(timestamp) {
@@ -1014,80 +1084,6 @@ function processMovementData() {
 }
 
 
-// function plotTwoNetworkChart(users, links) {
-// 	const plotBox1 = d3.select("#plot-box1").html("");
-// 	const margin = {
-// 		top: 20,
-// 		right: 50,
-// 		bottom: 20,
-// 		left: 100
-// 	};
-// 	const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
-// 	const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-// 	const svg = plotBox1.append("svg")
-// 		.attr("width", width + margin.left + margin.right)
-// 		.attr("height", height + margin.top + margin.bottom)
-// 		.append("g")
-// 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-// 	const xScale = d3.scaleLinear()
-// 		.domain([d3.min(users.flatMap(u => u.path.map(p => p.x))), d3.max(users.flatMap(u => u.path.map(p => p.x)))])
-// 		.range([0, width]);
-// 	const yScale = d3.scaleLinear()
-// 		.domain([d3.min(users.flatMap(u => u.path.map(p => p.y))), d3.max(users.flatMap(u => u.path.map(p => p.y)))])
-// 		.range([height, 0]);
-
-// 	users.forEach(user => {
-// 		let pathData = "M" + user.path.map(p => `${xScale(p.x)},${yScale(p.y)}`).join("L");
-// 		svg.append("path")
-// 			.attr("d", pathData)
-// 			.attr("fill", "none")
-// 			.attr("stroke", user.id === 0 ? "#ff0000" : "#0000ff")
-// 			.attr("stroke-width", 2);
-// 	});
-
-// 	const link = svg.append("line")
-// 		.attr("class", "link")
-// 		.style("stroke-width", 2)
-// 		.style("stroke", "#999");
-
-// 	function updateLink() {
-// 		const lastPosUser0 = users[0].path[users[0].path.length - 1];
-// 		const lastPosUser1 = users[1].path[users[1].path.length - 1];
-
-// 		link
-// 			.attr("x1", xScale(lastPosUser0.x))
-// 			.attr("y1", yScale(lastPosUser0.y))
-// 			.attr("x2", xScale(lastPosUser1.x))
-// 			.attr("y2", yScale(lastPosUser1.y));
-// 	}
-
-// 	updateLink();
-// 	let i = 0;
-
-// 	function animateLink() {
-// 		if (i < users[0].path.length && i < users[1].path.length) {
-// 			const posUser0 = users[0].path[i];
-// 			const posUser1 = users[1].path[i];
-
-// 			link
-// 				.transition()
-// 				.duration(10) // Adjust duration for faster animation
-// 				.attr("x1", xScale(posUser0.x))
-// 				.attr("y1", yScale(posUser0.y))
-// 				.attr("x2", xScale(posUser1.x))
-// 				.attr("y2", yScale(posUser1.y))
-// 				.on("end", animateLink); // Loop the animation
-
-// 			i++;
-// 		}
-// 	}
-
-// 	animateLink();
-// }
-
-
 
 function createPlotTemporal() {
   // Assuming globalState.finalData is set and contains the topics_dict property
@@ -1115,7 +1111,8 @@ function createPlotTemporal() {
   const speechPlotSvg = d3.select("#speech-plot-container");
   speechPlotSvg.html("");
   const svg = speechPlotSvg.append('svg')
-  .attr("width", width + margin.left + margin.right)
+  .attr("width", globalState.dynamicWidth + margin.left + margin.right) 
+  // .attr("width", width + margin.left + margin.right)
   .attr("height", margin.top + margin.bottom + temporalViewHeight)
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
@@ -1136,7 +1133,7 @@ function createPlotTemporal() {
     .attr("class", "background-line")
     .attr("x", 0)
     .attr("y", d => y(d))
-    .attr("width", width)
+    .attr("width", globalState.dynamicWidth)
     .attr("height", y.bandwidth())
     .attr("fill", "#e8e8e8"); // Light grey color
 
@@ -1160,6 +1157,119 @@ function createPlotTemporal() {
   .attr("height", y.bandwidth())
   .attr("fill", "#d0d0d0");
 }
+
+let lastSpatialExtentMesh = null;
+// #d1d1d1
+function plotSpatialExtent() {
+  const { lineTimeStamp1, lineTimeStamp2, finalData, scene } = globalState;
+  const startTime = lineTimeStamp1;
+  const endTime = lineTimeStamp2;
+
+  // Remove the previous visualization if it exists
+  if (lastSpatialExtentMesh) {
+      scene.remove(lastSpatialExtentMesh);
+      lastSpatialExtentMesh.geometry.dispose();
+      lastSpatialExtentMesh.material.dispose();
+      lastSpatialExtentMesh = null;
+  }
+
+  // Initialize variables to store the merged extents
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+  // Loop through each topic in finalData.topics_dict
+  Object.entries(finalData.topics_dict).forEach(([topicName, topicDetails]) => {
+      topicDetails.actions.forEach(action => {
+          const actionStartTime = parseTimeToMillis(action.start_time);
+          const actionEndTime = parseTimeToMillis(action.end_time);
+
+          if (actionStartTime >= startTime && actionEndTime <= endTime && action.spatial_extent) {
+              action.spatial_extent.forEach(point => {
+                  minX = Math.min(minX, point[0]);
+                  minY = Math.min(minY, point[1]);
+                  minZ = Math.min(minZ, point[2]);
+                  maxX = Math.max(maxX, point[0]);
+                  maxY = Math.max(maxY, point[1]);
+                  maxZ = Math.max(maxZ, point[2]);
+              });
+          }
+      });
+  });
+
+  // Calculate the radius as half the distance between the furthest points
+  const radius = Math.sqrt(Math.pow(maxX - minX, 2) + Math.pow(maxY - minY, 2) + Math.pow(maxZ - minZ, 2)) / 2;
+  const midPoint = new THREE.Vector3(
+      (minX + maxX) / 2,
+      (minY + maxY) / 2,
+      (minZ + maxZ) / 2
+  );
+
+  // Check if we have a valid merged extent to visualize
+  if (minX < Infinity && maxX > -Infinity) {
+      // Create a sphere to represent the merged extent
+      const geometry = new THREE.SphereGeometry(radius, 32, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0xd1d1d1, transparent: true, opacity: 0.5 }); // Grey sphere with slight transparency
+      const sphere = new THREE.Mesh(geometry, material);
+
+      sphere.position.set(midPoint.x, midPoint.y, midPoint.z);
+      console.log(scene);
+      scene.add(sphere);
+
+      // Update the reference to the last added mesh
+      lastSpatialExtentMesh = sphere;
+  }
+}
+
+// function plotSpatialExtent() {
+//   const { lineTimeStamp1, lineTimeStamp2, finalData } = globalState;
+//   const startTime = lineTimeStamp1;
+//   const endTime = lineTimeStamp2;
+
+//   // Initialize variables to store the merged extents
+//   let minX = Infinity, minY = Infinity, minZ = Infinity;
+//   let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+//   // Loop through each topic in finalData.topics_dict
+//   Object.entries(finalData.topics_dict).forEach(([topicName, topicDetails]) => {
+//       topicDetails.actions.forEach(action => {
+//           const actionStartTime = parseTimeToMillis(action.start_time);
+//           const actionEndTime = parseTimeToMillis(action.end_time);
+
+//           // Check if the action is within the selected time range
+//           if (actionStartTime >= startTime && actionEndTime <= endTime && action.spatial_extent) {
+//               action.spatial_extent.forEach(point => {
+//                   minX = Math.min(minX, point[0]);
+//                   minY = Math.min(minY, point[1]);
+//                   minZ = Math.min(minZ, point[2]);
+//                   maxX = Math.max(maxX, point[0]);
+//                   maxY = Math.max(maxY, point[1]);
+//                   maxZ = Math.max(maxZ, point[2]);
+//               });
+//           }
+//       });
+//   });
+
+//   // Check if we have a valid merged extent
+//   if (minX < Infinity && maxX > -Infinity) {
+//       // Calculate the midpoint of the merged extent
+//       const midPoint = new THREE.Vector3(
+//           (minX + maxX) / 2,
+//           (minY + maxY) / 2,
+//           (minZ + maxZ) / 2
+//       );
+
+//       // Optionally visualize the merged extent as a sphere or a box
+//       // Here, we visualize it as a box
+
+//       const geometry = new THREE.BoxGeometry(maxX - minX, maxY - minY, maxZ - minZ);
+//       const material = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true}); // Use wireframe to see through
+//       const box = new THREE.Mesh(geometry, material);
+
+//       box.position.set(midPoint.x, midPoint.y, midPoint.z);
+//       scene.add(box); // Add box to the scene
+//   }
+// }
+
 
 function setTimes(data) {
   // console.log(data.earliest_action_time);
@@ -1281,20 +1391,19 @@ function createLines(timestamp1, timestamp2) {
 	// const x = getXScale();
 	// console.log("yo in create line ");
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
-	const width = parseInt(svg.style("width")) - margin.right - margin.left;
-  const svgElement = d3.select("#shared-axis-svg").node();
-  const offsetHeight = svgElement.getBoundingClientRect().height;;
-
-  // const hierToolbar = document.getElementById('hier-toolbar');
-  // let offsetHeight = hierToolbar.offsetHeight;
-  // const offsetHeight = d3.select("#shared-axis-svg");
-  // console.log(offsetHeight);
-	const y1 = 35;
+	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
+  const dynamicWidth = globalState.dynamicWidth;
+  // const width = globalState.dynamicWidth;
+	const y1 = 55;
   const alignX = 10 ;
-	let xPosition1 = Math.max(0, Math.min(x(new Date(timestamp1)), width)) + margin.left + alignX;
+	// let xPosition1 = Math.max(0, Math.min(x(new Date(timestamp1)), width)) + margin.left + alignX;
 	// console.log("xpos1 " + xPosition1);
-	let xPosition2 = Math.max(0, Math.min(x(new Date(timestamp2)), width)) + margin.left + alignX ;
+	// let xPosition2 = Math.max(0, Math.min(x(new Date(timestamp2)), width)) + margin.left + alignX ;
 	// console.log("xpos2 " +  xPosition2);
+
+  let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
+  let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
+
 	let circle1 = svg.select('#time-indicator-circle1');
 	if (circle1.empty()) {
 		circle1 = svg.append('circle')
@@ -1382,69 +1491,122 @@ export function dragged(event, d) {
 		left: 40
 	};
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
-	const width = parseInt(svg.style("width")) - margin.left - margin.right;
-	// const x = getXScale();
-	let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
-	let newTimestamp = x.invert(newXPosition);
-	const id = d3.select(this).attr('id');
-	const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
-	const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
-	const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
-	const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
-	const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
-	const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
-	const minDistanceMillis = 5000;
-	let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
+	// const width = parseInt(svg.style("width")) - margin.left - margin.right;
+  // const width = globalState.dynamicWidth;
+  const timeExtent = d3.select('#time-extent-toggle input[name="time-extent"]:checked').node().value;
+  // console.log(d3.select('#time-extent-toggle input[name="time-extent"]:checked').node().value);
+  if (timeExtent === "Range")
+  {
+    // let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
+    let newXPosition = event.x - margin.left;
+    let newTimestamp = x.invert(newXPosition);
+    const id = d3.select(this).attr('id');
+    const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
+    const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
+    const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
+    const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
+    const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
+    const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
+    const minDistanceMillis = 5000;
+    let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
 
-	if (newTimestamp > new Date(globalState.globalEndTime)) {
-		newTimestamp = new Date(globalState.globalEndTime);
-		newXPosition = x(newTimestamp);
-	}
+    if (newTimestamp > new Date(globalState.globalEndTime)) {
+      newTimestamp = new Date(globalState.globalEndTime);
+      newXPosition = x(newTimestamp);
+    }
 
-	if (isLine1) {
-		newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
-	} else {
-		newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
-	}
-	if (isLine1) {
-		globalState.lineTimeStamp1 = newTimestamp;
-		globalState.lineTimeStamp2 = otherTimestamp;
-		globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
-		const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
-		globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-	} else {
-		globalState.lineTimeStamp2 = newTimestamp;
-		globalState.lineTimeStamp1 = otherTimestamp;
-	}
-	newXPosition = x(new Date(newTimestamp));
-	d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
-	d3.select(circleId).attr('cx', newXPosition + margin.left);
+    if (isLine1) {
+      newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
+    } else {
+      newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
+    }
+    if (isLine1) {
+      globalState.lineTimeStamp1 = newTimestamp;
+      globalState.lineTimeStamp2 = otherTimestamp;
+      globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
+      const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
+      globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+      globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    } else {
+      globalState.lineTimeStamp2 = newTimestamp;
+      globalState.lineTimeStamp1 = otherTimestamp;
+    }
+    newXPosition = x(new Date(newTimestamp));
+    // newXPosition = Math.max(0, Math.min(newXPosition, globalState.dynamicWidth));
+    // let newXPosition = x(new Date(newTimestamp)); 
+    d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
+    d3.select(circleId).attr('cx', newXPosition + margin.left);
+
+    if (isAnimating) {
+      toggleAnimation();
+      updatePlayPauseButton();
+    }
+    isAnimating = false;
+    // globalState.jsonDatas.forEach((data, index) => {
+    //   // updateVisualization(newTimestamp, index);
+
+    //   // updateVisualizationOcculus(newTimestamp.getTime());
+    // });
+    // animateTemporalView(newTimestamp);
+    createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    updateTimeDisplay(newTimestamp, globalState.globalStartTime);
+    const timeStamp1 = new Date(globalState.lineTimeStamp1);
+    const timeStamp2 = globalState.lineTimeStamp2;
+    updateRangeDisplay(timeStamp1, timeStamp2);
+    generateHierToolBar();
+    initializeOrUpdateSpeechBox();
+    plotSpatialExtent();
+  }
+  else 
+  {
+      // let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
+      let newXPosition = event.x - margin.left;
+      let newTimestamp = x.invert(newXPosition).getTime(); // Convert to milliseconds
+      const minDistanceMillis = 5000;
+    
+      if (newTimestamp > globalState.globalEndTime) {
+        newTimestamp = globalState.globalEndTime; // Use milliseconds for comparison
+        newXPosition = x(new Date(newTimestamp)); // Convert back to Date for scaling
+      }
+    
+      globalState.lineTimeStamp1 = newTimestamp;
+      globalState.lineTimeStamp2 = newTimestamp + minDistanceMillis; 
+      console.log(`Selected Time Range: ${(new Date(globalState.lineTimeStamp1))} - ${(new Date(globalState.lineTimeStamp2))}`);
+      globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
+      const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
+      globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+      globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    // }
+    //  else {
+    //   globalState.lineTimeStamp2 = newTimestamp;
+    //   globalState.lineTimeStamp1 = otherTimestamp;
+    // }
+    newXPosition = x(new Date(newTimestamp));
+    // newXPosition = Math.max(0, Math.min(newXPosition, globalState.dynamicWidth));
+    d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
+    d3.select("#time-indicator-circle1").attr('cx', newXPosition + margin.left);
 
 
-	if (isAnimating) {
-		toggleAnimation();
-		updatePlayPauseButton();
-	}
-	isAnimating = false;
-	globalState.jsonDatas.forEach((data, index) => {
-		// updateVisualization(newTimestamp, index);
+    if (isAnimating) {
+      toggleAnimation();
+      updatePlayPauseButton();
+    }
+    isAnimating = false;
+    // globalState.jsonDatas.forEach((data, index) => {
+    //   // updateVisualization(newTimestamp, index);
 
-		// updateVisualizationOcculus(newTimestamp.getTime());
-	});
-	// animateTemporalView(newTimestamp);
-	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-	updateTimeDisplay(newTimestamp, globalState.globalStartTime);
-	// console.log("this os what is being sent to func ");
-	// console.log("stamp 1 " + new Date(globalState.lineTimeStamp1));
-	// console.log("stamp 2 " + globalState.lineTimeStamp2);
-	const timeStamp1 = new Date(globalState.lineTimeStamp1);
-	const timeStamp2 = globalState.lineTimeStamp2;
-	updateRangeDisplay(timeStamp1, timeStamp2);
-  generateHierToolBar();
-  initializeOrUpdateSpeechBox();
-  // createSpeechBox();
-
+    //   // updateVisualizationOcculus(newTimestamp.getTime());
+    // });
+    // animateTemporalView(newTimestamp);
+    createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    updateTimeDisplay(newTimestamp, globalState.globalStartTime);
+    const timeStamp1 = new Date(globalState.lineTimeStamp1);
+    const timeStamp2 = globalState.lineTimeStamp2;
+    updateRangeDisplay(timeStamp1, timeStamp2);
+    generateHierToolBar();
+    initializeOrUpdateSpeechBox();
+    plotSpatialExtent();
+  }
 }
 
 function generateHierToolBar() {
@@ -1491,40 +1653,46 @@ function createTopicItem(topicName, topicDetails, toolbar) {
   topicItem.appendChild(topicCheckbox);
   topicItem.appendChild(label);
 
+  // Filter actions within the time range first before extracting unique keywords
+  const filteredActions = topicDetails.actions.filter(action => {
+    const actionStartTime = parseTimeToMillis(action.start_time);
+    const actionEndTime = parseTimeToMillis(action.end_time);
+    return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+  });
+
   const uniqueKeywords = new Set();
-  topicDetails.actions.forEach(action => {
-      action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
+  filteredActions.forEach(action => {
+    action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
   });
 
   const keywordsList = document.createElement('ul');
   uniqueKeywords.forEach(keyword => {
-      const keywordItem = document.createElement('li');
-      const keywordCheckbox = document.createElement('input');
-      keywordCheckbox.type = 'checkbox';
-      keywordCheckbox.className = 'keyword-checkbox';
-      keywordCheckbox.id = `checkbox_keyword_${keyword.replace(/\s+/g, '_')}_broadtopic_${topicName.replace(/\s+/g, '_')}`;
+    const keywordItem = document.createElement('li');
+    const keywordCheckbox = document.createElement('input');
+    keywordCheckbox.type = 'checkbox';
+    keywordCheckbox.className = 'keyword-checkbox';
+    keywordCheckbox.id = `checkbox_keyword_${keyword.replace(/\s+/g, '_')}_broadtopic_${topicName.replace(/\s+/g, '_')}`;
 
-      keywordCheckbox.addEventListener('change', function() {
-          // Check the associated broad topic checkbox when this keyword checkbox is checked
-          if (this.checked) {
-              topicCheckbox.checked = true;
-          }
-          else {
-            const allSiblingsUnchecked = [...this.parentNode.parentNode.querySelectorAll('.keyword-checkbox')].every(checkbox => !checkbox.checked);
-            if (allSiblingsUnchecked) {
-                topicCheckbox.checked = false;
-            }
+    keywordCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        topicCheckbox.checked = true;
+      } else {
+        // Check if all sibling keyword checkboxes are unchecked
+        const allSiblingsUnchecked = [...this.parentNode.parentNode.querySelectorAll('.keyword-checkbox')].every(checkbox => !checkbox.checked);
+        if (allSiblingsUnchecked) {
+          topicCheckbox.checked = false;
         }
-        initializeOrUpdateSpeechBox();
-      });
+      }
+      initializeOrUpdateSpeechBox();
+    });
 
-      const keywordLabel = document.createElement('label');
-      keywordLabel.htmlFor = keywordCheckbox.id;
-      keywordLabel.textContent = keyword;
+    const keywordLabel = document.createElement('label');
+    keywordLabel.htmlFor = keywordCheckbox.id;
+    keywordLabel.textContent = keyword;
 
-      keywordItem.appendChild(keywordCheckbox);
-      keywordItem.appendChild(keywordLabel);
-      keywordsList.appendChild(keywordItem);
+    keywordItem.appendChild(keywordCheckbox);
+    keywordItem.appendChild(keywordLabel);
+    keywordsList.appendChild(keywordItem);
   });
 
   topicItem.appendChild(keywordsList);
@@ -1532,14 +1700,14 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
   // Listener for the broad topic checkbox to check/uncheck all keywords
   topicCheckbox.addEventListener('change', function() {
-      const childCheckboxes = this.parentNode.querySelectorAll('.keyword-checkbox');
-      childCheckboxes.forEach(childCheckbox => {
-          childCheckbox.checked = this.checked;
-          // Since we're programmatically changing the checkbox state, manually trigger the change event
-          childCheckbox.dispatchEvent(new Event('change'));
-      });
+    const childCheckboxes = this.parentNode.querySelectorAll('.keyword-checkbox');
+    childCheckboxes.forEach(childCheckbox => {
+      childCheckbox.checked = this.checked;
+      childCheckbox.dispatchEvent(new Event('change'));
+    });
   });
 }
+
 
 function createOthersItem(othersData, toolbar) {
   const othersItem = document.createElement('li');
@@ -1729,62 +1897,6 @@ actionsToDisplay.forEach(action => {
 }
 
 
-// function getSpeechData(action) {
-//   const speechBox = document.createElement('div');
-//   speechBox.className = 'speech-box';
-//   speechBox.style.border = '1px solid grey'; // Grey border
-//   speechBox.style.borderRadius = '8px'; // Rounded corners
-//   speechBox.style.padding = '15px';
-//   const lineBreak = document.createElement('br');
-
-//   // Speaker Element
-//   const speakerEl = document.createElement('div');
-//   speakerEl.className = 'speaker';
-//   speakerEl.textContent = `[SPEAKER_${action.actor_name}]`;
-
-//   // Original Transcribed Text
-//   const originalTextEl = document.createElement('div');
-//   originalTextEl.className = 'original-transcribed';
-//   const rawTextTitle = document.createElement('strong');
-//   rawTextTitle.textContent = 'Original Transcribed Text: ';
-  
-//   const rawTextContent = document.createElement('span');
-//   rawTextContent.textContent = action.data.raw_text;
-//   originalTextEl.appendChild(rawTextTitle);
-//   originalTextEl.appendChild(lineBreak);
-//   originalTextEl.appendChild(rawTextContent);
-
-//   // Summary
-//   const summaryEl = document.createElement('div');
-//   summaryEl.className = 'summary';
-//   const summaryTitle = document.createElement('strong');
-//   summaryTitle.textContent = 'Summary: ';
-//   const summaryContent = document.createElement('span');
-//   summaryContent.textContent = action.data.summary || "No summary provided.";
-//   summaryEl.appendChild(summaryTitle);
-//   summaryEl.appendChild(lineBreak);
-//   summaryEl.appendChild(summaryContent);
-
-//   // Keywords
-//   const keywordsEl = document.createElement('div');
-//   keywordsEl.className = 'keywords';
-//   const keywordsTitle = document.createElement('strong');
-//   keywordsTitle.textContent = 'Keywords: ';
-//   const keywordsContent = document.createElement('span');
-//   keywordsContent.textContent = action.data.keywords.join(', ');
-//   keywordsEl.appendChild(keywordsTitle);
-//   keywordsEl.appendChild(lineBreak);
-//   keywordsEl.appendChild(keywordsContent);
-
-//   // Append all elements to the speech box
-//   speechBox.appendChild(speakerEl);
-//   speechBox.appendChild(originalTextEl);
-//   speechBox.appendChild(summaryEl);
-//   speechBox.appendChild(keywordsEl);
-
-//   return speechBox;
-// }
-
 
 function getSpeechData(action, selectedKeywords) {
   const speechBox = document.createElement('div');
@@ -1817,10 +1929,13 @@ function getSpeechData(action, selectedKeywords) {
   summaryTitle.textContent = 'Summary: ';
 
   const summaryContent = document.createElement('span');
-  summaryContent.textContent = action.data.summary || "No summary provided.";
-  summaryEl.appendChild(summaryTitle);
-  summaryEl.appendChild(document.createElement('br'));
-  summaryEl.appendChild(summaryContent);
+  if (action.data.summary) {
+    summaryContent.textContent = action.data.summary ;
+    summaryEl.appendChild(summaryTitle);
+    summaryEl.appendChild(document.createElement('br'));
+    summaryEl.appendChild(summaryContent);
+  }
+
 
   // Keywords
   const keywordsEl = document.createElement('div');
@@ -1949,75 +2064,80 @@ function updateTimeDisplay(timestamp, startTime) {
 		timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
 	}
 }
-
-
 function createSharedAxis() {
-  const data = globalState.finalData;
-  // console.log(data);
+  const { globalStartTime, globalEndTime, bins } = globalState;
+  console.log(new Date(globalStartTime));
+  console.log(new Date(globalEndTime));
+  // Container setup
   const temporalViewContainer = d3.select("#temporal-view");
-  const sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
+  let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
+  if (sharedAxisContainer.empty()) {
+    sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
+  }
+
   sharedAxisContainer.html("");
-  const margin = {
-      top: 20,
-      right: 30,
-      bottom: 10,
-      left: 40
-  };
-  const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-  // Assuming 'data' is the parsed JSON from 'topic_oriented_analysis_full_data.json'
-  // and contains an array of actions with 'start_time' and 'end_time'
-  // const actions = data.actions;
 
-  // // Parse start and end times
-  // const startTimes = actions.map(action => new Date(data.earliest_action_time));
-  // const endTimes = actions.map(action => new Date(data.latest_action_time));
+  // Margin setup
+  const margin = { top: 20, right: 30, bottom: 10, left: 40 };
 
-  // Calculate overall start and end times for the axis
-  const startTime = new Date(globalState.globalStartTime);
-  const endTime = new Date(globalState.globalEndTime);
-  // console.log(startTime + " " + endTime);
-  
-  // Calculate intervals
-  const totalTime = endTime - startTime; // in milliseconds
-  const intervalDuration = totalTime / bins;
-  intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(startTime.getTime() + i * intervalDuration));
+  // Time format for ticks
+  const timeFormat = d3.timeFormat("%I:%M:%S");
 
-  // Create the scale for the x-axis
+  // Calculate the total duration in minutes
+  const totalDurationMinutes = (globalEndTime - globalStartTime) / (1000 * 60);
+
+  // Calculate the number of intervals based on the bin size (minutes per interval)
+  const numberOfIntervals = Math.ceil(totalDurationMinutes / bins);
+
+  // Dynamic width based on the number of intervals
+  const widthPerInterval = 100; // Adjust the width per interval as needed
+  globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
+
+  // Adjust the scale to cover the dynamic width
   x = d3.scaleTime()
-      .domain([startTime, endTime])
-      .range([0, width]);
-  
-      
-  const axisHeight = 30;
-  const xAxis = d3.axisTop(x)
-      .tickValues(intervals) 
-      .tickFormat(d3.timeFormat("%I:%M:%S"))
-      .tickPadding(5);
+      .domain([new Date(globalStartTime), new Date(globalEndTime)])
+      .range([0, globalState.dynamicWidth]);
 
+  // Setup the axis
+  const xAxis = d3.axisTop(x)
+      .ticks(d3.timeMinute.every(bins))
+      .tickFormat(timeFormat);
+
+  // Create SVG for the axis
   const svg = sharedAxisContainer.append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", margin.top + margin.bottom + axisHeight)
+      .attr("width", globalState.dynamicWidth + margin.left + margin.right)
+      .attr("height", 50)
       .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
   svg.append("g")
-  .attr("id", "shared-axis-svg")
-      .attr("transform", `translate(0,${margin.top - 15})`)
       .attr("class", "x-axis")
-      .call(xAxis)
-      .selectAll("text")
-      .style("font-size", "12px")
-      .style("fill", "#666");
+      .call(xAxis);
+
+  // Enable horizontal scrolling
+  // sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
 }
 
 
-camera.updateProjectionMatrix();
 
+
+function updateAxisTicks(svg, xScale, binSize) {
+  const tickInterval = d3.timeMinute.every(binSize); // Dynamically set tick interval based on bin size
+  const xAxis = d3.axisTop(xScale)
+      .ticks(tickInterval)
+      .tickFormat(d3.timeFormat("%I:%M:%S"))
+      .tickPadding(5);
+  
+  svg.select(".x-axis").call(xAxis); // Re-call the axis to update ticks
+}
+
+
+globalState.camera.updateProjectionMatrix();
 function onWindowResize() {
 	const spatialView = document.getElementById('spatial-view');
-	camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
+	globalState.camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
+	globalState.camera.updateProjectionMatrix();
+	globalState.renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
 }
 
 // loadAndPlotTemporal();
@@ -2034,6 +2154,7 @@ async function initialize() {
     checkbox.dispatchEvent(new Event('change'));
   });
   initializeOrUpdateSpeechBox();
+  plotSpatialExtent();
   // createSpeechBox();
 }
 
@@ -2045,8 +2166,8 @@ window.addEventListener('resize', onWindowResize, false);
 
 function animate() {
 	requestAnimationFrame(animate);
-	controls.update();
-	renderer.render(scene, camera);
+	globalState.controls.update();
+	globalState.renderer.render(globalState.scene, globalState.camera);
 }
 
 export function getScene() {

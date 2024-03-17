@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototype Dashboard</title>
+    <title>Task Dashboard</title>
     <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
@@ -123,22 +123,29 @@
             </div>
             <div id="timeDisplay">00:00:00</div>
             
-        </div>
-       
+        </div>     
         <div id="shared-axis-container">
             <svg id="shared-axis"></svg>
         </div>
+        <div id="controls-container">
+            <div id="bin-selection-container" class="dropdown">
+                <button class="dropbtn" onclick="myFunction()">Sample Size
+                </button>
+                <select id="binsDropdown">
+                    <option value="1" selected>1</option>
+                    <option value="2" >2</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                </select>
+                </div>
+            <div id="time-extent-toggle">
+                <input type="radio" id="range" name="time-extent" value="Range" checked>
+                <label for="range">Range</label>
 
-        <div id="bin-selection-container" class="dropdown">
-            <button class="dropbtn" onclick="myFunction()">Sample Size
-                <!-- Icon can be added here if needed -->
-            </button>
-            <select id="binsDropdown">
-                <option value="5"  selected>5</option>
-                <option value="10" >10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-            </select>
+                <input type="radio" id="instance" name="time-extent" value="Instance">
+                <label for="instance">Instance</label>
+            </div>
         </div>
         <div id="speech-plot-container">
             <svg id="speech-plot"></svg>
@@ -173,12 +180,12 @@
         </script>
         <svg id= "indicator-svg" style="position: absolute; top: 25; left: 0; z-index: 1; " width="100%" height="100%">
             <!-- pointer-events: none; -->
-            <line id="time-indicator-line1" x1="100" y1="28" x2="100" y2="100%"></line>
+            <line id="time-indicator-line1" x1="95" y1="33" x2="95" y2="100%"></line>
             <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#82caeb"></circle>
             <line id="time-indicator-line2" x1="100" y1="28" x2="100" y2="100%"></line>
             <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#82caeb"></circle>
         </svg>
-    </div>
+    </div>x
     <script type="module" src="src/script.js"></script>
     <script type="module" src="src/objToolbar.js"></script>
 </body>
