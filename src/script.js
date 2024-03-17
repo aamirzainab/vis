@@ -33,7 +33,7 @@ var bins = 5;
 let intervals;
 let globalState = {
 	currentTimestamp: 0,
-	bins: 5,
+	bins: 1,
 	jsonDatas: [],
 	avatars: [],
 	meshes: [],
@@ -50,6 +50,11 @@ let globalState = {
 	lineTimeStamp1: 0,
 	lineTimeStamp2: 0,
   finalData: undefined,
+  dynamicWidth:0,
+  scene: undefined,
+  camera:undefined,
+  renderer:undefined,
+  controls:undefined,
 };
 const userInterestTopic = "Emergency Management";
 
@@ -79,36 +84,36 @@ let avatars = []
 let interactionMeshes = []
 let speechMeshes = []
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
-const spatialView = document.getElementById('spatial-view');
-const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-camera.position.set(0, 10, 10);
-camera.updateProjectionMatrix();
+// const scene = new THREE.Scene();
+// scene.background = new THREE.Color(0xffffff);
+// const spatialView = document.getElementById('spatial-view');
+// const camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+// camera.position.set(0, 10, 10);
+// camera.updateProjectionMatrix();
 
-const renderer = new THREE.WebGLRenderer({
-	antialias: true
-});
+// const renderer = new THREE.WebGLRenderer({
+// 	antialias: true
+// });
 
-renderer.setSize(spatialView.width, spatialView.height);
-document.getElementById('spatial-view').appendChild(renderer.domElement);
+// renderer.setSize(spatialView.width, spatialView.height);
+// document.getElementById('spatial-view').appendChild(renderer.domElement);
 
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableZoom = true;
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.enableZoom = true;
 
-renderer.domElement.addEventListener('mouseenter', function() {
-	controls.enableZoom = true;
-});
+// renderer.domElement.addEventListener('mouseenter', function() {
+// 	controls.enableZoom = true;
+// });
 
-renderer.domElement.addEventListener('mouseleave', function() {
-	controls.enableZoom = false;
-});
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(0, 1, 0);
-scene.add(directionalLight);
+// renderer.domElement.addEventListener('mouseleave', function() {
+// 	controls.enableZoom = false;
+// });
+// const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// scene.add(ambientLight);
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+// directionalLight.position.set(0, 1, 0);
+// scene.add(directionalLight);
 
 let avatarLoaded = false;
 let roomLoaded = false;
@@ -135,11 +140,8 @@ function fitCameraToObject(camera, object) {
 	camera.updateProjectionMatrix();
 }
 
-controls.update();
 
-const gridHelper = new THREE.GridHelper(10, 10);
-gridHelper.position.y = -1;
-scene.add(gridHelper);
+
 
 
 async function loadAvatarModel(filename) {
@@ -149,7 +151,7 @@ async function loadAvatarModel(filename) {
 	avatar.scale.set(1, 1, 1);
 	avatar.name = filename;
 	// console.log(avatar.name);
-	scene.add(avatar);
+	globalState.scene.add(avatar);
 	avatarLoaded = true;
 	return avatar;
 }
@@ -162,7 +164,7 @@ async function loadRoomModel() {
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
 		roomMesh.scale.set(1, 1, 1);
-		scene.add(roomMesh);
+		globalState.scene.add(roomMesh);
 	} catch (error) {
 		console.error('Error loading the room model:', error);
 	}
@@ -175,11 +177,14 @@ function changeBinSize(newBinSize) {
 		detail: newBinSize
 	});
 	updateIntervals(newBinSize);
+  // initializeOrUpdateSpeechBox();
+//   console.log("calling create tempporal plot here ");
+  createPlotTemporal();
 	window.dispatchEvent(event);
 }
 
 document.getElementById('binsDropdown').addEventListener('change', function() {
-	bins = parseInt(this.value);
+	// bins = parseInt(this.value);
 	changeBinSize(this.value);
   //zainab do something here?
 });
@@ -260,6 +265,43 @@ document.getElementById('toggle-xr-interaction').addEventListener('change', func
 	}
 });
 
+d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
+  // When a radio button is changed, retrieve the value
+  var timeExtent = d3.select(this).attr('value');
+  
+  // Log the current selection or do something else with it
+  // console.log("Time Extent selected:", timeExtent);
+  toggleInstanceRange(timeExtent);
+});
+
+d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
+	// When a radio button is changed, retrieve the value
+	var timeExtent = d3.select(this).attr('value');
+	
+	// Log the current selection or do something else with it
+	// console.log("Time Extent selected:", timeExtent);
+	toggleInstanceRange(timeExtent);
+  });
+  
+  function toggleInstanceRange(selectedOption){
+	console.log("selected option " + selectedOption);
+	const line1 = d3.select('#time-indicator-line1');
+	const line2 = d3.select('#time-indicator-line2');
+	const circle1 = d3.select('#time-indicator-circle1');
+	const circle2 = d3.select('#time-indicator-circle2');
+	if (selectedOption === 'Instance')
+	{
+  
+	  line2.style('display', 'none');
+	  circle2.style('display', 'none');
+	}
+	if (selectedOption === 'Range')
+	{
+  
+	  line2.style('display', 'visible');
+	  circle2.style('display', 'visible');
+	}
+  }
 window.onload = function() {
 	document.getElementById('toggle-user0').addEventListener('change', function() {
 		globalState.show[0] = this.checked;
@@ -708,36 +750,54 @@ function createSpheresSpeech(data, id, isHighlight = false) {
 
 
 async function initializeScene() {
-	// await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
+	globalState.scene = new THREE.Scene();
+	globalState.scene.background = new THREE.Color(0xffffff);
+	const spatialView = document.getElementById('spatial-view');
+	globalState.camera = new THREE.PerspectiveCamera(45, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	globalState.camera.position.set(0, 10, 10);
+	globalState.camera.updateProjectionMatrix();
+	
+	globalState.renderer = new THREE.WebGLRenderer({
+	  antialias: true
+	});
+	
+	globalState.renderer.setSize(spatialView.width, spatialView.height);
+	document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
+	
+	
+	globalState.controls = new OrbitControls(globalState.camera, globalState.renderer.domElement);
+	globalState.controls.enableZoom = true;
+	
+	globalState.renderer.domElement.addEventListener('mouseenter', function() {
+	  globalState.controls.enableZoom = true;
+	});
+	
+	globalState.renderer.domElement.addEventListener('mouseleave', function() {
+	  globalState.controls.enableZoom = false;
+	});
+	const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+	globalState.scene.add(ambientLight);
+	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+	directionalLight.position.set(0, 1, 0);
+	globalState.scene.add(directionalLight);
+	
+	globalState.controls.update();
+  
+	const gridHelper = new THREE.GridHelper(10, 10);
+	gridHelper.position.y = -1;
+	globalState.scene.add(gridHelper);
 
-
-  const jsonFiles = await Promise.all([
-    fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
-    fetch('file1.json').then(response => response.json()),
-    // fetch('file1TransformedUser3.json').then(response => response.json()),
-]);
-
-jsonFiles.forEach((jsonData, index) => {
-  const sortedData = jsonData.sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-  globalState.jsonDatas[index] = sortedData;
-});
-
-	const avatarArray = await Promise.all([
-		loadAvatarModel("RealWorld/ipad_user1.glb"),
-		loadAvatarModel("RealWorld/ipad_user2.glb"),
-
-	]);
-  const finalData = await Promise.all([
-		fetch('topic_oriented_analysis_full_data.json').then(response => response.json()),
+  	const finalData = await Promise.all([
+		fetch('action_oriented_analysis_full_data.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
-	globalState.avatars = [avatarArray[0], avatarArray[1]];
+	// globalState.avatars = [avatarArray[0], avatarArray[1]];
 
 
 	setTimes(globalState.finalData);
   // setTimes(globalState.jsonDatas);
 
-	fitCameraToObject(camera, scene, 1.2, controls);
+	fitCameraToObject(globalState.camera, globalState.scene, 1.2, globalState.controls);
 
 	const playPauseButton = document.createElement('div');
 	playPauseButton.id = 'playPauseButton';
@@ -942,6 +1002,8 @@ export function updateIntervals() {
 		length: globalState.bins + 1
 	}, (v, i) => new Date(globalState.globalStartTime + i * globalState.intervalDuration));
   createSharedAxis();
+  createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+  createPlotTemporal();
 }
 
 function formatTime(timestamp) {
@@ -1090,76 +1152,77 @@ function processMovementData() {
 
 
 function createPlotTemporal() {
-  // Assuming globalState.finalData is set and contains the topics_dict property
-  const topicsData = Object.entries(globalState.finalData.topics_dict).flatMap(([topicName, topicDetails]) => {
-    return topicDetails.actions.map(action => ({
-      topic: topicName,
-      startTime: parseTimeToMillis(action.start_time),
-      endTime: parseTimeToMillis(action.end_time),
-      rawStartTime : action.start_time,
-      rawEndTime: action.end_time,
-    })).filter(action => action.startTime && action.endTime); // Ensuring we have valid times
-  });
-
-  const temporalViewContainer = d3.select("#temporal-view");
-  const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
-	const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
-  const margin = {
-		top: 20,
-		right: 30,
-		bottom: 10,
-		left: 40
-	};
-  const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-  const height = temporalViewHeight - margin.top - margin.bottom;
-  const speechPlotSvg = d3.select("#speech-plot-container");
-  speechPlotSvg.html("");
-  const svg = speechPlotSvg.append('svg')
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", margin.top + margin.bottom + temporalViewHeight)
-    .append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
-
-  // Y scale for topics
-  const y = d3.scaleBand()
-    .rangeRound([0, height])
-    .padding(0.1)
-    .domain(topicsData.map(d => d.topic));
-
-  svg.append("g")
-    .attr("class", "axis axis--y")
-    .call(d3.axisLeft(y));
-
-    svg.selectAll(".background-line")
-    .data(y.domain())
-    .enter().append("rect")
-    .attr("class", "background-line")
-    .attr("x", 0)
-    .attr("y", d => y(d))
-    .attr("width", width)
-    .attr("height", y.bandwidth())
-    .attr("fill", "#e8e8e8"); // Light grey color
-
-  svg.selectAll(".bar")
-  .data(topicsData)
-  .enter().append("rect")
-  .attr("class", "bar")
-  .attr("x", d => Math.min(x(d.startTime), x(d.endTime)))
-  .attr("y", d => y(d.topic))
-  .attr("width", d => {
-    let width = x(d.endTime) - x(d.startTime);
-  //   if (d.startTime > d.endTime) { 
-  //   console.log("come hereeee");
-  //   console.log(`new Date(parsetime), Start Time: ${new Date(d.startTime)}, End Time: ${new Date(d.endTime)}, Width: ${width}`);
-  //   console.log(`After parsetime, Start Time: ${(d.startTime)}, End Time: ${(d.endTime)}`);
-  //   console.log(`Raw, Start Time: ${(d.rawStartTime)}, End Time: ${(d.rawEndTime)}`);
-
-  // }
-    return width;
-  })
-  .attr("height", y.bandwidth())
-  .attr("fill", "#d0d0d0");
-}
+	// Assuming globalState.finalData is set and contains the topics_dict property
+	const topicsData = Object.entries(globalState.finalData.action_dict).flatMap(([topicName, topicDetails]) => {
+	  return topicDetails.actions.map(action => ({
+		topic: topicName,
+		startTime: parseTimeToMillis(action.start_time),
+		endTime: parseTimeToMillis(action.end_time),
+		rawStartTime : action.start_time,
+		rawEndTime: action.end_time,
+	  })).filter(action => action.startTime && action.endTime); // Ensuring we have valid times
+	});
+  
+	const temporalViewContainer = d3.select("#temporal-view");
+	const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
+	  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
+	const margin = {
+		  top: 20,
+		  right: 30,
+		  bottom: 10,
+		  left: 40
+	  };
+	const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
+	const height = temporalViewHeight - margin.top - margin.bottom;
+	const speechPlotSvg = d3.select("#speech-plot-container");
+	speechPlotSvg.html("");
+	const svg = speechPlotSvg.append('svg')
+	.attr("width", globalState.dynamicWidth + margin.left + margin.right) 
+	// .attr("width", width + margin.left + margin.right)
+	.attr("height", margin.top + margin.bottom + temporalViewHeight)
+	  .append('g')
+	  .attr('transform', `translate(${margin.left},${margin.top})`);
+  
+	// Y scale for topics
+	const y = d3.scaleBand()
+	  .rangeRound([0, height])
+	  .padding(0.1)
+	  .domain(topicsData.map(d => d.topic));
+  
+	svg.append("g")
+	  .attr("class", "axis axis--y")
+	  .call(d3.axisLeft(y));
+  
+	  svg.selectAll(".background-line")
+	  .data(y.domain())
+	  .enter().append("rect")
+	  .attr("class", "background-line")
+	  .attr("x", 0)
+	  .attr("y", d => y(d))
+	  .attr("width", globalState.dynamicWidth)
+	  .attr("height", y.bandwidth())
+	  .attr("fill", "#e8e8e8"); // Light grey color
+  
+	svg.selectAll(".bar")
+	.data(topicsData)
+	.enter().append("rect")
+	.attr("class", "bar")
+	.attr("x", d => Math.min(x(d.startTime), x(d.endTime)))
+	.attr("y", d => y(d.topic))
+	.attr("width", d => {
+	  let width = x(d.endTime) - x(d.startTime);
+	//   if (d.startTime > d.endTime) { 
+	//   console.log("come hereeee");
+	//   console.log(`new Date(parsetime), Start Time: ${new Date(d.startTime)}, End Time: ${new Date(d.endTime)}, Width: ${width}`);
+	//   console.log(`After parsetime, Start Time: ${(d.startTime)}, End Time: ${(d.endTime)}`);
+	//   console.log(`Raw, Start Time: ${(d.rawStartTime)}, End Time: ${(d.rawEndTime)}`);
+  
+	// }
+	  return width;
+	})
+	.attr("height", y.bandwidth())
+	.attr("fill", "#d0d0d0");
+  }
 
 function setTimes(data) {
   // console.log(data.earliest_action_time);
@@ -1281,20 +1344,19 @@ function createLines(timestamp1, timestamp2) {
 	// const x = getXScale();
 	// console.log("yo in create line ");
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
-	const width = parseInt(svg.style("width")) - margin.right - margin.left;
-  const svgElement = d3.select("#shared-axis-svg").node();
-  const offsetHeight = svgElement.getBoundingClientRect().height;;
-
-  // const hierToolbar = document.getElementById('hier-toolbar');
-  // let offsetHeight = hierToolbar.offsetHeight;
-  // const offsetHeight = d3.select("#shared-axis-svg");
-  // console.log(offsetHeight);
-	const y1 = 35;
+	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
+  const dynamicWidth = globalState.dynamicWidth;
+  // const width = globalState.dynamicWidth;
+	const y1 = 55;
   const alignX = 10 ;
-	let xPosition1 = Math.max(0, Math.min(x(new Date(timestamp1)), width)) + margin.left + alignX;
+	// let xPosition1 = Math.max(0, Math.min(x(new Date(timestamp1)), width)) + margin.left + alignX;
 	// console.log("xpos1 " + xPosition1);
-	let xPosition2 = Math.max(0, Math.min(x(new Date(timestamp2)), width)) + margin.left + alignX ;
+	// let xPosition2 = Math.max(0, Math.min(x(new Date(timestamp2)), width)) + margin.left + alignX ;
 	// console.log("xpos2 " +  xPosition2);
+
+  let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
+  let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
+
 	let circle1 = svg.select('#time-indicator-circle1');
 	if (circle1.empty()) {
 		circle1 = svg.append('circle')
@@ -1382,81 +1444,135 @@ export function dragged(event, d) {
 		left: 40
 	};
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
-	const width = parseInt(svg.style("width")) - margin.left - margin.right;
-	// const x = getXScale();
-	let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
-	let newTimestamp = x.invert(newXPosition);
-	const id = d3.select(this).attr('id');
-	const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
-	const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
-	const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
-	const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
-	const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
-	const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
-	const minDistanceMillis = 5000;
-	let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
+	// const width = parseInt(svg.style("width")) - margin.left - margin.right;
+  // const width = globalState.dynamicWidth;
+  const timeExtent = d3.select('#time-extent-toggle input[name="time-extent"]:checked').node().value;
+  // console.log(d3.select('#time-extent-toggle input[name="time-extent"]:checked').node().value);
+  if (timeExtent === "Range")
+  {
+    // let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
+    let newXPosition = event.x - margin.left;
+    let newTimestamp = x.invert(newXPosition);
+    const id = d3.select(this).attr('id');
+    const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
+    const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
+    const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
+    const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
+    const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
+    const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
+    const minDistanceMillis = 5000;
+    let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
 
-	if (newTimestamp > new Date(globalState.globalEndTime)) {
-		newTimestamp = new Date(globalState.globalEndTime);
-		newXPosition = x(newTimestamp);
-	}
+    if (newTimestamp > new Date(globalState.globalEndTime)) {
+      newTimestamp = new Date(globalState.globalEndTime);
+      newXPosition = x(newTimestamp);
+    }
 
-	if (isLine1) {
-		newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
-	} else {
-		newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
-	}
-	if (isLine1) {
-		globalState.lineTimeStamp1 = newTimestamp;
-		globalState.lineTimeStamp2 = otherTimestamp;
-		globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
-		const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
-		globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-	} else {
-		globalState.lineTimeStamp2 = newTimestamp;
-		globalState.lineTimeStamp1 = otherTimestamp;
-	}
-	newXPosition = x(new Date(newTimestamp));
-	d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
-	d3.select(circleId).attr('cx', newXPosition + margin.left);
+    if (isLine1) {
+      newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
+    } else {
+      newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
+    }
+    if (isLine1) {
+      globalState.lineTimeStamp1 = newTimestamp;
+      globalState.lineTimeStamp2 = otherTimestamp;
+      globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
+      const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
+      globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+      globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    } else {
+      globalState.lineTimeStamp2 = newTimestamp;
+      globalState.lineTimeStamp1 = otherTimestamp;
+    }
+    newXPosition = x(new Date(newTimestamp));
+    // newXPosition = Math.max(0, Math.min(newXPosition, globalState.dynamicWidth));
+    // let newXPosition = x(new Date(newTimestamp)); 
+    d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
+    d3.select(circleId).attr('cx', newXPosition + margin.left);
+
+    if (isAnimating) {
+      toggleAnimation();
+      updatePlayPauseButton();
+    }
+    isAnimating = false;
+    // globalState.jsonDatas.forEach((data, index) => {
+    //   // updateVisualization(newTimestamp, index);
+
+    //   // updateVisualizationOcculus(newTimestamp.getTime());
+    // });
+    // animateTemporalView(newTimestamp);
+    createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    updateTimeDisplay(newTimestamp, globalState.globalStartTime);
+    const timeStamp1 = new Date(globalState.lineTimeStamp1);
+    const timeStamp2 = globalState.lineTimeStamp2;
+    updateRangeDisplay(timeStamp1, timeStamp2);
+    generateHierToolBar();
+    initializeOrUpdateSpeechBox();
+    // plotSpatialExtent();
+  }
+  else 
+  {
+      // let newXPosition = Math.max(0, Math.min(event.x - margin.left, width));
+      let newXPosition = event.x - margin.left;
+      let newTimestamp = x.invert(newXPosition).getTime(); // Convert to milliseconds
+      const minDistanceMillis = 5000;
+    
+      if (newTimestamp > globalState.globalEndTime) {
+        newTimestamp = globalState.globalEndTime; // Use milliseconds for comparison
+        newXPosition = x(new Date(newTimestamp)); // Convert back to Date for scaling
+      }
+    
+      globalState.lineTimeStamp1 = newTimestamp;
+      globalState.lineTimeStamp2 = newTimestamp + minDistanceMillis; 
+      console.log(`Selected Time Range: ${(new Date(globalState.lineTimeStamp1))} - ${(new Date(globalState.lineTimeStamp2))}`);
+      globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
+      const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
+      globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+      globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    // }
+    //  else {
+    //   globalState.lineTimeStamp2 = newTimestamp;
+    //   globalState.lineTimeStamp1 = otherTimestamp;
+    // }
+    newXPosition = x(new Date(newTimestamp));
+    // newXPosition = Math.max(0, Math.min(newXPosition, globalState.dynamicWidth));
+    d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
+    d3.select("#time-indicator-circle1").attr('cx', newXPosition + margin.left);
 
 
-	if (isAnimating) {
-		toggleAnimation();
-		updatePlayPauseButton();
-	}
-	isAnimating = false;
-	globalState.jsonDatas.forEach((data, index) => {
-		// updateVisualization(newTimestamp, index);
+    if (isAnimating) {
+      toggleAnimation();
+      updatePlayPauseButton();
+    }
+    isAnimating = false;
+    // globalState.jsonDatas.forEach((data, index) => {
+    //   // updateVisualization(newTimestamp, index);
 
-		// updateVisualizationOcculus(newTimestamp.getTime());
-	});
-	// animateTemporalView(newTimestamp);
-	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-	updateTimeDisplay(newTimestamp, globalState.globalStartTime);
-	// console.log("this os what is being sent to func ");
-	// console.log("stamp 1 " + new Date(globalState.lineTimeStamp1));
-	// console.log("stamp 2 " + globalState.lineTimeStamp2);
-	const timeStamp1 = new Date(globalState.lineTimeStamp1);
-	const timeStamp2 = globalState.lineTimeStamp2;
-	updateRangeDisplay(timeStamp1, timeStamp2);
-  generateHierToolBar();
-  initializeOrUpdateSpeechBox();
-  // createSpeechBox();
-
+    //   // updateVisualizationOcculus(newTimestamp.getTime());
+    // });
+    // animateTemporalView(newTimestamp);
+    createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    updateTimeDisplay(newTimestamp, globalState.globalStartTime);
+    const timeStamp1 = new Date(globalState.lineTimeStamp1);
+    const timeStamp2 = globalState.lineTimeStamp2;
+    updateRangeDisplay(timeStamp1, timeStamp2);
+    generateHierToolBar();
+    initializeOrUpdateSpeechBox();
+    // plotSpatialExtent();
+  }
 }
 
 function generateHierToolBar() {
-  const data = globalState.finalData;
+//   const data = globalState.finalData;
+  const data = globalState.finalData.action_dict;
   const toolbar = document.getElementById('hier-toolbar');
   toolbar.innerHTML = '';
 
   let othersTopicDetails = null;
 
   // Process each topic and save "Others" for last
-  Object.entries(data.topics_dict).forEach(([topicName, topicDetails]) => {
-      const isInTimeRange = topicDetails.actions.some(action => {
+  Object.entries(data).forEach(([broadActionName, actionDetails]) => {
+      const isInTimeRange = actionDetails.actions.some(action => {
         // console.log("THIS IS TOPIC NAME " + topicName);
           const actionStartTime = parseTimeToMillis(action.start_time);
           const actionEndTime = parseTimeToMillis(action.end_time);
@@ -1464,82 +1580,97 @@ function generateHierToolBar() {
       });
 
       if (isInTimeRange) {
-          if (topicName !== "Others") {
-              createTopicItem(topicName, topicDetails, toolbar);
-          } else {
-              othersTopicDetails = topicDetails;
-          }
+        //   if (topicName !== "Others") {
+            createTopicItem(broadActionName, actionDetails, toolbar);
+        //   } else {
+            //   othersTopicDetails = topicDetails;
+        //   }
       }
   });
 
-  if (othersTopicDetails !== null) {
-      createOthersItem(othersTopicDetails, toolbar);
-  }
+//   if (othersTopicDetails !== null) {
+//       createOthersItem(othersTopicDetails, toolbar);
+//   }
 }
+
 
 function createTopicItem(topicName, topicDetails, toolbar) {
-  const topicItem = document.createElement('li');
-  const topicCheckbox = document.createElement('input');
-  topicCheckbox.type = 'checkbox';
-  topicCheckbox.id = `checkbox_broadtopic_${topicName.replace(/\s+/g, '_')}`;
-  topicCheckbox.className = 'topic-checkbox';
+    const topicItem = document.createElement('li');
+    const topicCheckbox = document.createElement('input');
+    topicCheckbox.type = 'checkbox';
+	topicCheckbox.id = `checkbox_broadtopic_${topicName.replace(/\s+/g, '_')}`;
+	topicCheckbox.className = 'topic-checkbox';
 
-  const label = document.createElement('label');
-  label.htmlFor = topicCheckbox.id;
-  label.textContent = topicName;
+    const label = document.createElement('label');
+    label.htmlFor = topicCheckbox.id;
+    label.textContent = topicName;
 
-  topicItem.appendChild(topicCheckbox);
-  topicItem.appendChild(label);
+    topicItem.appendChild(topicCheckbox);
+    topicItem.appendChild(label);
 
-  const uniqueKeywords = new Set();
-  topicDetails.actions.forEach(action => {
-      action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
-  });
+    const keywordsList = document.createElement('ul');
+    const addedActions = new Set(); // Set to track added specific actions
 
-  const keywordsList = document.createElement('ul');
-  uniqueKeywords.forEach(keyword => {
-      const keywordItem = document.createElement('li');
-      const keywordCheckbox = document.createElement('input');
-      keywordCheckbox.type = 'checkbox';
-      keywordCheckbox.className = 'keyword-checkbox';
-      keywordCheckbox.id = `checkbox_keyword_${keyword.replace(/\s+/g, '_')}_broadtopic_${topicName.replace(/\s+/g, '_')}`;
+    topicDetails.actions.filter(action => {
+        const actionStartTime = parseTimeToMillis(action.start_time);
+        const actionEndTime = parseTimeToMillis(action.end_time);
+        return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+    }).forEach(action => {
+        const specificAction = action.formatted_data.action_property_specific_action;
 
-      keywordCheckbox.addEventListener('change', function() {
-          // Check the associated broad topic checkbox when this keyword checkbox is checked
-          if (this.checked) {
-              topicCheckbox.checked = true;
-          }
-          else {
-            const allSiblingsUnchecked = [...this.parentNode.parentNode.querySelectorAll('.keyword-checkbox')].every(checkbox => !checkbox.checked);
-            if (allSiblingsUnchecked) {
-                topicCheckbox.checked = false;
-            }
+        // Check if this specific action has already been added
+        if (!addedActions.has(specificAction)) {
+            addedActions.add(specificAction); // Add to Set to track it
+
+            const keywordItem = document.createElement('li');
+            const keywordCheckbox = document.createElement('input');
+            keywordCheckbox.type = 'checkbox';
+            keywordCheckbox.className = 'keyword-checkbox';
+
+            // Ensure unique ID by incorporating both the broad action and specific action
+            keywordCheckbox.id = `checkbox_keyword_${specificAction.replace(/\s+/g, '_')}_broadtopic_${topicName.replace(/\s+/g, '_')}`;
+
+            const keywordLabel = document.createElement('label');
+            keywordLabel.htmlFor = keywordCheckbox.id;
+            keywordLabel.textContent = specificAction;
+
+            keywordItem.appendChild(keywordCheckbox);
+            keywordItem.appendChild(keywordLabel);
+            keywordsList.appendChild(keywordItem);
+
+            // Event listener for each specific action checkbox
+            keywordCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // Optionally, check the broad action checkbox if any specific action is selected
+                    topicCheckbox.checked = true;
+                } else {
+                    // Check if all specific actions are deselected, then deselect the broad action checkbox
+                    const allUnchecked = Array.from(keywordsList.querySelectorAll('.keyword-checkbox')).every(cb => !cb.checked);
+                    if (allUnchecked) {
+                        topicCheckbox.checked = false;
+                    }
+                }
+                // Call to update other components based on the selection
+                initializeOrUpdateSpeechBox(); // Assuming this function exists and handles UI updates
+            });
         }
-        initializeOrUpdateSpeechBox();
-      });
+    });
 
-      const keywordLabel = document.createElement('label');
-      keywordLabel.htmlFor = keywordCheckbox.id;
-      keywordLabel.textContent = keyword;
+    topicItem.appendChild(keywordsList);
+    toolbar.appendChild(topicItem);
 
-      keywordItem.appendChild(keywordCheckbox);
-      keywordItem.appendChild(keywordLabel);
-      keywordsList.appendChild(keywordItem);
-  });
-
-  topicItem.appendChild(keywordsList);
-  toolbar.appendChild(topicItem);
-
-  // Listener for the broad topic checkbox to check/uncheck all keywords
-  topicCheckbox.addEventListener('change', function() {
-      const childCheckboxes = this.parentNode.querySelectorAll('.keyword-checkbox');
-      childCheckboxes.forEach(childCheckbox => {
-          childCheckbox.checked = this.checked;
-          // Since we're programmatically changing the checkbox state, manually trigger the change event
-          childCheckbox.dispatchEvent(new Event('change'));
-      });
-  });
+    // Event listener for the broad action checkbox
+    topicCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        // Check/uncheck all specific action checkboxes based on the broad action checkbox state
+        Array.from(keywordsList.querySelectorAll('.keyword-checkbox')).forEach(cb => {
+            cb.checked = isChecked;
+            // Optionally, trigger change events for each checkbox to update other UI components
+            cb.dispatchEvent(new Event('change'));
+        });
+    });
 }
+
 
 function createOthersItem(othersData, toolbar) {
   const othersItem = document.createElement('li');
@@ -1561,44 +1692,43 @@ function createOthersItem(othersData, toolbar) {
   toolbar.appendChild(othersItem);
 }
 
-
-
-
-
-
 function getSelectedTopic() {
-  const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
-  let selectedTopic = '';
+	const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
+	let selectedTopic = '';
+	
+	topicCheckboxes.forEach(checkbox => {
+		if (checkbox.checked) {
+			const idParts = checkbox.id.split('_'); 
+			const topicIndex = idParts.indexOf('broadtopic') + 1; 
+			selectedTopic = idParts.slice(topicIndex).join(' '); 
+		}
+	});
+	
+	return selectedTopic;
+  }
   
-  topicCheckboxes.forEach(checkbox => {
-      if (checkbox.checked) {
-          const idParts = checkbox.id.split('_'); 
-          const topicIndex = idParts.indexOf('broadtopic') + 1; 
-          selectedTopic = idParts.slice(topicIndex).join(' '); 
-      }
-  });
   
-  return selectedTopic;
-}
+  function getSelectedKeywords() {
+	const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked'); // Select only checked boxes
+	// console.log(keywordCheckboxes);
+	let selectedKeywords = [];
+	
+	keywordCheckboxes.forEach(checkbox => {
+		// console.log(checkbox.id);
+		// Extracts the keyword from the ID, considering 'keyword' and 'broadtopic' identifiers
+		const idParts = checkbox.id.split('_'); // Splits the ID into parts
+		const keywordIndexStart = idParts.indexOf('keyword') + 1; // Finds the start index of the keyword
+		const keywordIndexEnd = idParts.indexOf('broadtopic'); // Finds the end index of the keyword
+		const keyword = idParts.slice(keywordIndexStart, keywordIndexEnd).join(' '); // Extracts the keyword and replaces underscores with spaces
+		selectedKeywords.push(keyword);
+	});
+	// console.log("this is whats returning from selected key words " + selectedKeywords);
+	
+	return selectedKeywords;
+  }
+  
+  
 
-
-function getSelectedKeywords() {
-  const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked'); // Select only checked boxes
-  // console.log(keywordCheckboxes);
-  let selectedKeywords = [];
-  
-  keywordCheckboxes.forEach(checkbox => {
-      // Extracts the keyword from the ID, considering 'keyword' and 'broadtopic' identifiers
-      const idParts = checkbox.id.split('_'); // Splits the ID into parts
-      const keywordIndexStart = idParts.indexOf('keyword') + 1; // Finds the start index of the keyword
-      const keywordIndexEnd = idParts.indexOf('broadtopic'); // Finds the end index of the keyword
-      const keyword = idParts.slice(keywordIndexStart, keywordIndexEnd).join(' '); // Extracts the keyword and replaces underscores with spaces
-      selectedKeywords.push(keyword);
-  });
-  // console.log("this is whats returning from selected key words " + selectedKeywords);
-  
-  return selectedKeywords;
-}
 
 function parseTimeToMillis(customString) {
   // console.log(" here with " + customString);
@@ -1664,235 +1794,91 @@ function createSpeechBox() {
 }
 
 function initializeOrUpdateSpeechBox() {
-  const data = globalState.finalData;
-  const container = document.getElementById("speech-box");
-  const hierToolbar = document.getElementById('hier-toolbar');
-  let offsetHeight = hierToolbar.offsetHeight;
-  const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-  container.style.marginTop =  `${offsetHeight}px`;
+    const data = globalState.finalData.action_dict; // Updated data path
+    const container = document.getElementById("speech-box");
+    const hierToolbar = document.getElementById('hier-toolbar');
+    let offsetHeight = hierToolbar.offsetHeight;
+    const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
+    container.style.marginTop = `${offsetHeight}px`;
 
-  // Ensure the time range display is updated or created if it doesn't exist
-  let rangeDisplay = document.querySelector('.time-range-display-speechbox');
-  if (!rangeDisplay) {
-      rangeDisplay = document.createElement('div');
-      rangeDisplay.className = 'time-range-display-speechbox';
-      container.appendChild(rangeDisplay);
-  }
-  rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
+    let rangeDisplay = document.querySelector('.time-range-display-speechbox');
+    if (!rangeDisplay) {
+        rangeDisplay = document.createElement('div');
+        rangeDisplay.className = 'time-range-display-speechbox';
+        container.appendChild(rangeDisplay);
+    }
+    rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
 
-  // Clear existing speech boxes to update
-  let speechBoxesContainer = document.getElementById("speech-boxes-container");
-  if (!speechBoxesContainer) {
-      speechBoxesContainer = document.createElement('div');
-      speechBoxesContainer.id = "speech-boxes-container";
-      container.appendChild(speechBoxesContainer);
-  } else {
-      speechBoxesContainer.innerHTML = '';
-  }
+    let speechBoxesContainer = document.getElementById("speech-boxes-container");
+    if (!speechBoxesContainer) {
+        speechBoxesContainer = document.createElement('div');
+        speechBoxesContainer.id = "speech-boxes-container";
+        container.appendChild(speechBoxesContainer);
+    } else {
+        speechBoxesContainer.innerHTML = '';
+    }
 
-  const selectedTopic = getSelectedTopic();
-  const selectedKeywords = getSelectedKeywords();
-  let actionsToDisplay = [];
-
-  if (selectedTopic === "Others") {
-      actionsToDisplay = data.topics_dict[selectedTopic]?.actions || [];
-  } else {
-      actionsToDisplay = Object.values(data.topics_dict).flatMap(topic => topic.actions).filter(action => {
-          const actionStartTime = parseTimeToMillis(action.start_time);
-          const actionEndTime = parseTimeToMillis(action.end_time);
-          const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-          return isInTimeRange && (selectedKeywords.length === 0 || action.data.keywords.some(keyword => selectedKeywords.includes(keyword)));
-      });
-  }
-
-  // Populate the speechBoxesContainer with speech boxes for filtered actions
-  // actionsToDisplay.forEach(action => {
-  //     const speechBox = getSpeechData(action);
-  //     speechBoxesContainer.appendChild(speechBox);
-  // });
-  // actionsToDisplay.forEach(action => {
-  //   // Pass selectedKeywords only if they belong to the selected topic
-  //   // console.log(action.topic);
-  //   const keywordsForAction = (selectedTopic === action.topic) ? selectedKeywords : [];
-  //   console.log(keywordsForAction);
-  //   const speechBox = getSpeechData(action, keywordsForAction);
-  //   speechBoxesContainer.appendChild(speechBox);
-// });
-actionsToDisplay.forEach(action => {
-    const isActionInSelectedTopic = action.data.keywords.some(keyword => selectedKeywords.includes(keyword));
-    const keywordsToHighlight = isActionInSelectedTopic ? selectedKeywords : [];
-    const speechBox = getSpeechData(action, keywordsToHighlight);
-    speechBoxesContainer.appendChild(speechBox);
-});
-
-  
-}
-
-
-// function getSpeechData(action) {
-//   const speechBox = document.createElement('div');
-//   speechBox.className = 'speech-box';
-//   speechBox.style.border = '1px solid grey'; // Grey border
-//   speechBox.style.borderRadius = '8px'; // Rounded corners
-//   speechBox.style.padding = '15px';
-//   const lineBreak = document.createElement('br');
-
-//   // Speaker Element
-//   const speakerEl = document.createElement('div');
-//   speakerEl.className = 'speaker';
-//   speakerEl.textContent = `[SPEAKER_${action.actor_name}]`;
-
-//   // Original Transcribed Text
-//   const originalTextEl = document.createElement('div');
-//   originalTextEl.className = 'original-transcribed';
-//   const rawTextTitle = document.createElement('strong');
-//   rawTextTitle.textContent = 'Original Transcribed Text: ';
-  
-//   const rawTextContent = document.createElement('span');
-//   rawTextContent.textContent = action.data.raw_text;
-//   originalTextEl.appendChild(rawTextTitle);
-//   originalTextEl.appendChild(lineBreak);
-//   originalTextEl.appendChild(rawTextContent);
-
-//   // Summary
-//   const summaryEl = document.createElement('div');
-//   summaryEl.className = 'summary';
-//   const summaryTitle = document.createElement('strong');
-//   summaryTitle.textContent = 'Summary: ';
-//   const summaryContent = document.createElement('span');
-//   summaryContent.textContent = action.data.summary || "No summary provided.";
-//   summaryEl.appendChild(summaryTitle);
-//   summaryEl.appendChild(lineBreak);
-//   summaryEl.appendChild(summaryContent);
-
-//   // Keywords
-//   const keywordsEl = document.createElement('div');
-//   keywordsEl.className = 'keywords';
-//   const keywordsTitle = document.createElement('strong');
-//   keywordsTitle.textContent = 'Keywords: ';
-//   const keywordsContent = document.createElement('span');
-//   keywordsContent.textContent = action.data.keywords.join(', ');
-//   keywordsEl.appendChild(keywordsTitle);
-//   keywordsEl.appendChild(lineBreak);
-//   keywordsEl.appendChild(keywordsContent);
-
-//   // Append all elements to the speech box
-//   speechBox.appendChild(speakerEl);
-//   speechBox.appendChild(originalTextEl);
-//   speechBox.appendChild(summaryEl);
-//   speechBox.appendChild(keywordsEl);
-
-//   return speechBox;
-// }
-
-
-function getSpeechData(action, selectedKeywords) {
-  const speechBox = document.createElement('div');
-  speechBox.className = 'speech-box';
-  speechBox.style.border = '1px solid grey'; // Grey border
-  speechBox.style.borderRadius = '8px'; // Rounded corners
-  speechBox.style.padding = '15px';
-
-  // Speaker Element
-  const speakerEl = document.createElement('div');
-  speakerEl.className = 'speaker';
-  speakerEl.textContent = `[SPEAKER_${action.actor_name}]`;
-
-  // Original Transcribed Text
-  const originalTextEl = document.createElement('div');
-  originalTextEl.className = 'original-transcribed';
-  const rawTextTitle = document.createElement('strong');
-  rawTextTitle.textContent = 'Original Transcribed Text: ';
-
-  const rawTextContent = document.createElement('span');
-  rawTextContent.textContent = action.data.raw_text;
-  originalTextEl.appendChild(rawTextTitle);
-  originalTextEl.appendChild(document.createElement('br'));
-  originalTextEl.appendChild(rawTextContent);
-
-  // Summary
-  const summaryEl = document.createElement('div');
-  summaryEl.className = 'summary';
-  const summaryTitle = document.createElement('strong');
-  summaryTitle.textContent = 'Summary: ';
-
-  const summaryContent = document.createElement('span');
-  summaryContent.textContent = action.data.summary || "No summary provided.";
-  summaryEl.appendChild(summaryTitle);
-  summaryEl.appendChild(document.createElement('br'));
-  summaryEl.appendChild(summaryContent);
-
-  // Keywords
-  const keywordsEl = document.createElement('div');
-  keywordsEl.className = 'keywords';
-  const keywordsTitle = document.createElement('strong');
-  keywordsTitle.textContent = 'Keywords: ';
-
-  const keywordsContent = document.createElement('span');
-  keywordsContent.innerHTML = action.data.keywords.map(keyword => {
-    // console.log("here??");
-    // console.log(selectedKeywords);
-    // console.log(keyword);
-      // Highlight the selected keywords
-      if (selectedKeywords.includes(keyword)) {
-          return `<span style="background-color: #90EE90;">${keyword}</span>`; // Light green background for selected keywords
-      } else {
-          return keyword;
-      }
-  }).join(', ');
-
-  keywordsEl.appendChild(keywordsTitle);
-  keywordsEl.appendChild(document.createElement('br'));
-  keywordsEl.appendChild(keywordsContent);
-
-  // Append all elements to the speech box
-  speechBox.appendChild(speakerEl);
-  speechBox.appendChild(originalTextEl);
-  speechBox.appendChild(summaryEl);
-  speechBox.appendChild(keywordsEl);
-
-  return speechBox;
-}
-function updateSpeechBox() {
-  const data = globalState.finalData;
-  const startTime = globalState.lineTimeStamp1;
-  const endTime = globalState.lineTimeStamp2;
-  const selectedTopic = getSelectedTopic();
-  const othersKeywords = ["Others"];
-  let selectedKeywords = getSelectedKeywords();
-  const container = document.getElementById("speech-box");
-  container.innerHTML = ''; // Clear current content
-  if (selectedTopic !== '') {
-      let filteredActions = [];
-      if (selectedTopic === 'Others') {
-          filteredActions = data.topics_dict[selectedTopic]?.actions.filter(action => {
+    const selectedTopic = getSelectedTopic(); // Assumes this function gets the selected topic name
+    const selectedKeywords = getSelectedKeywords(); // Assumes this function returns an array of selected keywords
+	// console.log("this is selected tpopic " + selectedTopic);
+	// console.log("n this is ketywrods " + selectedKeywords);
+	
+    let actionsToDisplay = [];
+    if (data[selectedTopic]) {
+        actionsToDisplay = data[selectedTopic].actions.filter(action => {
             const actionStartTime = parseTimeToMillis(action.start_time);
             const actionEndTime = parseTimeToMillis(action.end_time);
-            const isInTimeRange = actionEndTime >= startTime && actionStartTime <= endTime;
-            // console.log(action.data.keywords);
-            const matchesKeywords = action.data.keywords.some(keyword => othersKeywords.includes(keyword));
-            return isInTimeRange && matchesKeywords;
-          });
-      } else {
-          // console.log(selectedTopic);
-          // console.log(selectedKeywords);
-          const actions = data.topics_dict[selectedTopic]?.actions || [];
-          filteredActions = actions.filter(action => {
-              const actionStartTime = parseTimeToMillis(action.start_time);
-              const actionEndTime = parseTimeToMillis(action.end_time);
-              const isInTimeRange = actionEndTime >= startTime && actionStartTime <= endTime;
-              const matchesKeywords = selectedKeywords.length === 0 || action.data.keywords.some(keyword => selectedKeywords.includes(keyword));
-              return isInTimeRange && matchesKeywords;
-          });
-      }
+            return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+        });
+    }
 
-      // Create and append speech boxes for filtered actions.
-      filteredActions.forEach(action => {
-          const speechBox = getSpeechData(action);
-          container.appendChild(speechBox);
-      });
-  }
+    actionsToDisplay.forEach(action => {
+        const speechBox = getSpeechData(action, selectedKeywords);
+        speechBoxesContainer.appendChild(speechBox);
+    });
 }
+
+function getSpeechData(action, selectedKeywords) {
+    const speechBox = document.createElement('div');
+    speechBox.className = 'speech-box';
+    speechBox.style.border = '1px solid grey';
+    speechBox.style.borderRadius = '8px';
+    speechBox.style.padding = '15px';
+
+    const speakerEl = document.createElement('div');
+    speakerEl.className = 'speaker';
+    speakerEl.textContent = `[${action.actor_name}]`;
+
+    const originalTextEl = document.createElement('div');
+    originalTextEl.className = 'original-transcribed';
+    const rawTextTitle = document.createElement('strong');
+    rawTextTitle.textContent = 'Original Transcribed Text: ';
+
+    const rawTextContent = document.createElement('span');
+    rawTextContent.textContent = action.formatted_data.raw_log_text; // Use formatted_data.raw_log_text
+    originalTextEl.appendChild(rawTextTitle);
+    originalTextEl.appendChild(document.createElement('br'));
+    originalTextEl.appendChild(rawTextContent);
+
+    // Action Property
+    const actionPropertyEl = document.createElement('div');
+    actionPropertyEl.className = 'action-property';
+    const actionPropertyTitle = document.createElement('strong');
+    actionPropertyTitle.textContent = 'Action Property: ';
+
+    const actionPropertyContent = document.createElement('span');
+    actionPropertyContent.textContent = action.formatted_data.action_property_specific_action; // Use formatted_data.action_property_specific_action
+    actionPropertyEl.appendChild(actionPropertyTitle);
+    actionPropertyEl.appendChild(document.createElement('br'));
+    actionPropertyEl.appendChild(actionPropertyContent);
+
+    speechBox.appendChild(speakerEl);
+    speechBox.appendChild(originalTextEl);
+    speechBox.appendChild(actionPropertyEl); // Include action property in the speech box
+
+    return speechBox;
+}
+
 
 function updateRangeDisplay(time1, time2) {
   const svg = d3.select("#temporal-view");
@@ -1950,94 +1936,99 @@ function updateTimeDisplay(timestamp, startTime) {
 	}
 }
 
-
 function createSharedAxis() {
-  const data = globalState.finalData;
-  // console.log(data);
-  const temporalViewContainer = d3.select("#temporal-view");
-  const sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
-  sharedAxisContainer.html("");
-  const margin = {
-      top: 20,
-      right: 30,
-      bottom: 10,
-      left: 40
-  };
-  const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-  // Assuming 'data' is the parsed JSON from 'topic_oriented_analysis_full_data.json'
-  // and contains an array of actions with 'start_time' and 'end_time'
-  // const actions = data.actions;
-
-  // // Parse start and end times
-  // const startTimes = actions.map(action => new Date(data.earliest_action_time));
-  // const endTimes = actions.map(action => new Date(data.latest_action_time));
-
-  // Calculate overall start and end times for the axis
-  const startTime = new Date(globalState.globalStartTime);
-  const endTime = new Date(globalState.globalEndTime);
-  // console.log(startTime + " " + endTime);
+	const { globalStartTime, globalEndTime, bins } = globalState;
+	console.log(new Date(globalStartTime));
+	console.log(new Date(globalEndTime));
+	// Container setup
+	const temporalViewContainer = d3.select("#temporal-view");
+	let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
+	if (sharedAxisContainer.empty()) {
+	  sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
+	}
   
-  // Calculate intervals
-  const totalTime = endTime - startTime; // in milliseconds
-  const intervalDuration = totalTime / bins;
-  intervals = Array.from({ length: bins + 1 }, (v, i) => new Date(startTime.getTime() + i * intervalDuration));
-
-  // Create the scale for the x-axis
-  x = d3.scaleTime()
-      .domain([startTime, endTime])
-      .range([0, width]);
+	sharedAxisContainer.html("");
   
-      
-  const axisHeight = 30;
-  const xAxis = d3.axisTop(x)
-      .tickValues(intervals) 
-      .tickFormat(d3.timeFormat("%I:%M:%S"))
-      .tickPadding(5);
+	// Margin setup
+	const margin = { top: 20, right: 30, bottom: 10, left: 40 };
+  
+	// Time format for ticks
+	const timeFormat = d3.timeFormat("%I:%M:%S");
+  
+	// Calculate the total duration in minutes
+	const totalDurationMinutes = (globalEndTime - globalStartTime) / (1000 * 60);
+  
+	// Calculate the number of intervals based on the bin size (minutes per interval)
+	const numberOfIntervals = Math.ceil(totalDurationMinutes / bins);
+  
+	// Dynamic width based on the number of intervals
+	const widthPerInterval = 100; // Adjust the width per interval as needed
+	globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
+  
+	// Adjust the scale to cover the dynamic width
+	x = d3.scaleTime()
+		.domain([new Date(globalStartTime), new Date(globalEndTime)])
+		.range([0, globalState.dynamicWidth]);
+  
+	// Setup the axis
+	const xAxis = d3.axisTop(x)
+		.ticks(d3.timeMinute.every(bins))
+		.tickFormat(timeFormat);
+  
+	// Create SVG for the axis
+	const svg = sharedAxisContainer.append("svg")
+		.attr("width", globalState.dynamicWidth + margin.left + margin.right)
+		.attr("height", 50)
+		.append("g")
+		.attr("transform", `translate(${margin.left}, ${margin.top})`);
+  
+	svg.append("g")
+		.attr("class", "x-axis")
+		.call(xAxis);
+  
+	// Enable horizontal scrolling
+	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
+  }
+  
+  
+  
+  
+  function updateAxisTicks(svg, xScale, binSize) {
+	const tickInterval = d3.timeMinute.every(binSize); // Dynamically set tick interval based on bin size
+	const xAxis = d3.axisTop(xScale)
+		.ticks(tickInterval)
+		.tickFormat(d3.timeFormat("%I:%M:%S"))
+		.tickPadding(5);
+	
+	svg.select(".x-axis").call(xAxis); // Re-call the axis to update ticks
+  }
 
-  const svg = sharedAxisContainer.append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", margin.top + margin.bottom + axisHeight)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  svg.append("g")
-  .attr("id", "shared-axis-svg")
-      .attr("transform", `translate(0,${margin.top - 15})`)
-      .attr("class", "x-axis")
-      .call(xAxis)
-      .selectAll("text")
-      .style("font-size", "12px")
-      .style("fill", "#666");
-}
-
-
-camera.updateProjectionMatrix();
+// camera.updateProjectionMatrix();
 
 function onWindowResize() {
 	const spatialView = document.getElementById('spatial-view');
-	camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
+	globalState.camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
+	globalState.camera.updateProjectionMatrix();
+	globalState.renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
 }
-
-// loadAndPlotTemporal();
-// createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 async function initialize() {
-  await initializeScene();
-	// await loadAndPlotTemporal();
-  createSharedAxis();
-	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-  createPlotTemporal();
-	generateHierToolBar();
-  document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
-    checkbox.checked = true;
-    checkbox.dispatchEvent(new Event('change'));
-  });
-  initializeOrUpdateSpeechBox();
-  // createSpeechBox();
-}
-
+	await initializeScene();
+	  // await loadAndPlotTemporal();
+	createSharedAxis();
+	  createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+	createPlotTemporal();
+	  generateHierToolBar();
+	document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
+	  checkbox.checked = true;
+	  checkbox.dispatchEvent(new Event('change'));
+	});
+	initializeOrUpdateSpeechBox();
+	// plotSpatialExtent();
+	// createSpeechBox();
+  }
 initialize();
+globalState.camera.updateProjectionMatrix();
 
   
 onWindowResize();
@@ -2045,10 +2036,9 @@ window.addEventListener('resize', onWindowResize, false);
 
 function animate() {
 	requestAnimationFrame(animate);
-	controls.update();
-	renderer.render(scene, camera);
+	globalState.controls.update();
+	globalState.renderer.render(globalState.scene, globalState.camera);
 }
-
 export function getScene() {
 	return scene;
 }
