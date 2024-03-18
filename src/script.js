@@ -57,6 +57,7 @@ let globalState = {
   controls:undefined,
 };
 const userInterestTopic = "Emergency Management";
+const margin = { top: 20, right: 30, bottom: 10, left: 120 };
 
 const hsl = {
 	h: 0,
@@ -1166,12 +1167,6 @@ function createPlotTemporal() {
 	const temporalViewContainer = d3.select("#temporal-view");
 	const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
 	  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
-	const margin = {
-		  top: 20,
-		  right: 30,
-		  bottom: 10,
-		  left: 40
-	  };
 	const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
 	const height = temporalViewHeight - margin.top - margin.bottom;
 	const speechPlotSvg = d3.select("#speech-plot-container");
@@ -1335,15 +1330,7 @@ export function getGlobalState() {
 
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
-	const margin = {
-		top: 20,
-		right: 30,
-		bottom: 0,
-		left: 40
-	};
-	// const x = getXScale();
-	// console.log("yo in create line ");
-	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
+	const height = parseInt(svg.style("height")) - margin.top ;
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1437,12 +1424,6 @@ function createLines(timestamp1, timestamp2) {
 
 export function dragged(event, d) {
 	const svg = d3.select("#temporal-view");
-	const margin = {
-		top: 20,
-		right: 30,
-		bottom: 10,
-		left: 40
-	};
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
 	// const width = parseInt(svg.style("width")) - margin.left - margin.right;
   // const width = globalState.dynamicWidth;
@@ -1882,7 +1863,6 @@ function getSpeechData(action, selectedKeywords) {
 
 function updateRangeDisplay(time1, time2) {
   const svg = d3.select("#temporal-view");
-  const margin = { top: 20, right: 30, bottom: 0, left: 40 };
   const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
   // Assuming the x scale and lines' positions are correctly calculated elsewhere
 
@@ -1940,8 +1920,12 @@ function createSharedAxis() {
 	const { globalStartTime, globalEndTime, bins } = globalState;
 	console.log(new Date(globalStartTime));
 	console.log(new Date(globalEndTime));
+	 
 	// Container setup
 	const temporalViewContainer = d3.select("#temporal-view");
+	const minWidth = document.getElementById('temporal-view').clientWidth;
+	console.log("here " + minWidth);
+	// const minWidth = temporalViewContainer.width
 	let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
 	if (sharedAxisContainer.empty()) {
 	  sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
@@ -1950,7 +1934,7 @@ function createSharedAxis() {
 	sharedAxisContainer.html("");
   
 	// Margin setup
-	const margin = { top: 20, right: 30, bottom: 10, left: 40 };
+	// const margin = { top: 20, right: 30, bottom: 10, left: 80 };
   
 	// Time format for ticks
 	const timeFormat = d3.timeFormat("%I:%M:%S");
@@ -1964,6 +1948,8 @@ function createSharedAxis() {
 	// Dynamic width based on the number of intervals
 	const widthPerInterval = 100; // Adjust the width per interval as needed
 	globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
+	// let localDynamicWidth = numberOfIntervals * widthPerInterval;
+	globalState.dynamicWidth = Math.max(globalState.dynamicWidth, minWidth);
   
 	// Adjust the scale to cover the dynamic width
 	x = d3.scaleTime()

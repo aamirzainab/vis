@@ -4,6 +4,7 @@ html, body {
     display: flex;
     flex-direction: column;
     font-family: 'Arial', sans-serif;
+    font-size:14px;
 }
 
 *, *::before, *::after {
@@ -63,7 +64,7 @@ html, body {
     left: 20%;
     padding: 5px;
     margin: 10px;
-    font-size: 14px; 
+    font-size: 1em; 
     z-index: 2; 
 }
 
@@ -177,7 +178,7 @@ html, body {
     background-color: transparent; /* Make it transparent to show the container's color */
     border: none; /* No borders */
     padding: 5px 8px; /* Same padding for visual consistency */
-    font-size: 16px; /* Large, readable text */
+    font-size: 1.23em; /* Large, readable text */
     color: #333; /* A dark grey for text to make it readable */
     cursor: pointer; /* Indicate it's a dropdown */
 }
