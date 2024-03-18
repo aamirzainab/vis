@@ -57,6 +57,8 @@ let globalState = {
   controls:undefined,
 };
 const userInterestTopic = "Emergency Management";
+// const margin = 
+const margin = { top: 20, right: 30, bottom: 10, left: 120 };
 
 const hsl = {
 	h: 0,
@@ -1100,12 +1102,7 @@ function createPlotTemporal() {
   const temporalViewContainer = d3.select("#temporal-view");
   const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
 	const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
-  const margin = {
-		top: 20,
-		right: 30,
-		bottom: 10,
-		left: 40
-	};
+
   const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
   const height = temporalViewHeight - margin.top - margin.bottom;
   const speechPlotSvg = d3.select("#speech-plot-container");
@@ -1212,7 +1209,7 @@ function plotSpatialExtent() {
       const sphere = new THREE.Mesh(geometry, material);
 
       sphere.position.set(midPoint.x, midPoint.y, midPoint.z);
-      console.log(scene);
+      // console.log(scene);
       scene.add(sphere);
 
       // Update the reference to the last added mesh
@@ -1382,15 +1379,10 @@ export function getGlobalState() {
 
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
-	const margin = {
-		top: 20,
-		right: 30,
-		bottom: 0,
-		left: 40
-	};
+  // bottom was 0 
 	// const x = getXScale();
 	// console.log("yo in create line ");
-	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
+	const height = parseInt(svg.style("height")) - margin.top;
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1484,12 +1476,6 @@ function createLines(timestamp1, timestamp2) {
 
 export function dragged(event, d) {
 	const svg = d3.select("#temporal-view");
-	const margin = {
-		top: 20,
-		right: 30,
-		bottom: 10,
-		left: 40
-	};
 	const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
 	// const width = parseInt(svg.style("width")) - margin.left - margin.right;
   // const width = globalState.dynamicWidth;
@@ -1889,13 +1875,13 @@ function initializeOrUpdateSpeechBox() {
 actionsToDisplay.forEach(action => {
     const isActionInSelectedTopic = action.data.keywords.some(keyword => selectedKeywords.includes(keyword));
     const keywordsToHighlight = isActionInSelectedTopic ? selectedKeywords : [];
+    // console.log(action.action_type);
     const speechBox = getSpeechData(action, keywordsToHighlight);
     speechBoxesContainer.appendChild(speechBox);
 });
 
   
 }
-
 
 
 function getSpeechData(action, selectedKeywords) {
@@ -1908,7 +1894,14 @@ function getSpeechData(action, selectedKeywords) {
   // Speaker Element
   const speakerEl = document.createElement('div');
   speakerEl.className = 'speaker';
-  speakerEl.textContent = `[SPEAKER_${action.actor_name}]`;
+  speakerEl.textContent = `[SPEAKER: ${action.actor_name}]`;
+  
+  // Audience Element
+  // if (action.action_type === "Verbal Communication ") {
+    const audienceEl = document.createElement('div');
+    audienceEl.className = 'audience';
+    audienceEl.textContent = `[AUDIENCE: ${action.audience}]`;
+  // }
 
   // Original Transcribed Text
   const originalTextEl = document.createElement('div');
@@ -1936,7 +1929,6 @@ function getSpeechData(action, selectedKeywords) {
     summaryEl.appendChild(summaryContent);
   }
 
-
   // Keywords
   const keywordsEl = document.createElement('div');
   keywordsEl.className = 'keywords';
@@ -1945,15 +1937,12 @@ function getSpeechData(action, selectedKeywords) {
 
   const keywordsContent = document.createElement('span');
   keywordsContent.innerHTML = action.data.keywords.map(keyword => {
-    // console.log("here??");
-    // console.log(selectedKeywords);
-    // console.log(keyword);
-      // Highlight the selected keywords
-      if (selectedKeywords.includes(keyword)) {
-          return `<span style="background-color: #90EE90;">${keyword}</span>`; // Light green background for selected keywords
-      } else {
-          return keyword;
-      }
+    // Highlight the selected keywords only for the selected topic
+    if (selectedKeywords.includes(keyword)) {
+      return `<span style="background-color: #90EE90;">${keyword}</span>`; // Light green background for selected keywords
+    } else {
+      return keyword;
+    }
   }).join(', ');
 
   keywordsEl.appendChild(keywordsTitle);
@@ -1962,56 +1951,18 @@ function getSpeechData(action, selectedKeywords) {
 
   // Append all elements to the speech box
   speechBox.appendChild(speakerEl);
+  if (action.action_type === "VerbalInteraction") {  speechBox.appendChild(audienceEl);  }
   speechBox.appendChild(originalTextEl);
-  speechBox.appendChild(summaryEl);
+  if (action.data.summary) {
+    speechBox.appendChild(summaryEl);
+  }
   speechBox.appendChild(keywordsEl);
 
   return speechBox;
 }
-function updateSpeechBox() {
-  const data = globalState.finalData;
-  const startTime = globalState.lineTimeStamp1;
-  const endTime = globalState.lineTimeStamp2;
-  const selectedTopic = getSelectedTopic();
-  const othersKeywords = ["Others"];
-  let selectedKeywords = getSelectedKeywords();
-  const container = document.getElementById("speech-box");
-  container.innerHTML = ''; // Clear current content
-  if (selectedTopic !== '') {
-      let filteredActions = [];
-      if (selectedTopic === 'Others') {
-          filteredActions = data.topics_dict[selectedTopic]?.actions.filter(action => {
-            const actionStartTime = parseTimeToMillis(action.start_time);
-            const actionEndTime = parseTimeToMillis(action.end_time);
-            const isInTimeRange = actionEndTime >= startTime && actionStartTime <= endTime;
-            // console.log(action.data.keywords);
-            const matchesKeywords = action.data.keywords.some(keyword => othersKeywords.includes(keyword));
-            return isInTimeRange && matchesKeywords;
-          });
-      } else {
-          // console.log(selectedTopic);
-          // console.log(selectedKeywords);
-          const actions = data.topics_dict[selectedTopic]?.actions || [];
-          filteredActions = actions.filter(action => {
-              const actionStartTime = parseTimeToMillis(action.start_time);
-              const actionEndTime = parseTimeToMillis(action.end_time);
-              const isInTimeRange = actionEndTime >= startTime && actionStartTime <= endTime;
-              const matchesKeywords = selectedKeywords.length === 0 || action.data.keywords.some(keyword => selectedKeywords.includes(keyword));
-              return isInTimeRange && matchesKeywords;
-          });
-      }
-
-      // Create and append speech boxes for filtered actions.
-      filteredActions.forEach(action => {
-          const speechBox = getSpeechData(action);
-          container.appendChild(speechBox);
-      });
-  }
-}
 
 function updateRangeDisplay(time1, time2) {
   const svg = d3.select("#temporal-view");
-  const margin = { top: 20, right: 30, bottom: 0, left: 40 };
   const height = parseInt(svg.style("height")) - margin.top - margin.bottom;
   // Assuming the x scale and lines' positions are correctly calculated elsewhere
 
@@ -2068,8 +2019,12 @@ function createSharedAxis() {
   const { globalStartTime, globalEndTime, bins } = globalState;
   console.log(new Date(globalStartTime));
   console.log(new Date(globalEndTime));
+   
   // Container setup
   const temporalViewContainer = d3.select("#temporal-view");
+  const minWidth = document.getElementById('temporal-view').clientWidth;
+  console.log("here " + minWidth);
+  // const minWidth = temporalViewContainer.width
   let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
   if (sharedAxisContainer.empty()) {
     sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
@@ -2078,7 +2033,7 @@ function createSharedAxis() {
   sharedAxisContainer.html("");
 
   // Margin setup
-  const margin = { top: 20, right: 30, bottom: 10, left: 40 };
+  // const margin = { top: 20, right: 30, bottom: 10, left: 80 };
 
   // Time format for ticks
   const timeFormat = d3.timeFormat("%I:%M:%S");
@@ -2092,6 +2047,8 @@ function createSharedAxis() {
   // Dynamic width based on the number of intervals
   const widthPerInterval = 100; // Adjust the width per interval as needed
   globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
+  // let localDynamicWidth = numberOfIntervals * widthPerInterval;
+  globalState.dynamicWidth = Math.max(globalState.dynamicWidth, minWidth);
 
   // Adjust the scale to cover the dynamic width
   x = d3.scaleTime()
@@ -2132,7 +2089,7 @@ function updateAxisTicks(svg, xScale, binSize) {
 }
 
 
-globalState.camera.updateProjectionMatrix();
+
 function onWindowResize() {
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera.aspect = spatialView.clientWidth / spatialView.clientHeight;
@@ -2159,6 +2116,7 @@ async function initialize() {
 }
 
 initialize();
+globalState.camera.updateProjectionMatrix();
 
   
 onWindowResize();
