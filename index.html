@@ -9,11 +9,14 @@
 <body>
 
     <div id="spatial-view"></div>
+
+    <div id="text-overlay" ></div>
         <div id="range-display"></div>
         <div id="right-pane">
             <div class="plot-box" id="plot-box1"></div>
             <div class="plot-box" id="plot-box2"></div> 
             <div class="plot-box" id="plot-box3"></div> 
+        </div>
         </div>
     <div id="left-pane">
         <div id="hier-toolbar" class="toolbar hier"></div>
@@ -132,26 +135,82 @@
                 <button class="dropbtn" onclick="myFunction()">Sample Size
                 </button>
                 <select id="binsDropdown">
-                    <option value="1" selected>1</option>
+                    <option value="0.5" selected>0.5</option>
+                    <option value="1" >1</option>
                     <option value="2" >2</option>
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>
                 </select>
+                <div id="unit-selection-container" style="margin-left: 10px; display: inline-block;">
+                    <input type="radio" id="unit-minutes" name="unit" value="minutes" checked>
+                    <label for="unit-minutes">Minutes</label>
+                    <input type="radio" id="unit-seconds" name="unit" value="seconds">
+                    <label for="unit-seconds">Seconds</label>
                 </div>
-            <div id="time-extent-toggle">
-                <input type="radio" id="range" name="time-extent" value="Range" checked>
-                <label for="range">Range</label>
-
-                <input type="radio" id="instance" name="time-extent" value="Instance">
-                <label for="instance">Instance</label>
+                </div>
+            <div id="user-interest-topic-container">
+                <span class="user-interest-icon">&#9733;</span> 
+                <div id="user-interest-topic"></div>
             </div>
+            
         </div>
         <div id="speech-plot-container">
             <svg id="speech-plot"></svg>
         </div>
         <script>
-            // Function to toggle the dropdown visibility
+            async function updateSampleSizes() {
+                const parseTimeToMillis = customString => {
+                    let [dateStr, timeStr, milliStr] = customString.split('_');
+                    let year = parseInt(dateStr.slice(0, 2), 10) + 2000;
+                    let month = parseInt(dateStr.slice(2, 4), 10) - 1;
+                    let day = parseInt(dateStr.slice(4, 6), 10);
+                    let hours = parseInt(timeStr.slice(0, 2), 10);
+                    let minutes = parseInt(timeStr.slice(2, 4), 10);
+                    let seconds = parseInt(timeStr.slice(4, 6), 10);
+                    let milliseconds = parseInt(milliStr, 10);
+                    return new Date(year, month, day, hours, minutes, seconds, milliseconds).getTime();
+                };
+                const adjustAndRoundSize = (size, unit) => {
+                    if (unit === 'seconds') {
+                        size *= 60; // Convert minutes to seconds
+                        size = Math.round(size / 5) * 5; // Round to nearest multiple of 5 seconds
+                    } else {
+                        size = Math.round(size / 0.05) * 0.05;
+                    }
+                    size = parseFloat(size.toFixed(2));
+                    return size;
+                };
+
+                try {
+                    const response = await fetch('topic_oriented_analysis_full_data.json');
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    // const actionDict = data.action_dict; // Adjust according to the desired category
+                    const earliestTimeMillis = parseTimeToMillis(data.earliest_action_time);
+                    const latestTimeMillis = parseTimeToMillis(data.latest_action_time);
+                    const durationMinutes = (latestTimeMillis - earliestTimeMillis) / 60000;
+
+                    const percentages = [0.5, 1, 2, 5, 10, 20];
+                    const binsDropdown = document.getElementById('binsDropdown');
+                    const unit = document.querySelector('input[name="unit"]:checked').value;
+                    binsDropdown.innerHTML = ''; // Clear existing options
+
+                    percentages.forEach(percentage => {
+                        let size = durationMinutes * percentage / 100;
+                        size = adjustAndRoundSize(size, unit);
+                        const optionText = unit === 'minutes' ? `${size} min` : `${size} sec`;
+                        const option = new Option(optionText, size);
+                        binsDropdown.add(option);
+                    });
+                } catch (error) {
+                    console.error('Failed to update sample sizes:', error);
+                    }
+                }
+                document.querySelectorAll('input[name="unit"]').forEach(input => {
+                    input.addEventListener('change', updateSampleSizes);
+                    });
+
             function myFunction() {
                 var dropdown = document.getElementById("binsDropdown");
                 if (dropdown.style.display === "block") {
@@ -177,18 +236,25 @@
                     }
                 }
             }
+            document.addEventListener('DOMContentLoaded', updateSampleSizes);
         </script>
-        <svg id= "indicator-svg" style="position: absolute; top: 25; left: 0; z-index: 1; " width="100%" height="100%">
-            <!-- pointer-events: none; -->
-            <line id="time-indicator-line1" x1="95" y1="33" x2="95" y2="100%"></line>
-            <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#82caeb"></circle>
-            <line id="time-indicator-line2" x1="100" y1="28" x2="100" y2="100%"></line>
-            <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#82caeb"></circle>
-        </svg>
-    </div>x
+ <svg id= "indicator-svg" style="position: absolute; top: 25; left: 0; z-index: 1; " width="100%" height="100%">
+    <!-- pointer-events: none; -->
+    <line id="time-indicator-line1" x1="95" y1="33" x2="95" y2="100%"></line>
+    <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#82caeb"></circle>
+    <line id="time-indicator-line2" x1="100" y1="28" x2="100" y2="100%"></line>
+    <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#82caeb"></circle>
+    </svg>
     <script type="module" src="src/script.js"></script>
     <script type="module" src="src/objToolbar.js"></script>
 </body>
 </html>
+
+<!-- <svg id= "indicator-svg" style="position: absolute; top: 25; left: 130; z-index: 120; " width="100%" height="100%">
+    <line id="time-indicator-line1" x1="1" y1="33" x2="95" y2="100%"></line>
+    <circle id="time-indicator-circle1" cx="1" cy="28" r="5" fill="#82caeb"></circle>
+    <line id="time-indicator-line2" x1="12" y1="28" x2="100" y2="100%"></line>
+    <circle id="time-indicator-circle2" cx="12" cy="28" r="5" fill="#82caeb"></circle>
+</svg> -->
 
 
