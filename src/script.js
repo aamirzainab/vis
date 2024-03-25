@@ -125,7 +125,7 @@ async function loadAvatarModel(filename) {
   // filename = ('3d_human_model/scene.gltf');
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
-	avatar.scale.set(0.1, 0.1, 0.1);
+	avatar.scale.set(0.15, 0.15, 0.15);
 	avatar.name = filename;
   avatar.visible = true ;
 	globalState.scene.add(avatar);
@@ -528,21 +528,16 @@ const data = globalState.movementData.actions ;
   });
 
 if (filteredData.length !== 0) {
-  // console.log("setting to true x");
-  // globalState.scene.add(avatar);
-  // console.log(avatar.visible);
-  // avatar.visible = true ;
   filteredData.forEach(entry => {
     const spatialExent = entry.spatial_extent;
 
-    const x = -1*(spatialExent[0][0]);
+    const x = spatialExent[0][2]; // UNITY Z 
     const y = spatialExent[0][1];
-    const z = spatialExent[0][2];
+    const z = -spatialExent[0][0];
     avatar.position.x = x ;
     // avatar.position.y = y ; 
     avatar.position.z = z ;
-    // const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
-
+    // const euler = new THREE.Euler(THREE.MathUtils.degToRad(spatialExent[1][0]), THREE.MathUtils.degToRad(spatialExent[1][1]), (THREE.MathUtils.degToRad(spatialExent[1][2])), 'XYZ');
     // avatar.rotation.set(0, 0, 0);
     // avatar.setRotationFromEuler(euler);
   });
@@ -1611,7 +1606,7 @@ const rScale = d3.scaleLinear()
       const count = topic.actions.filter(action => action.action_type === "VerbalInteraction" && action.actor_name === user).length;
       return {topic: topicKey, count};
     });
-    console.log(userData);
+    // console.log(userData);
 
     // Define the radar line generator
     const radarLine = d3.lineRadial()
@@ -2192,7 +2187,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 //     // }
 // });
 filteredActions.forEach(action => {
-  console.log(action);
+  // console.log(action);
   if (action.action_type === "RawCapture") { return ; }
   action.data.keywords.forEach((keyword, index) => {
     uniqueKeywords.add(keyword);
@@ -2561,25 +2556,108 @@ function updateInterestBox() {
   container.style.overflowWrap = "break-word";
   container.contentEditable = "true"; // Make it editable
 }
-function updateXRSnapshot(){
-  // const actionDictEntries = Object.entries(globalState.finalData.action_dict);
-
-  // // Filtering for Raw Capture actions and ensuring they are within the time range
-  // const rawCaptureEntries = actionDictEntries
-  //   .filter(([actionName, _]) => actionName === "Raw Capture")
-  //   .flatMap(([_, actionDetails]) => actionDetails.actions)
-  //   .filter(action => {
-  //     return action.start_time >= globalState.lineTimeStamp1 && action.end_time <= globalState.lineTimeStamp2;
-  //   });
-  //   if (rawCaptureEntries.length > 0) {
-  //   const imagePath = rawCaptureEntries[0].data.image_path; // Adjust based on actual structure if needed
-  //   document.getElementById("user-xr-snapshot").innerHTML = `<img src="${imagePath}" alt="XR Snapshot"/>`;
-  // } else {
-  //   console.log("No matching Raw Capture events found in the specified time range.");
-  // }
 
 
+function updateXRSnapshot() {
+  // Choose the correct data source based on your structure. Adjust as necessary.
+  // const rawCaptureData = globalState.finalData.topics_dict ? globalState.finalData.topics_dict["Raw Capture"] : globalState.finalData.action_dict["Raw Capture"];
+const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
+  const container = document.getElementById('user-xr-snapshot');
+  container.innerHTML = ''; // Clear previous content
+
+  // Create a title element
+  const titleElement = document.createElement('div');
+  titleElement.style.textAlign = 'center';
+  titleElement.style.marginBottom = '10px';
+  titleElement.id = 'imageTitle';
+  container.appendChild(titleElement);
+
+  if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
+    const filteredActions = rawCaptureData.actions.filter(action => {
+      const actionStartTime = parseTimeToMillis(action.start_time);
+      const actionEndTime = parseTimeToMillis(action.end_time);
+      return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+    });
+
+    if (filteredActions.length >= 1) {
+      const imageWrapper = document.createElement('div');
+      imageWrapper.style.position = 'relative';
+      imageWrapper.style.maxWidth = '500px';
+      imageWrapper.style.margin = 'auto';
+
+      filteredActions.forEach((action, index) => {
+        const imagePath = action.actor_name + '\\' + action.specific_action_data;
+        const img = document.createElement('img');
+        img.src = imagePath;
+        img.alt = "Raw Capture Image";
+        img.style.maxWidth = '100%';
+        img.style.display = index === 0 ? 'block' : 'none';
+        imageWrapper.appendChild(img);
+      });
+
+      // Update the title with the actor name of the first image
+      updateTitle(filteredActions[0].actor_name);
+
+      container.appendChild(imageWrapper);
+
+      // Navigation arrows functionality
+      addNavigationArrows(imageWrapper, filteredActions);
+    } else {
+      titleElement.innerHTML = 'No images available';
+    }
+  } else {
+    titleElement.innerHTML = 'No raw capture data available';
+  }
 }
+
+function addNavigationArrows(imageWrapper, filteredActions) {
+  const prevArrow = document.createElement('button');
+  prevArrow.innerHTML = '&#10094;';
+  prevArrow.style.position = 'absolute';
+  prevArrow.style.top = '50%';
+  prevArrow.style.left = '10px';
+  prevArrow.style.zIndex = '10';
+  prevArrow.style.cursor = 'pointer';
+
+  const nextArrow = document.createElement('button');
+  nextArrow.innerHTML = '&#10095;';
+  nextArrow.style.position = 'absolute';
+  nextArrow.style.top = '50%';
+  nextArrow.style.right = '10px';
+  nextArrow.style.zIndex = '10';
+  nextArrow.style.cursor = 'pointer';
+
+  let currentIndex = 0;
+  prevArrow.onclick = () => {
+    currentIndex = (currentIndex - 1 + filteredActions.length) % filteredActions.length;
+    changeImage(currentIndex, imageWrapper, filteredActions);
+  };
+
+  nextArrow.onclick = () => {
+    currentIndex = (currentIndex + 1) % filteredActions.length;
+    changeImage(currentIndex, imageWrapper, filteredActions);
+  };
+
+  imageWrapper.appendChild(prevArrow);
+  imageWrapper.appendChild(nextArrow);
+}
+
+function changeImage(index, imageWrapper, filteredActions) {
+  Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
+    img.style.display = imgIndex === index ? 'block' : 'none';
+  });
+  // Update the title with the actor name of the current image
+  updateTitle(filteredActions[index].actor_name);
+}
+
+function updateTitle(actorName) {
+  const titleElement = document.getElementById('imageTitle');
+  if (titleElement) {
+    titleElement.innerHTML = `${actorName} XR Snapshot`;
+  }
+}
+
+
 
 function updateRangeDisplay(time1, time2) {
   const indicatorSVG = d3.select("#indicator-svg");
