@@ -60,7 +60,7 @@ let globalState = {
 	triangleMesh: [],
 	raycastLines : [],
 };
-const userInterestTopic = "Data visualization, User1’s flooding data visualization near the Rockaways area";
+const userInterestTopic = "Data visualization, User1’s folooding data visualization near the Rockaways area";
 
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
@@ -179,9 +179,7 @@ async function loadAvatarModel(filename) {
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		// const filename = 'RealWorld/room132.glb';
-		const filename = 'RD_background_dense_color_fix.glb';
-
+		const filename = 'RealWorld/room132.glb';
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
@@ -485,7 +483,7 @@ function createDeviceSegment(id){
 		avatar.position.x = x ; 
 		avatar.position.z = z ; 
 		const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
-	
+	//zainab chmage thios 
 		avatar.rotation.set(0, 0, 0);
 		avatar.setRotationFromEuler(euler);
 	  });
@@ -493,14 +491,19 @@ function createDeviceSegment(id){
 	}
 
 		
-	function createRayCastSegment() {
+	function createRayCastSegment(id) {
 		// const scene = globalState.scene; // Assuming this is your THREE.Scene object
 		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
-		if (!globalState.raycastLines) {
-			globalState.raycastLines = [];
+		// if (!globalState.raycastLines[id]) {
+		// 	globalState.raycastLines[id] = [];
+		// }
+		if (globalState.raycastLines[id]) {
+			globalState.scene.remove(globalState.raycastLines[id]);
+			// globalState.currentLineSegments[id].geometry.dispose(); 
+			// globalState.currentLineSegments[id].material.dispose(); 
+			globalState.raycastLines[id] = null;
 		}
-	
 		// Clear existing lines from the scene
 		globalState.raycastLines.forEach(line => globalState.scene.remove(line));
 		globalState.raycastLines.length = 0; //
@@ -750,7 +753,6 @@ async function initializeScene() {
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
 	globalState.scene.add(gridHelper);
-	loadRoomModel();
 
   	const finalData = await Promise.all([
 		fetch('new_action_oriented_analysis_full_data.json').then(response => response.json()),
@@ -1583,75 +1585,191 @@ function plotCombinedUsersSpiderChart() {
 	});
   }
   
-function plotScatterPlot(){
-	const plotBox = d3.select("#plot-box3").html("");
+// function plotScatterPlot(){
+// 	const plotBox = d3.select("#plot-box3").html("");
+//     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+//     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+//     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+// 	const raycastDataWithUserInfo = [];
+
+//     // Loop through each topic in globalState.finalData
+//     Object.values(globalState.finalData.action_dict).forEach(topic => {
+// 		// console.log(topic);
+//         // Check if the topic has actions and iterate through them
+//         if (topic.actions) {
+//             topic.actions.forEach(action => {
+// 				// console.log("jere>");
+//                 // Check if the action's specific action data type is Raycast and if it has valid specific action data
+//                 if (action.specific_action_data_type === "Raycast") {
+//                     // Add the specific action data along with user info to the array
+//                     raycastDataWithUserInfo.push({
+//                         user: action.actor_name, // Saving user info
+//                         data: action.specific_action_data // Saving specific action data (raycast data points)
+//                     });
+//                 }
+//             });
+//         }
+//     });
+// console.log(raycastDataWithUserInfo);
+// // const scene1 = new THREE.Scene();
+// //     const camera1 = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+// //     const renderer1 = new THREE.WebGLRenderer();
+// //     renderer1.setSize(width, height);
+
+// //     // Attach the renderer's canvas to the plotBox instead of document.body
+// //     plotBox.node().appendChild(renderer1.domElement);
+// // 	const axesHelper = new THREE.AxesHelper(5);
+// //     scene1.add(axesHelper);
+// // 	const size = 10;
+// //     const divisions = 10;
+// //     const gridHelperXY = new THREE.GridHelper(size, divisions);
+// //     // const gridHelperYZ = new THREE.GridHelper(size, divisions);
+// //     // const gridHelperXZ = new THREE.GridHelper(size, divisions);
+// //     // gridHelperYZ.rotation.z = Math.PI / 2; // Rotate to YZ plane
+// //     // gridHelperXZ.rotation.x = Math.PI / 2; // Rotate to XZ plane
+// //     scene1.add(gridHelperXY);
+// //     // scene1.add(gridHelperYZ);
+// //     // scene1.add(gridHelperXZ);
+// // 	renderer1.setClearColor(0xffffff, 1);
+
+
+// //     // Adjust camera position based on the data's scale and positioning
+// //     camera1.position.set(0, 0, 10); // Example positioning, adjust as needed
+
+// // 	const controls1 = new OrbitControls(camera1, renderer1.domElement);
+// // 	controls1.enableZoom = true;
+
+// //     // Create a sphere for each data point
+// //     raycastDataWithUserInfo.forEach(item => {
+// //         const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
+// //         const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user)}); // Random color
+// //         const sphere = new THREE.Mesh(geometry, material);
+        
+// //         sphere.position.set(...item.data);
+// //         scene1.add(sphere);
+// //     });
+
+// //     // Function to animate and render the scene
+// //     function animate() {
+// //         requestAnimationFrame(animate);
+// //         renderer1.render(scene1, camera1);
+// //     }
+
+// //     animate();
+// const scene = new THREE.Scene();
+// // Use an OrthographicCamera for 2D visualization
+// const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+// const renderer = new THREE.WebGLRenderer();
+// renderer.setSize(width, height);
+// plotBox.node().appendChild(renderer.domElement); // Attach the renderer's canvas to the plotBox
+// const controls = new OrbitControls(camera, renderer.domElement);
+//     controls.enableRotate = false; // Disable rotation for a 2D view
+//     controls.enableZoom = true; // Enable zoom
+// renderer.setClearColor(0xffffff, 1); // Set background color to white
+
+// // Adjust camera position and look at the center of the scene
+// camera.position.set(0, 0, 100);
+// camera.lookAt(0, 0, 0);
+
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10); // Assuming you have a color scale
+
+// // Create a sphere for each data point
+// raycastDataWithUserInfo.forEach(item => {
+// 	const geometry = new THREE.CircleGeometry(5, 32); // Use CircleGeometry for 2D circles
+// 	const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user) });
+// 	const circle = new THREE.Mesh(geometry, material);
+
+// 	// Adjust positions; assuming item.data is an array of [x, y, z]
+// 	circle.position.set(item.data[0], item.data[1], 0); // Z is set to 0 as it's 2D
+// 	scene.add(circle);
+// });
+
+// // Optionally, add a GridHelper to visualize the 2D plane
+// const size = 10;
+// const divisions = 10;
+// const gridHelper = new THREE.GridHelper(size, divisions);
+// scene.add(gridHelper);
+
+// // Function to animate and render the scene
+// function animate() {
+// 	requestAnimationFrame(animate);
+// 	renderer.render(scene, camera);
+// }
+
+// animate();
+// }
+
+function plotScatterPlot() {
+    const plotBox = d3.select("#plot-box3").html("");
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
-	const raycastDataWithUserInfo = [];
-
-    // Loop through each topic in globalState.finalData
+    const raycastDataWithUserInfo = [];
     Object.values(globalState.finalData.action_dict).forEach(topic => {
-		// console.log(topic);
-        // Check if the topic has actions and iterate through them
         if (topic.actions) {
             topic.actions.forEach(action => {
-				// console.log("jere>");
-                // Check if the action's specific action data type is Raycast and if it has valid specific action data
                 if (action.specific_action_data_type === "Raycast") {
-                    // Add the specific action data along with user info to the array
                     raycastDataWithUserInfo.push({
-                        user: action.actor_name, // Saving user info
-                        data: action.specific_action_data // Saving specific action data (raycast data points)
+                        user: action.actor_name, 
+                        data: action.specific_action_data 
                     });
                 }
             });
         }
     });
-console.log(raycastDataWithUserInfo);
-const scene1 = new THREE.Scene();
-    const camera1 = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    const renderer1 = new THREE.WebGLRenderer();
-    renderer1.setSize(width, height);
 
-    // Attach the renderer's canvas to the plotBox instead of document.body
-    plotBox.node().appendChild(renderer1.domElement);
-	const axesHelper = new THREE.AxesHelper(5);
-    scene1.add(axesHelper);
-	const size = 10;
-    const divisions = 10;
-    const gridHelperXY = new THREE.GridHelper(size, divisions);
-    // const gridHelperYZ = new THREE.GridHelper(size, divisions);
-    // const gridHelperXZ = new THREE.GridHelper(size, divisions);
-    // gridHelperYZ.rotation.z = Math.PI / 2; // Rotate to YZ plane
-    // gridHelperXZ.rotation.x = Math.PI / 2; // Rotate to XZ plane
-    // scene1.add(gridHelperXY);
-    // scene1.add(gridHelperYZ);
-    // scene1.add(gridHelperXZ);
-	renderer1.setClearColor(0xffffff, 1);
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(width, height);
+    plotBox.node().appendChild(renderer.domElement);
+    renderer.setClearColor(0xffffff, 1);
+    camera.position.set(0, 0, 100);
+	camera.up.set(0, -1, 0); 
+	camera.lookAt(scene.position);
 
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableRotate = false;
+    controls.enableZoom = true;
 
-    // Adjust camera position based on the data's scale and positioning
-    camera1.position.set(0, 0, 10); // Example positioning, adjust as needed
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-	const controls1 = new OrbitControls(camera1, renderer1.domElement);
-	controls1.enableZoom = true;
-
-    // Create a sphere for each data point
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     raycastDataWithUserInfo.forEach(item => {
-        const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
-        const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user)}); // Random color
-        const sphere = new THREE.Mesh(geometry, material);
-        
-        sphere.position.set(...item.data);
-        scene1.add(sphere);
+        const [x, y] = item.data;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    });
+    const dataCenterX = (minX + maxX) / 2;
+    const dataCenterY = (minY + maxY) / 2;
+
+    const scaleX = (width - margin.left - margin.right) / (maxX - minX);
+    const scaleY = (height - margin.top - margin.bottom) / (maxY - minY);
+
+    raycastDataWithUserInfo.forEach(item => {
+        const [x, y] = item.data;
+		const scaledX = -((x - dataCenterX) * scaleX); 
+        const scaledY = -((y - dataCenterY) * scaleY);
+    
+        const geometry = new THREE.CircleGeometry(5, 32);
+        const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user) });
+        const circle = new THREE.Mesh(geometry, material);
+    
+        circle.position.set(scaledX, scaledY, 0); 
+        scene.add(circle);
     });
 
-    // Function to animate and render the scene
+    const gridHelper = new THREE.GridHelper(10, 10);
+    scene.add(gridHelper);
+
     function animate() {
         requestAnimationFrame(animate);
-        renderer1.render(scene1, camera1);
+        controls.update();
+        renderer.render(scene, camera);
     }
 
     animate();
@@ -1677,25 +1795,6 @@ function setTimes(data) {
   globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
 }
 
-// function setTimes(data) {
-//   const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-//   const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-
-//   globalState.globalStartTime = Math.min(...globalStartTimes);
-//   console.log(globalState.globalStartTime);
-//   console.log(new Date(globalState.globalStartTime));
-//   const globalStartTime = globalState.globalStartTime;
-//   const somePadding = 0;
-//   globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-//   const globalEndTime = globalState.globalEndTime;
-//   const totalTime = globalEndTime - globalStartTime;
-//   globalState.intervalDuration = totalTime / globalState.bins;
-//   const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-//   globalState.intervals = Array.from({
-//       length: globalState.bins + 1
-//   }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-
-// }
 
 function createTimeSlider(data) {
 	const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
@@ -1865,13 +1964,17 @@ function createLines(timestamp1, timestamp2) {
 	circle1.call(drag);
 	circle2.call(drag);
 	updateRangeDisplay(timestamp1,timestamp2);
+	updateXRSnapshot();
 	createLineSegment(0);
 	createLineSegment(1);
 	createLineSegment(2);
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	createRayCastSegment();
+	
+	createRayCastSegment(0); 
+	createRayCastSegment(1);
+	createRayCastSegment(2);
 	updateSceneBasedOnSelections();
 	// initializeShadedAreaDrag();
 
@@ -1933,6 +2036,7 @@ export function dragged(event,d) {
     const timeStamp1 = new Date(globalState.lineTimeStamp1);
     const timeStamp2 = globalState.lineTimeStamp2;
     updateRangeDisplay(timeStamp1, timeStamp2);
+	updateXRSnapshot();
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
@@ -1944,7 +2048,10 @@ export function dragged(event,d) {
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	createRayCastSegment();
+	
+	createRayCastSegment(0); 
+	createRayCastSegment(1);
+	createRayCastSegment(2);
     initializeShadedAreaDrag();
 
     // console.log('Dragging Event Ended');
@@ -2357,6 +2464,105 @@ function updateInterestBox() {
 	container.contentEditable = "true"; // Make it editable
   }
 
+  function updateXRSnapshot() {
+	// Choose the correct data source based on your structure. Adjust as necessary.
+	const rawCaptureData =  globalState.finalData.action_dict["Raw Capture"];
+  
+	const container = document.getElementById('user-xr-snapshot');
+	container.innerHTML = ''; // Clear previous content
+  
+	// Create a title element
+	const titleElement = document.createElement('div');
+	titleElement.style.textAlign = 'center';
+	titleElement.style.marginBottom = '10px';
+	titleElement.id = 'imageTitle';
+	container.appendChild(titleElement);
+  
+	if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
+	  const filteredActions = rawCaptureData.actions.filter(action => {
+		const actionStartTime = parseTimeToMillis(action.start_time);
+		const actionEndTime = parseTimeToMillis(action.end_time);
+		return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+	  });
+  
+	  if (filteredActions.length >= 1) {
+		const imageWrapper = document.createElement('div');
+		imageWrapper.style.position = 'relative';
+		imageWrapper.style.maxWidth = '500px';
+		imageWrapper.style.margin = 'auto';
+  
+		filteredActions.forEach((action, index) => {
+		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
+		  const img = document.createElement('img');
+		  img.src = imagePath;
+		  img.alt = "Raw Capture Image";
+		  img.style.maxWidth = '100%';
+		  img.style.display = index === 0 ? 'block' : 'none';
+		  imageWrapper.appendChild(img);
+		});
+  
+		// Update the title with the actor name of the first image
+		updateTitle(filteredActions[0].actor_name);
+  
+		container.appendChild(imageWrapper);
+  
+		// Navigation arrows functionality
+		addNavigationArrows(imageWrapper, filteredActions);
+	  } else {
+		titleElement.innerHTML = 'No images available';
+	  }
+	} else {
+	  titleElement.innerHTML = 'No raw capture data available';
+	}
+  }
+  
+  function addNavigationArrows(imageWrapper, filteredActions) {
+	const prevArrow = document.createElement('button');
+	prevArrow.innerHTML = '&#10094;';
+	prevArrow.style.position = 'absolute';
+	prevArrow.style.top = '50%';
+	prevArrow.style.left = '10px';
+	prevArrow.style.zIndex = '10';
+	prevArrow.style.cursor = 'pointer';
+  
+	const nextArrow = document.createElement('button');
+	nextArrow.innerHTML = '&#10095;';
+	nextArrow.style.position = 'absolute';
+	nextArrow.style.top = '50%';
+	nextArrow.style.right = '10px';
+	nextArrow.style.zIndex = '10';
+	nextArrow.style.cursor = 'pointer';
+  
+	let currentIndex = 0;
+	prevArrow.onclick = () => {
+	  currentIndex = (currentIndex - 1 + filteredActions.length) % filteredActions.length;
+	  changeImage(currentIndex, imageWrapper, filteredActions);
+	};
+  
+	nextArrow.onclick = () => {
+	  currentIndex = (currentIndex + 1) % filteredActions.length;
+	  changeImage(currentIndex, imageWrapper, filteredActions);
+	};
+  
+	imageWrapper.appendChild(prevArrow);
+	imageWrapper.appendChild(nextArrow);
+  }
+  
+  function changeImage(index, imageWrapper, filteredActions) {
+	Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
+	  img.style.display = imgIndex === index ? 'block' : 'none';
+	});
+	// Update the title with the actor name of the current image
+	updateTitle(filteredActions[index].actor_name);
+  }
+  
+  function updateTitle(actorName) {
+	const titleElement = document.getElementById('imageTitle');
+	if (titleElement) {
+		titleElement.innerHTML = `${actorName} XR Snapshot`;
+	}
+  }
+
   function updateRangeDisplay(time1, time2) {
 	const indicatorSVG = d3.select("#indicator-svg");
 	indicatorSVG.selectAll("rect.shading").remove();
@@ -2420,6 +2626,7 @@ function updateInterestBox() {
 	//   .getTime();
   
 	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
+	  updateXRSnapshot();
 	  createLineSegment(0);
 	  createLineSegment(1);
 	  createLineSegment(2);
@@ -2427,7 +2634,10 @@ function updateInterestBox() {
 	  createDeviceSegment(0);
 	  createDeviceSegment(1);
 	  createDeviceSegment(2);
-	  createRayCastSegment();
+	  
+	createRayCastSegment(0); 
+	createRayCastSegment(1);
+	createRayCastSegment(2);
 	  updateSceneBasedOnSelections();
   
 	  dragStartX = event.x; 
@@ -2628,7 +2838,9 @@ async function initialize() {
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	createRayCastSegment();
+	createRayCastSegment(0); 
+	createRayCastSegment(1);
+	createRayCastSegment(2);
 	// plotBarChart();
 	plotUserSpecificBarChart();
 	plotScatterPlot();
