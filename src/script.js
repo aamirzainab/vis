@@ -133,7 +133,7 @@ async function loadAvatarModel(filename) {
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		const filename = 'RealWorld/room132.glb';
+		const filename = 'RD_background_dense_color_fix.glb';
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
@@ -551,7 +551,6 @@ if (filteredData.length !== 0) {
 
 
 async function initializeScene() {
-	// await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
   globalState.scene = new THREE.Scene();
   globalState.scene.background = new THREE.Color(0xffffff);
   const spatialView = document.getElementById('spatial-view');
@@ -591,6 +590,8 @@ async function initializeScene() {
   gridHelper.position.y = -1;
   globalState.scene.add(gridHelper);
 
+	await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
+  
   const jsonFiles = await Promise.all([
     fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
     fetch('file1.json').then(response => response.json()),
@@ -1300,6 +1301,107 @@ function plotBarChart() {
       .text(d => d);
 }
 
+function plotUserSpecificBarChart() {
+  const plotBox = d3.select("#plot-box1").html("");
+  const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+  const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+  const height = 500 - margin.top - margin.bottom; 
+
+  const svg = plotBox.append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Assuming globalState.finalData.action_dict exists and is structured appropriately
+  let allUsers = new Set();
+  let userDataByAction = {};
+
+  Object.entries(globalState.finalData.action_dict)
+  .filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
+  .forEach(([actionName, actionDetails]) => {
+      const userCounts = actionDetails.actions.reduce((acc, action) => {
+          acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
+          allUsers.add(action.actor_name);
+          return acc;
+      }, {});
+
+      userDataByAction[actionName] = userCounts;
+  });
+
+  const users = Array.from(allUsers);
+  const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
+      actionName,
+      ...counts
+  }));
+
+  // Setup scales
+  const x0 = d3.scaleBand()
+      .rangeRound([0, width])
+      .paddingInner(0.1)
+      .domain(processedData.map(d => d.actionName));
+
+  const x1 = d3.scaleBand()
+      .padding(0.05)
+      .domain(users)
+      .rangeRound([0, x0.bandwidth()]);
+
+  const y = d3.scaleLinear()
+      .domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
+      .range([height, 0]);
+
+  const color = d3.scaleOrdinal(d3.schemeCategory10).domain(users);
+
+  // Create the grouped bars
+  const action = svg.selectAll(".action")
+      .data(processedData)
+      .enter().append("g")
+      .attr("class", "g")
+      .attr("transform", d => `translate(${x0(d.actionName)},0)`);
+
+  action.selectAll("rect")
+      .data(d => users.map(key => ({ key, value: d[key] || 0 })))
+      .enter().append("rect")
+      .attr("width", x1.bandwidth())
+      .attr("x", d => x1(d.key))
+      .attr("y", d => y(d.value))
+      .attr("height", d => height - y(d.value))
+      .attr("fill", d => color(d.key));
+
+  // Add the axes
+  svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x0))
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(-65)");
+
+  svg.append("g")
+      .call(d3.axisLeft(y));
+
+  // Legend
+  const legend = svg.selectAll(".legend")
+      .data(users)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+        .style("text-anchor", "end")
+        .text(d => d);
+}
 
 
 
@@ -2656,6 +2758,7 @@ async function initialize() {
 	createAvatarSegment(0);
 	createAvatarSegment(1);
   updateSceneBasedOnSelections();
+  // plotUserSpecificBarChart();
   plotBarChart();
   plotCombinedUsersSpiderChart();
   plotTreeMap();
