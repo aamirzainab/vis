@@ -1429,7 +1429,7 @@ function plotUserSpecificBarChart() {
 		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
 		.range([height, 0]);
   
-	const color = d3.scaleOrdinal(d3.schemeCategory10).domain(users);
+	const color = colorScale; 
   
 	// Create the grouped bars
 	const action = svg.selectAll(".action")
@@ -1445,7 +1445,7 @@ function plotUserSpecificBarChart() {
 		.attr("x", d => x1(d.key))
 		.attr("y", d => y(d.value))
 		.attr("height", d => height - y(d.value))
-		.attr("fill", d => color(d.key));
+		.attr("fill", d => colorScale(d.key));
   
 	// Add the axes
 	svg.append("g")
@@ -1461,25 +1461,24 @@ function plotUserSpecificBarChart() {
 	svg.append("g")
 		.call(d3.axisLeft(y));
   
-	// Legend
-	const legend = svg.selectAll(".legend")
-		.data(users)
-		.enter().append("g")
-		.attr("class", "legend")
-		.attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+	// const legend = svg.selectAll(".legend")
+	// 	.data(users)
+	// 	.enter().append("g")
+	// 	.attr("class", "legend")
+	// 	.attr("transform", (d, i) => "translate(0," + i * 20 + ")");
   
-	legend.append("rect")
-		.attr("x", width - 18)
-		.attr("width", 18)
-		.attr("height", 18)
-		.style("fill", color);
+	// legend.append("rect")
+	// 	.attr("x", width - 18)
+	// 	.attr("width", 18)
+	// 	.attr("height", 18)
+	// 	.style("fill", colo);
   
-	legend.append("text")
-		.attr("x", width - 24)
-		.attr("y", 9)
-		.attr("dy", ".35em")
-		  .style("text-anchor", "end")
-		  .text(d => d);
+	// legend.append("text")
+	// 	.attr("x", width - 24)
+	// 	.attr("y", 9)
+	// 	.attr("dy", ".35em")
+	// 	  .style("text-anchor", "end")
+	// 	  .text(d => d);
   }
 
 function plotCombinedUsersSpiderChart() {
@@ -1553,7 +1552,7 @@ function plotCombinedUsersSpiderChart() {
 		.attr("alignment-baseline", "middle");
 	});
   
-	const color = d3.scaleOrdinal(d3.schemeCategory10);
+	const color = colorScale;
   
 	// Plot radar chart area for each user
 	users.forEach((user, userIndex) => {
@@ -1617,6 +1616,16 @@ const scene1 = new THREE.Scene();
     plotBox.node().appendChild(renderer1.domElement);
 	const axesHelper = new THREE.AxesHelper(5);
     scene1.add(axesHelper);
+	const size = 10;
+    const divisions = 10;
+    const gridHelperXY = new THREE.GridHelper(size, divisions);
+    // const gridHelperYZ = new THREE.GridHelper(size, divisions);
+    // const gridHelperXZ = new THREE.GridHelper(size, divisions);
+    // gridHelperYZ.rotation.z = Math.PI / 2; // Rotate to YZ plane
+    // gridHelperXZ.rotation.x = Math.PI / 2; // Rotate to XZ plane
+    // scene1.add(gridHelperXY);
+    // scene1.add(gridHelperYZ);
+    // scene1.add(gridHelperXZ);
 	renderer1.setClearColor(0xffffff, 1);
 
 
@@ -1629,7 +1638,7 @@ const scene1 = new THREE.Scene();
     // Create a sphere for each data point
     raycastDataWithUserInfo.forEach(item => {
         const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
-        const material = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff }); // Random color
+        const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user)}); // Random color
         const sphere = new THREE.Mesh(geometry, material);
         
         sphere.position.set(...item.data);
