@@ -28,7 +28,7 @@ let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 2;
-let x ; 
+let x ;
 let yScale ;
 // var bins = 5;
 let intervals;
@@ -52,7 +52,7 @@ let globalState = {
 	lineTimeStamp1: 0,
 	lineTimeStamp2: 0,
   finalData: undefined,
-  movementData: undefined, 
+  movementData: undefined,
   dynamicWidth:0,
   scene: undefined,
   camera:undefined,
@@ -61,7 +61,7 @@ let globalState = {
   sprites: [],
 };
 const userInterestTopic = "Emergency Management";
-// const margin = 
+// const margin =
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
 const hsl = {
@@ -127,7 +127,7 @@ async function loadAvatarModel(filename) {
 	const avatar = gltf.scene;
 	avatar.scale.set(0.1, 0.1, 0.1);
 	avatar.name = filename;
-  avatar.visible = true ; 
+  avatar.visible = true ;
 	globalState.scene.add(avatar);
 	avatarLoaded = true;
 	return avatar;
@@ -264,7 +264,7 @@ document.getElementById('toggle-xr-interaction').addEventListener('change', func
 d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
   // When a radio button is changed, retrieve the value
   var timeExtent = d3.select(this).attr('value');
-  
+
   // Log the current selection or do something else with it
   // console.log("Time Extent selected:", timeExtent);
   toggleInstanceRange(timeExtent);
@@ -448,7 +448,7 @@ function addTextOverlay(text) {
   textElement.style.maxWidth = '250px'; // Set a maximum width for text wrapping
   textElement.style.wordWrap = 'break-word';
   textElement.textContent = text;
-  
+
   container.appendChild(textElement);
 }
 
@@ -460,9 +460,9 @@ function clearTextOverlays() {
 }
 
 function updateSceneBasedOnSelections() {
-  const data = globalState.finalData.topics_dict; 
-  const selectedTopics = getSelectedTopics(); 
-  const selectedKeywords = getSelectedKeywords(); 
+  const data = globalState.finalData.topics_dict;
+  const selectedTopics = getSelectedTopics();
+  const selectedKeywords = getSelectedKeywords();
   const movementData = globalState.movementData.actions;
     // globalState.sprites.forEach(sprite => {
     //   globalState.scene.remove(sprite);
@@ -498,13 +498,13 @@ function updateSceneBasedOnSelections() {
                     // console.log(" did ya come here?");
                     addTextOverlay(action.data.raw_text);
 
-                      // const spatial_extent = closestData.spatial_extent; 
+                      // const spatial_extent = closestData.spatial_extent;
                       // const textSprite = createTextSprite(action.data.raw_text);
                       // textSprite.position.set(spatial_extent[0][0], spatial_extent[0][1]+ 1, spatial_extent[0][2]);
                       // globalState.scene.add(textSprite);
                       // globalState.sprites.push(textSprite);
 
-                     
+
                   }
               }
           });
@@ -515,15 +515,15 @@ function updateSceneBasedOnSelections() {
 function createAvatarSegment(id){
 const userID = "User_" + (id + 1 ) ;
 const avatar = globalState.avatars[id];
-const linewidth = 7; 
-const data = globalState.movementData.actions ; 
+const linewidth = 7;
+const data = globalState.movementData.actions ;
   const filteredData = data.filter(action => {
       const actionStartTime = parseTimeToMillis(action.start_time);
       const actionEndTime = parseTimeToMillis(action.end_time);
       // console.log(userID);
       return action.action_type === "Transformation" &&
              action.formatted_data.action_property_specific_action === "XRCamera Transformation" &&
-       action.actor_name == userID && 
+       action.actor_name == userID &&
              actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
   });
 
@@ -531,22 +531,23 @@ if (filteredData.length !== 0) {
   // console.log("setting to true x");
   // globalState.scene.add(avatar);
   // console.log(avatar.visible);
-  // avatar.visible = true ; 
+  // avatar.visible = true ;
   filteredData.forEach(entry => {
     const spatialExent = entry.spatial_extent;
 
-    const x = spatialExent[0][0];
+    const x = -1*(spatialExent[0][0]);
     const y = spatialExent[0][1];
     const z = spatialExent[0][2];
-    avatar.position.x = x ; 
-    avatar.position.z = z ; 
-    const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
+    avatar.position.x = x ;
+    // avatar.position.y = y ; 
+    avatar.position.z = z ;
+    // const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
 
-    avatar.rotation.set(0, 0, 0);
-    avatar.setRotationFromEuler(euler);
+    // avatar.rotation.set(0, 0, 0);
+    // avatar.setRotationFromEuler(euler);
   });
   }
-  // avatar.visible = false ; 
+  // avatar.visible = false ;
   // globalState.scene.remove(avatar);
   // console.log("setting to false ");
 }
@@ -562,22 +563,22 @@ async function initializeScene() {
 	globalState.camera.position.set(0, 2, 5);
 
   globalState.camera.updateProjectionMatrix();
-  
+
   globalState.renderer = new THREE.WebGLRenderer({
     antialias: true
   });
-  
+
   globalState.renderer.setSize(spatialView.width, spatialView.height);
   document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
-  
-  
+
+
   globalState.controls = new OrbitControls(globalState.camera, globalState.renderer.domElement);
   globalState.controls.enableZoom = true;
-  
+
   globalState.renderer.domElement.addEventListener('mouseenter', function() {
     globalState.controls.enableZoom = true;
   });
-  
+
   globalState.renderer.domElement.addEventListener('mouseleave', function() {
     globalState.controls.enableZoom = false;
   });
@@ -586,7 +587,7 @@ async function initializeScene() {
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
   directionalLight.position.set(0, 1, 0);
   globalState.scene.add(directionalLight);
-  
+
   globalState.controls.update();
 
   const gridHelper = new THREE.GridHelper(10, 10);
@@ -594,7 +595,7 @@ async function initializeScene() {
   globalState.scene.add(gridHelper);
 
 	await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
-  
+
   const jsonFiles = await Promise.all([
     fetch('file1Transformed_emptySpeech.json').then(response => response.json()),
     fetch('file1.json').then(response => response.json()),
@@ -608,8 +609,8 @@ jsonFiles.forEach((jsonData, index) => {
 
 	const avatarArray = await Promise.all([
     loadAvatarModel('3d_human_model/scene_1.gltf'),
-    loadAvatarModel('3d_human_model/scene_2.gltf'), 
-    loadAvatarModel('3d_human_model/scene_2.gltf'), 
+    loadAvatarModel('3d_human_model/scene_2.gltf'),
+    loadAvatarModel('3d_human_model/scene_2.gltf'),
 
     // loadAvatarModel('RD_background_dense.glb')
 	]);
@@ -620,7 +621,7 @@ jsonFiles.forEach((jsonData, index) => {
   ]);
   globalState.finalData = finalData[0];
   // console.log(globalState.finalData.topics_dict["User Transformation"]);
-  globalState.movementData = globalState.finalData.topics_dict["User Transformation"]; 
+  globalState.movementData = globalState.finalData.topics_dict["User Transformation"];
   delete globalState.finalData.topics_dict["User Transformation"];
 	globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
 
@@ -654,7 +655,7 @@ jsonFiles.forEach((jsonData, index) => {
 }
 
 
-// initializeScene(); // zainab 
+// initializeScene(); // zainab
 
 function filterDataByType(data) {
 	const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
@@ -915,7 +916,7 @@ function createPlotTemporal() {
       rawEndTime: action.end_time,
       isUserInterest: topicDetails.is_user_interest,
       hasUserInterestKeyword: action.has_user_interest_keyword
-    })).filter(action => action.startTime && action.endTime); // Ensuring we have valid times
+    })).filter(action => action.startTime && action.endTime && action.topic !== "Raw Capture"); // Ensuring we have valid times
   });
 
   const temporalViewContainer = d3.select("#temporal-view");
@@ -923,25 +924,25 @@ function createPlotTemporal() {
 	const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
 
   const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-  // const width = document.getElementById('spatial-view').clientWidth - 1000; 
+  // const width = document.getElementById('spatial-view').clientWidth - 1000;
   const height = temporalViewHeight - margin.top - margin.bottom;
-  const svgWidth = globalState.dynamicWidth + margin.left + margin.right ; 
+  const svgWidth = globalState.dynamicWidth + margin.left + margin.right ;
   const speechPlotSvg = d3.select("#speech-plot-container");
   speechPlotSvg.html("");
   const svg = speechPlotSvg.append('svg')
   .attr('id', 'plot-svg')
-  .attr("width", svgWidth) 
+  .attr("width", svgWidth)
   // .attr("width", width + margin.left + margin.right)
   .attr("height", margin.top + margin.bottom + temporalViewHeight)
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
     svg.append("text")
-    .attr("y", -10) 
-    .attr("x", -30) 
-    .style("text-anchor", "middle") 
+    .attr("y", -10)
+    .attr("x", -30)
+    .style("text-anchor", "middle")
     .style("font-weight", "bold")
-    .text("Topics"); 
+    .text("Topics");
   // Y scale for topics
    yScale = d3.scaleBand()
     .rangeRound([0, height])
@@ -961,7 +962,7 @@ function createPlotTemporal() {
 		  const topic = topicsData.find(topic => topic.topic === d);
 		  return topic && topic.isUserInterest ? "#7e4695" : "#000"; // Purple for user interest
 	  })
-    .style("cursor", "pointer") 
+    .style("cursor", "pointer")
     .on("click", function(event, d) {
       // console.log("helloooo?");
       showContextMenu(event, d);
@@ -970,20 +971,20 @@ function createPlotTemporal() {
   // svg.append("g")
   //   .attr("class", "axis axis--y")
   //   .call(d3.axisLeft(yScale))
-  //   .selectAll(".tick text") 
-  //   // .raise() 
-    // .style("cursor", "pointer") 
+  //   .selectAll(".tick text")
+  //   // .raise()
+    // .style("cursor", "pointer")
     // .on("click", function(event, d) {
     //   // console.log("helloooo?");
     //   showContextMenu(event, d);
     // })
-  //   .style("fill", function(d) { 
+  //   .style("fill", function(d) {
   //     const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-  //     return isUserInterest ? "#7e4695" : "#000"; 
+  //     return isUserInterest ? "#7e4695" : "#000";
   //   });
 
     svg.select(".axis--y").selectAll(".tick text")
-    .style("cursor", "pointer") 
+    .style("cursor", "pointer")
     .style("pointer-events", "all")
     .on("click", function(event, d) {
       showContextMenu(event, d);
@@ -1113,7 +1114,7 @@ function createSplitBars(topicName) {
               .attr("y", yScale(`${topicName}-${user}`))
               .attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
               .attr("height", newYHeight)
-              .attr("fill", d => action.has_user_interest_keyword ? "#7e4695" : "#d0d0d0"); 
+              .attr("fill", d => action.has_user_interest_keyword ? "#7e4695" : "#d0d0d0");
       });
   });
 
@@ -1156,7 +1157,7 @@ function createSplitBars(topicName) {
 //         hasUserInterestKeyword: hasUserInterestKeyword
 //       };
 //   })
-//   .filter(item => item.count !== 0); 
+//   .filter(item => item.count !== 0);
 //   const x = d3.scaleBand()
 //   .range([0, width])
 //   .padding(0.1)
@@ -1193,7 +1194,7 @@ function createSplitBars(topicName) {
 
 function plotBarChart() {
   const plotBox1 = d3.select("#plot-box1").html("");
-  const margin = { top: 20, right: 20, bottom: 50, left: 40 };
+  const margin = { top: 20, right: 20, bottom: 100, left: 40 };
   const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
   const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
@@ -1208,7 +1209,7 @@ function plotBarChart() {
   // This logic will vary based on your actual data structure
   let userDataByTopic = {}; // { topicName: { userName: count, userName2: count }, ... }
   let allUsers = new Set();
-  
+
   Object.entries(globalState.finalData.topics_dict).forEach(([topic, details]) => {
     const userCounts = details.actions.reduce((acc, action) => {
         if (action.action_type === "VerbalInteraction") {
@@ -1310,7 +1311,7 @@ function plotUserSpecificBarChart() {
   const plotBox = d3.select("#plot-box1").html("");
   const margin = { top: 60, right: 20, bottom: 180, left: 40 };
   const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-  const height = 500 - margin.top - margin.bottom; 
+  const height = 500 - margin.top - margin.bottom;
 
   const svg = plotBox.append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -1323,7 +1324,7 @@ function plotUserSpecificBarChart() {
   let userDataByAction = {};
 
   Object.entries(globalState.finalData.action_dict)
-  .filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
+  .filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
   .forEach(([actionName, actionDetails]) => {
       const userCounts = actionDetails.actions.reduce((acc, action) => {
           acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
@@ -1419,7 +1420,7 @@ function plotSpiderChart(userName) {
     .map(topicKey => {
         let topic = globalState.finalData.topics_dict[topicKey];
         let verbalInteractions = topic.actions.filter(action => action.action_type === "VerbalInteraction" && action.actor_name === userName);
-        
+
         // let verbalInteractions = topic.actions.filter(action => action.action_type === "VerbalInteraction");
         let count = verbalInteractions.length;
         let hasUserInterestKeyword = verbalInteractions.some(action => action.has_user_interest_keyword);
@@ -1428,9 +1429,9 @@ function plotSpiderChart(userName) {
           count: count,
           hasUserInterestKeyword: hasUserInterestKeyword
         };
-    }).filter(item => item.count !== 0 && item.topic !== "Others" ); 
-  
-  
+    }).filter(item => item.count !== 0 && item.topic !== "Others" );
+
+
   const svg = plotBox1.append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
@@ -1550,8 +1551,8 @@ function plotCombinedUsersSpiderChart() {
         topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
       }
     });
-    let topicMax = Math.max(...topicCounts.values(), 0); 
-    maxCount = Math.max(maxCount, topicMax); 
+    let topicMax = Math.max(...topicCounts.values(), 0);
+    maxCount = Math.max(maxCount, topicMax);
   });
   let topicsWithCounts = Object.keys(globalState.finalData.topics_dict)
   .filter(topicKey => topicKey !== "Others") // Exclude "Others"
@@ -1568,7 +1569,7 @@ const rScale = d3.scaleLinear()
     .domain([0, maxCount]);
 
   // Draw circular grids
-  const levels = 5 ; 
+  const levels = 5 ;
   for (let i = 0; i <= levels; i++) {
     svg.append("circle")
       .attr("cx", 0)
@@ -1600,7 +1601,7 @@ const rScale = d3.scaleLinear()
   });
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
-  const users = [...new Set(Object.values(globalState.finalData.topics_dict).flatMap(topic => 
+  const users = [...new Set(Object.values(globalState.finalData.topics_dict).flatMap(topic =>
     topic.actions.filter(action => action.action_type === "VerbalInteraction" ).map(action => action.actor_name)))];
 
   users.forEach((user, userIndex) => {
@@ -1657,9 +1658,9 @@ function plotTreeMap() {
     };
     // console.log(hierarchicalData);
 
-    // const color = d3.scaleOrdinal(d3.schemeCategory10);
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
     // const customColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'];
-const color = d3.scaleOrdinal(customColors);
+// // const color = d3.scaleOrdinal(customColors);
 
     // Select the body for SVG append, set dimensions, and create hierarchical data
     const svg = plotBox.append('svg')
@@ -1675,6 +1676,12 @@ const color = d3.scaleOrdinal(customColors);
         .size([width, height])
         .padding(1)
         (root);
+
+
+// const maxValue = d3.max(root.leaves(), d => d.value);
+
+// // Create a sequential color scale with shades of blue
+// const color = d3.scaleSequential([0, maxValue], d3.interpolateBlues);
 
     // Drawing the rectangles for each node
     const leaf = svg.selectAll('g')
@@ -1699,7 +1706,7 @@ const color = d3.scaleOrdinal(customColors);
 
     // Optionally, add title for tooltip effect
     leaf.append('title')
-        .text(d => `${d.data.name}\nCount: ${d.value}`);  
+        .text(d => `${d.data.name}\nCount: ${d.value}`);
 }
 
 
@@ -1840,7 +1847,7 @@ function setTimes(data) {
 // function setTimes(data) {
 //   const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
 //   const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-  
+
 //   globalState.globalStartTime = Math.min(...globalStartTimes);
 //   console.log(globalState.globalStartTime);
 //   console.log(new Date(globalState.globalStartTime));
@@ -1902,7 +1909,7 @@ function setTimes(data) {
 //       // initializeShadedAreaDrag();
 //       // console.log("left shading function, enetring toolbar ");
 //       generateHierToolBar();
-		
+
 // 		});
 // 	slider.node().value = 0;
 // 	slider.on('input', function() {
@@ -2028,12 +2035,12 @@ function createLines(timestamp1, timestamp2) {
 
 	circle1.call(drag);
 	circle2.call(drag);
-  
+
 	updateRangeDisplay(timestamp1,timestamp2);
   updateXRSnapshot();
   plotSpatialExtent();
   // initializeShadedAreaDrag();
-  
+
 
 
 }
@@ -2043,7 +2050,7 @@ function createLines(timestamp1, timestamp2) {
 
 export function dragged(event,d) {
   const svgElement = document.querySelector("#temporal-view svg");
-  const container = document.getElementById("temporal-view"); 
+  const container = document.getElementById("temporal-view");
   const svg = d3.select("#plot-svg");
   const indicatorSvg = document.getElementById('indicator-svg');
   indicatorSvg.style.overflow = "visible";
@@ -2161,7 +2168,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
   topicItem.appendChild(topicCheckbox);
   topicItem.appendChild(label);
-  if (globalState.finalData.topics_dict[topicName].is_user_interest) { 
+  if (globalState.finalData.topics_dict[topicName].is_user_interest) {
     label.innerHTML = `${topicName} <span style="color: #7e4695;">★</span>`;
       label.style.color = '#7e4695';}
 
@@ -2171,7 +2178,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
     const actionEndTime = parseTimeToMillis(action.end_time);
     return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
   });
-  
+
 
   const userInterestKeywords = new Set();
   const uniqueKeywords = new Set();
@@ -2196,7 +2203,7 @@ filteredActions.forEach(action => {
   });
 });
 
-  
+
   // filteredActions.forEach(action => {
   //   action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
   //   // console.log(action.has_user_interest_keyword);
@@ -2215,12 +2222,12 @@ filteredActions.forEach(action => {
         // If the keyword checkbox is checked, add grey background to its parent `li`
         this.parentNode.style.backgroundColor = 'd0d0d0'; // Directly applying style
         this.parentNode.classList.add('keyword-selected');
-      } 
+      }
       else {
         this.parentNode.classList.remove('keyword-selected');
       }
 
-    
+
 
     // keywordCheckbox.addEventListener('change', function() {
       if (this.checked) {
@@ -2233,12 +2240,12 @@ filteredActions.forEach(action => {
           topicCheckbox.checked = false;
           // this.parentNode.classList.remove('keyword-selected');
         }
-        
+
       }
       initializeOrUpdateSpeechBox();
       updateSceneBasedOnSelections();
     });
-    
+
 
     const keywordLabel = document.createElement('label');
     keywordLabel.htmlFor = keywordCheckbox.id;
@@ -2302,29 +2309,29 @@ function createOthersItem(othersData, toolbar) {
 // function getSelectedTopic() {
 //   const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
 //   let selectedTopic = '';
-  
+
 //   topicCheckboxes.forEach(checkbox => {
 //       if (checkbox.checked) {
-//           const idParts = checkbox.id.split('_'); 
-//           const topicIndex = idParts.indexOf('broadtopic') + 1; 
-//           selectedTopic = idParts.slice(topicIndex).join(' '); 
+//           const idParts = checkbox.id.split('_');
+//           const topicIndex = idParts.indexOf('broadtopic') + 1;
+//           selectedTopic = idParts.slice(topicIndex).join(' ');
 //       }
 //   });
-  
+
 //   return selectedTopic;
 // }
 
 function getSelectedTopics() {
   const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
   let selectedTopics = [];
-  
+
   topicCheckboxes.forEach(checkbox => {
-      const idParts = checkbox.id.split('_'); 
-      const topicIndex = idParts.indexOf('broadtopic') + 1; 
-      const topic = idParts.slice(topicIndex).join(' '); 
+      const idParts = checkbox.id.split('_');
+      const topicIndex = idParts.indexOf('broadtopic') + 1;
+      const topic = idParts.slice(topicIndex).join(' ');
       selectedTopics.push(topic);
   });
-  
+
   return selectedTopics;
 }
 
@@ -2333,7 +2340,7 @@ function getSelectedKeywords() {
   const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked'); // Select only checked boxes
   // console.log(keywordCheckboxes);
   let selectedKeywords = [];
-  
+
   keywordCheckboxes.forEach(checkbox => {
       // Extracts the keyword from the ID, considering 'keyword' and 'broadtopic' identifiers
       const idParts = checkbox.id.split('_'); // Splits the ID into parts
@@ -2343,36 +2350,36 @@ function getSelectedKeywords() {
       selectedKeywords.push(keyword);
   });
   // console.log("this is whats returning from selected key words " + selectedKeywords);
-  
+
   return selectedKeywords;
 }
 
 function parseTimeToMillis(customString) {
   // console.log(" here with " + customString);
   let [dateStr, timeStr, milliStr] = customString.split('_');
-  
+
   // Further split into year, month, day, hours, minutes, seconds
   let year = parseInt(dateStr.slice(0, 2), 10) + 2000; // Assuming '24' is 2024
   let month = parseInt(dateStr.slice(2, 4), 10) - 1; // Month is 0-indexed in JS
   let day = parseInt(dateStr.slice(4, 6), 10);
-  
+
   let hours = parseInt(timeStr.slice(0, 2), 10);
   let minutes = parseInt(timeStr.slice(2, 4), 10);
   let seconds = parseInt(timeStr.slice(4, 6), 10);
-  
+
   // Milliseconds are straightforward, just need to parse
   let milliseconds = parseInt(milliStr, 10);
 
   // Log the parsed components
   // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds}`);
-  
+
   // Create the Date object
   let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
   // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds} and date ${date.toUTCString()}`);
-  
+
   // Log the Date object
   // console.log(`Date object: ${date}`);
-  
+
   // Return the time in milliseconds since Unix epoch
   let timeInMillis = date.getTime();
   // console.log(`Time in milliseconds since Unix epoch: ${timeInMillis}`);
@@ -2411,7 +2418,7 @@ function initializeOrUpdateSpeechBox() {
   const selectedKeywords = getSelectedKeywords(); // Assumes this function returns an array of selected keywords
   // console.log("Selected Topics: ", selectedTopics);
   // console.log("Selected Keywords: ", selectedKeywords);
-  
+
   let actionsToDisplay = [];
   // console.log(data);
   selectedTopics.forEach(topic => {
@@ -2426,7 +2433,7 @@ function initializeOrUpdateSpeechBox() {
   });
 
   actionsToDisplay.forEach(action => {
-    // console.log(action); 
+    // console.log(action);
     if (action.action_type === "RawCapture") { return ; }
       const speechBox = getSpeechData(action, selectedKeywords);
       if (speechBox)
@@ -2452,7 +2459,7 @@ function getSpeechData(action, selectedKeywords) {
   const speakerEl = document.createElement('div');
   speakerEl.className = 'speaker';
   speakerEl.textContent = `[SPEAKER: ${action.actor_name}]`;
-  
+
   // // Audience Element
   // // if (action.action_type === "Verbal Communication ") {
   //   const audienceEl = document.createElement('div');
@@ -2473,7 +2480,7 @@ function getSpeechData(action, selectedKeywords) {
   let processedText = action.data.raw_text;
   if (action.data.highlighted_texts && action.data.highlighted_texts.length > 0) {
     action.data.highlighted_texts.forEach(text => {
-      const highlightedText = `<span style="background-color: #7e4695; color: white;">${text}</span>`; 
+      const highlightedText = `<span style="background-color: #7e4695; color: white;">${text}</span>`;
       processedText = processedText.replace(text, highlightedText);
     });
   }
@@ -2481,7 +2488,7 @@ function getSpeechData(action, selectedKeywords) {
   originalTextEl.appendChild(document.createElement('br'));
   originalTextEl.appendChild(rawTextContent);
 
- 
+
 
   // Summary
   const summaryEl = document.createElement('div');
@@ -2506,7 +2513,7 @@ function getSpeechData(action, selectedKeywords) {
   const keywordsContent = document.createElement('span');
   keywordsContent.innerHTML = action.data.keywords.map(keyword => {
     if (selectedKeywords.includes(keyword)) {
-      return `<span style="background-color: #d0d0d0;">${keyword}</span>`; 
+      return `<span style="background-color: #d0d0d0;">${keyword}</span>`;
     } else {
       return keyword;
     }
@@ -2569,9 +2576,9 @@ function updateXRSnapshot(){
   //   document.getElementById("user-xr-snapshot").innerHTML = `<img src="${imagePath}" alt="XR Snapshot"/>`;
   // } else {
   //   console.log("No matching Raw Capture events found in the specified time range.");
-  // } 
+  // }
 
-  
+
 }
 
 function updateRangeDisplay(time1, time2) {
@@ -2589,14 +2596,14 @@ function updateRangeDisplay(time1, time2) {
   const shadingWidth = xEnd - xStart;
 
   indicatorSVG.append("rect")
-      .attr("class", "shading") 
+      .attr("class", "shading")
       .attr("x", xStart)
-      .attr("y", yStart) 
+      .attr("y", yStart)
       .attr("width", shadingWidth)
-      .attr("height", height) 
+      .attr("height", height)
       .attr("fill", "#43afe2")
 		// .attr('class', 'interactive')
-      .attr("fill-opacity", 0.5); 
+      .attr("fill-opacity", 0.5);
 
   const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
   const rangeDisplay = document.getElementById("range-display");
@@ -2647,7 +2654,7 @@ function initializeShadedAreaDrag() {
   updateSceneBasedOnSelections();
   plotSpatialExtent();
 
-  dragStartX = event.x; 
+  dragStartX = event.x;
 
 };
 
@@ -2659,9 +2666,9 @@ function initializeShadedAreaDrag() {
     .on("drag", dragged)
     .on("end", dragended);
 
-  
+
   shadedArea.call(drag);
- 
+
 }
 
 
@@ -2671,7 +2678,7 @@ function createSharedAxis() {
   const { globalStartTime, globalEndTime, bins, unit } = globalState;
   // console.log(new Date(globalStartTime));
   // console.log(new Date(globalEndTime));
-   
+
   // Container setup
   const temporalViewContainer = d3.select("#temporal-view");
   const minWidth = document.getElementById('temporal-view').clientWidth;
@@ -2695,7 +2702,7 @@ function createSharedAxis() {
   let intervalSizeMillis;
   if (unit === 'minutes') {
     intervalSizeMillis = bins * 60 * 1000; // Convert minutes to milliseconds
-  } else { 
+  } else {
     intervalSizeMillis = bins * 1000; // Convert seconds to milliseconds
   }
 
@@ -2748,7 +2755,7 @@ function updateAxisTicks(svg, xScale, binSize) {
       .ticks(tickInterval)
       .tickFormat(d3.timeFormat("%I:%M:%S"))
       .tickPadding(5);
-  
+
   svg.select(".x-axis").call(xAxis); // Re-call the axis to update ticks
 }
 
@@ -2800,7 +2807,7 @@ async function initialize() {
 initialize();
 globalState.camera.updateProjectionMatrix();
 
-  
+
 onWindowResize();
 window.addEventListener('resize', onWindowResize, false);
 
