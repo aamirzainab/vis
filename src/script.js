@@ -179,7 +179,9 @@ async function loadAvatarModel(filename) {
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		const filename = 'RealWorld/room132.glb';
+		// const filename = 'RealWorld/room132.glb';
+		const filename = 'RD_background_dense_color_fix.glb';
+
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
@@ -748,6 +750,7 @@ async function initializeScene() {
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
 	globalState.scene.add(gridHelper);
+	loadRoomModel();
 
   	const finalData = await Promise.all([
 		fetch('new_action_oriented_analysis_full_data.json').then(response => response.json()),
