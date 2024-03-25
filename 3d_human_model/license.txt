@@ -1,0 +1,11 @@
+Model Information:
+* title:	3D human model
+* source:	https://sketchfab.com/3d-models/3d-human-model-999fede68d58469eb0991034e74c0708
+* author:	M.Umeyr (https://sketchfab.com/Lymite)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "3D human model" (https://sketchfab.com/3d-models/3d-human-model-999fede68d58469eb0991034e74c0708) by M.Umeyr (https://sketchfab.com/Lymite) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
