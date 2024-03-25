@@ -18,9 +18,16 @@
                 <input type="checkbox" id="toggle-user1" name="userVisibility" checked>
                 <label for="toggle-user1">User 2</label>
             </div>
+            <div class="toggle">
+                <input type="checkbox" id="toggle-user2" name="userVisibility" checked>
+                <label for="toggle-user2">User 3</label>
+            </div>
         </div>
     </div>
         <div id="range-display"></div>
+        <div id="user-xr-snapshot">
+            <!-- <img src="1.png" alt="User XR Snapshot" style="width:100%; height:auto;"> -->
+        </div>
 
         <div id="right-pane">
             <div class="plot-box" id="plot-box1"></div>
@@ -162,53 +169,68 @@
 
         <script>
             async function updateSampleSizes() {
-                const parseTimeToMillis = customString => {
-                    let [dateStr, timeStr, milliStr] = customString.split('_');
-                    let year = parseInt(dateStr.slice(0, 2), 10) + 2000;
-                    let month = parseInt(dateStr.slice(2, 4), 10) - 1;
-                    let day = parseInt(dateStr.slice(4, 6), 10);
-                    let hours = parseInt(timeStr.slice(0, 2), 10);
-                    let minutes = parseInt(timeStr.slice(2, 4), 10);
-                    let seconds = parseInt(timeStr.slice(4, 6), 10);
-                    let milliseconds = parseInt(milliStr, 10);
-                    return new Date(year, month, day, hours, minutes, seconds, milliseconds).getTime();
-                };
+                // const parseTimeToMillis = customString => {
+                //     let [dateStr, timeStr, milliStr] = customString.split('_');
+                //     let year = parseInt(dateStr.slice(0, 2), 10) + 2000;
+                //     let month = parseInt(dateStr.slice(2, 4), 10) - 1;
+                //     let day = parseInt(dateStr.slice(4, 6), 10);
+                //     let hours = parseInt(timeStr.slice(0, 2), 10);
+                //     let minutes = parseInt(timeStr.slice(2, 4), 10);
+                //     let seconds = parseInt(timeStr.slice(4, 6), 10);
+                //     let milliseconds = parseInt(milliStr, 10);
+                //     return new Date(year, month, day, hours, minutes, seconds, milliseconds).getTime();
+                // };
                 const adjustAndRoundSize = (size, unit) => {
-                    if (unit === 'seconds') {
-                        size *= 60; // Convert minutes to seconds
-                        size = Math.round(size / 5) * 5; // Round to nearest multiple of 5 seconds
-                    } else {
-                        // For minutes, keep more precision for very small sizes
-                        // size = Math.round(size / 5) * 5;
-                        // size = Math.round(size * 4) / 4;
-                        size = Math.round(size / 0.05) * 0.05;
-                        // size = Math.round(size * 100) / 100; // Round to nearest hundredth of a minute if needed
-                    }
                     size = parseFloat(size.toFixed(2));
                     return size;
+                    // if (unit === 'seconds') {
+                    //     size *= 60; // Convert minutes to seconds
+                    //     size = Math.round(size / 5) * 5; // Round to nearest multiple of 5 seconds
+                    // } else {
+                    //     size = Math.round(size / 0.05) * 0.05;
+                    // }
+                    // size = parseFloat(size.toFixed(2));
+                    // return size;
                 };
 
                 try {
-                    const response = await fetch('action_oriented_analysis_full_data.json');
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const data = await response.json();
+                    // const response = await fetch('topic_oriented_analysis_full_data.json');
+                    // if (!response.ok) throw new Error('Network response was not ok');
+                    // const data = await response.json();
                     // const actionDict = data.action_dict; // Adjust according to the desired category
-                    const earliestTimeMillis = parseTimeToMillis(data.earliest_action_time);
-                    const latestTimeMillis = parseTimeToMillis(data.latest_action_time);
-                    const durationMinutes = (latestTimeMillis - earliestTimeMillis) / 60000;
+                    // const earliestTimeMillis = parseTimeToMillis(data.earliest_action_time);
+                    // const latestTimeMillis = parseTimeToMillis(data.latest_action_time);
+                    // const durationMinutes = (latestTimeMillis - earliestTimeMillis) / 60000;
 
-                    const percentages = [0.5, 1, 2, 5, 10, 20];
+                    // const percentages = [0.5, 1, 2, 5, 10, 20];
                     const binsDropdown = document.getElementById('binsDropdown');
                     const unit = document.querySelector('input[name="unit"]:checked').value;
                     binsDropdown.innerHTML = ''; // Clear existing options
 
-                    percentages.forEach(percentage => {
-                        let size = durationMinutes * percentage / 100;
-                        size = adjustAndRoundSize(size, unit);
-                        const optionText = unit === 'minutes' ? `${size} min` : `${size} sec`;
-                        const option = new Option(optionText, size);
+                    // percentages.forEach(percentage => {
+                    //     let size = durationMinutes * percentage / 100;
+                    //     size = adjustAndRoundSize(size, unit);
+                    //     const optionText = unit === 'minutes' ? `${size} min` : `${size} sec`;
+                    //     const option = new Option(optionText, size);
+                    //     binsDropdown.add(option);
+                    // });
+                    if (unit === 'minutes') {
+                    // Default minute values
+                    const minuteValues = [1, 3, 5];
+                    minuteValues.forEach(min => {
+                    min = adjustAndRoundSize(min, unit);
+                    const option = new Option(`${min} min`, min);
+                    binsDropdown.add(option);
+                        });
+                    } else {
+                    // Default second values
+                    const secondValues = [10, 30, 60];
+                    secondValues.forEach(sec => {
+                        sec = adjustAndRoundSize(sec, unit);
+                        const option = new Option(`${sec} sec`, sec);
                         binsDropdown.add(option);
-                    });
+                        });
+                    }
                 } catch (error) {
                     console.error('Failed to update sample sizes:', error);
                     }

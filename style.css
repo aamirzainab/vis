@@ -24,6 +24,7 @@ html, body {
     z-index: 100;
     overflow-y: auto;
     padding-bottom: 20px;
+    border: 2px solid #ccc; 
 }
 
 #left-pane {
@@ -47,8 +48,9 @@ html, body {
     flex: 1;
     width: 100%;
     overflow-y: auto;
-    border: 1px solid #ddd;
+    /* border: 1px solid #ddd; */
     margin-bottom: 10px;
+    border: 2px solid #ccc; 
 }
 
 #spatial-view, #temporal-view {
@@ -284,7 +286,16 @@ html, body {
 #hier-toolbar ul {
     list-style-type: none;
 }
-
+#hier-toolbar {
+    list-style: none;
+    flex-shrink: 0;
+    overflow-y: auto; /* Enables vertical scrolling within the toolbar */
+    max-height: 30%; /* Takes up 30% of the left pane's height */
+    width: 100%; /* Uses the full width of its container */
+}
+#hier-toolbar ul {
+    list-style-type: none;
+}
 
 #indicator-svg {
     pointer-events: none; /* Ignore mouse events; they "pass through" */
@@ -297,4 +308,20 @@ html, body {
 
 #indicator-svg .shading {
     pointer-events: auto; /* Enable mouse events for specific elements */
+}
+
+#user-xr-snapshot {
+    position: absolute;
+    /* bottom: 20px; Adjust the distance from the bottom as needed */
+    bottom:490px;
+    left: 1600px; /* Adjust the distance from the right side as needed */
+    width: 300px; /* Adjust based on the size of the images */
+    height: 150px; /* Adjust based on the size of the images */
+    background-color: #fff; /* Optional, depending on desired appearance */
+    border: 1px solid #ccc; /* Optional, for visibility */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional, for aesthetics */
+    padding: 5px; /* Optional, for internal spacing */
+    overflow: hidden; /* To keep the content contained */
+    z-index: 101; /* Ensure it's above other elements in spatial-view */
+    display: block; 
 }

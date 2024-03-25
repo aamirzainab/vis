@@ -27,7 +27,7 @@ import {
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
-let numUsers = 2;
+let numUsers = 3;
 let x ;
 let yScale ; 
 let intervals;
@@ -47,7 +47,6 @@ let globalState = {
 	startTimeStamp: 0,
 	endTimeStamp: 0,
 	currentDataIndex: -1,
-	// show: [],
 	show: Array(numUsers).fill(true),
 	lineTimeStamp1: 0,
 	lineTimeStamp2: 0,
@@ -59,6 +58,7 @@ let globalState = {
 	controls:undefined,
 	currentLineSegments : [],
 	triangleMesh: [],
+	raycastLines : [],
 };
 const userInterestTopic = "Data visualization, User1’s flooding data visualization near the Rockaways area";
 
@@ -70,9 +70,13 @@ const hsl = {
 	l: 0
 };
 const topicOfInterest = "";
-const colorScale = d3.scaleOrdinal()
-	.domain(["User_1", "User_2", "0", "1"])
-	.range(["#92d050", "#ffc000", "#92d050", "#ffc000" ]);
+// const colorScale = d3.scaleOrdinal()
+// 	.domain(["User_1", "User_2", "0", "1"])
+// 	.range(["#92d050", "#ffc000", "#92d050", "#ffc000" ]);
+
+	const colorScale = d3.scaleOrdinal()
+    .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
+    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
 
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
@@ -161,6 +165,7 @@ function changeBinSize(newBinSize) {
 
 async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
+	console.log(filename);
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
 	avatar.scale.set(1, 1, 1);
@@ -257,6 +262,7 @@ window.onload = function() {
 		// console.log(globalState.currentLineSegments);
 		const userID = 0 ;
 		globalState.show[userID] = this.checked;
+		console.log(globalState.avatars.visible)
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
 			if (globalState.currentLineSegments[userID]) {
@@ -266,6 +272,9 @@ window.onload = function() {
 				globalState.triangleMesh[userID].forEach(mesh => {
 						globalState.scene.add(mesh);
 				});
+			}
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = true ; 
 			}
 				
 		}
@@ -281,6 +290,10 @@ window.onload = function() {
 				globalState.triangleMesh[userID].forEach(mesh => {
 						globalState.scene.remove(mesh);
 				});
+			}
+
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = false ; 
 			}
 		}
 	});
@@ -299,6 +312,9 @@ window.onload = function() {
 						globalState.scene.add(mesh);
 				});
 			}
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = true ; 
+			}
 				
 		}
 		else {
@@ -311,6 +327,47 @@ window.onload = function() {
 				globalState.triangleMesh[userID].forEach(mesh => {
 						globalState.scene.remove(mesh);
 				});
+			}
+
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = false ; 
+			}
+		}
+	});
+	document.getElementById('toggle-user2').addEventListener('change', function() {
+		
+		const userID = 2 ;
+		globalState.show[userID] = this.checked;
+		if (globalState.show[userID]) {
+			// console.log("hellooo?")
+			if (globalState.currentLineSegments[userID]) {
+				globalState.scene.add(globalState.currentLineSegments[userID]);
+			}
+			if (globalState.triangleMesh[userID]) {
+				globalState.triangleMesh[userID].forEach(mesh => {
+						globalState.scene.add(mesh);
+				});
+			}
+
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = true ; 
+			}
+				
+		}
+		else {
+			if (globalState.currentLineSegments[userID]) {
+				
+				globalState.scene.remove(globalState.currentLineSegments[userID]);
+				
+			}
+			if (globalState.triangleMesh[userID]) {
+				globalState.triangleMesh[userID].forEach(mesh => {
+						globalState.scene.remove(mesh);
+				});
+			}
+
+			if (globalState.avatars[userID]) {
+				globalState.avatars[userID].visible = false ; 
 			}
 		}
 	});
@@ -399,7 +456,92 @@ function animateVisualization() {
 	}
 }
 
+function createDeviceSegment(id){
+	const userID = "User_" + (id + 1 ) ;
+	// console.log(globalState.avatars);
+	const avatar = globalState.avatars[id];
+	console.log()
+	const linewidth = 7; 
+	// const data = globalState.finalData; 
+	const data = globalState.finalData.action_dict["User Transformation"].actions;
+	  const filteredData = data.filter(action => {
+		  const actionStartTime = parseTimeToMillis(action.start_time);
+		  const actionEndTime = parseTimeToMillis(action.end_time);
+		  return action.action_type === "Transformation" &&
+				 action.formatted_data.action_property_specific_action === "XRCamera Transformation" &&
+		   action.actor_name == userID && 
+				 actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+	  });
+	
+	if (filteredData.length !== 0) {
+	  filteredData.forEach(entry => {
+		const spatialExent = entry.spatial_extent;
+	
+		const x = spatialExent[0][0];
+		const y = spatialExent[0][1];
+		const z = spatialExent[0][2];
+		avatar.position.x = x ; 
+		avatar.position.z = z ; 
+		const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
+	
+		avatar.rotation.set(0, 0, 0);
+		avatar.setRotationFromEuler(euler);
+	  });
+	  }
+	}
 
+		
+	function createRayCastSegment() {
+		// const scene = globalState.scene; // Assuming this is your THREE.Scene object
+		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+
+		if (!globalState.raycastLines) {
+			globalState.raycastLines = [];
+		}
+	
+		// Clear existing lines from the scene
+		globalState.raycastLines.forEach(line => globalState.scene.remove(line));
+		globalState.raycastLines.length = 0; //
+		// console.log("r u hee>");
+	
+		// Loop through each topic in globalState.finalData.action_dict
+		Object.values(globalState.finalData.action_dict).forEach(topic => {
+			// Filter Raycast actions within the specified time range and has valid specific action data
+			topic.actions.filter(action => {
+				const actionStartTime = parseTimeToMillis(action.start_time);
+				const actionEndTime = parseTimeToMillis(action.end_time);
+				return action.specific_action_data_type === "Raycast" &&
+					   actionEndTime >= globalState.lineTimeStamp1 && 
+					   actionStartTime <= globalState.lineTimeStamp2 &&
+					   action.specific_action_data; // Ensure there's valid raycast data
+			}).forEach(action => {
+				// Assuming specific_action_data contains the target raycast position
+				const raycastPosition = action.specific_action_data; // Adjust based on your structure
+
+	
+				// Find the user's avatar to get the starting position for the line
+				let match = action.actor_name.match(/\d+/);
+				let id = match ? parseInt(match[0], 10) - 1 : null;
+				
+				const userAvatar = globalState.avatars[id]
+				// .find(avatar => avatar.name === action.actor_name);
+				if (!userAvatar) return; // Skip if no matching user avatar is found
+	
+				// Create a line from the user's position to the raycast position
+				const points = [
+					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
+					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
+				];
+				console.log("heyyy");
+				const geometry = new THREE.BufferGeometry().setFromPoints(points);
+				const line = new THREE.Line(geometry, lineMaterial);
+				globalState.scene.add(line);
+				// globalState.scene.add(line);
+				globalState.raycastLines.push(line); 
+			});
+		});
+	}
+	
 
 
 function createLineSegment(id){
@@ -494,6 +636,7 @@ function updateSceneBasedOnSelections() {
     // Clear previous triangles before redrawing
     clearPreviousTriangles(0);
     clearPreviousTriangles(1);
+	clearPreviousTriangles(2);
 	// console.log("in update func with the new time stamps  " + globalState.lineTimeStamp1 + "   " +  globalState.lineTimeStamp2);
     selectedTopics.forEach(topic => {
         if (data[topic]) {
@@ -533,7 +676,10 @@ function updateSceneBasedOnSelections() {
                         ]);
                         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-                        let id = actorName === "User_1" ? 0 : 1; // Example conditional, adjust as needed
+                        // let id = actorName === "User_1" ? 0 : 1; // Example conditional, adjust as needed
+						let match = actorName.match(/\d+/);
+						let id = match ? parseInt(match[0], 10) - 1 : null;
+
 
                         // Choose a color based on the actor, or use a default color
                         const color = colorScale(String(id));  
@@ -604,11 +750,17 @@ async function initializeScene() {
 	globalState.scene.add(gridHelper);
 
   	const finalData = await Promise.all([
-		fetch('action_oriented_analysis_full_data.json').then(response => response.json()),
+		fetch('new_action_oriented_analysis_full_data.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
 
-	// globalState.avatars = [avatarArray[0], avatarArray[1]];
+  const avatarArray = await Promise.all([
+    loadAvatarModel('ipad_user1.glb'),
+    loadAvatarModel('ipad_user1.glb'), 
+	loadAvatarModel('ipad_user1.glb'),
+
+	]);
+	globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
 
 
 	setTimes(globalState.finalData);
@@ -1153,6 +1305,7 @@ function createPlotTemporal() {
 	// Add new bars for each user action under the selected topic
 	users.forEach((user, index) => {
 		userActions.filter(a => a.actor_name === user).forEach(action => {
+			console.log("came here with" + action.actor_name + " and action" + action.has_user_action_of_interest);
 			svg.append("rect")
 				.attr("class", "detail-bar")
 				.attr("x", x(parseTimeToMillis(action.start_time)))
@@ -1165,7 +1318,335 @@ function createPlotTemporal() {
   
   }
 
+function plotBarChart() {
+    const plotBox = d3.select("#plot-box1").html(""); 
+    const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom; 
 
+    const svg = plotBox.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		//  console.log(globalState.finalData.action_dict);
+    let processedData = Object.entries(globalState.finalData.action_dict).map(([actionName, actionDetails]) => {
+        // Count the number of actions for each broad action and flag if there's any action of user interest
+        let count = actionDetails.actions.length;
+        let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
+        return { actionName, count, hasUserActionOfInterest };
+    });
+	processedData = Object.entries(globalState.finalData.action_dict)
+	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
+	.map(([actionName, actionDetails]) => {
+		// Count the number of actions for each broad action and flag if there's any action of user interest
+		let count = actionDetails.actions.length;
+		let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
+		return { actionName, count, hasUserActionOfInterest };
+	});
+
+    const x = d3.scaleBand()
+        .range([0, width])
+        .padding(0.1)
+        .domain(processedData.map(d => d.actionName));
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(processedData, d => d.count)])
+        .range([height, 0]);
+
+    // Create bars
+    svg.selectAll(".bar")
+      .data(processedData)
+      .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.actionName))
+        .attr("width", x.bandwidth())
+        .attr("y", d => y(d.count))
+        .attr("height", d => height - y(d.count))
+        .attr("fill", d => d.hasUserActionOfInterest ? "#7e4695" : "#d0d0d0"); // Change color based on user action of interest
+
+    // Add the x Axis
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .selectAll("text")  
+          .style("text-anchor", "end")
+          .attr("dx", "-.8em")
+          .attr("dy", ".15em")
+          .attr("transform", "rotate(-65)");
+
+    // Add the y Axis
+    svg.append("g")
+        .call(d3.axisLeft(y));
+}
+
+function plotUserSpecificBarChart() {
+	const plotBox = d3.select("#plot-box1").html("");
+	const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+	const height = 500 - margin.top - margin.bottom; 
+  
+	const svg = plotBox.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+	// Assuming globalState.finalData.action_dict exists and is structured appropriately
+	let allUsers = new Set();
+	let userDataByAction = {};
+  
+	Object.entries(globalState.finalData.action_dict)
+	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
+	.forEach(([actionName, actionDetails]) => {
+		const userCounts = actionDetails.actions.reduce((acc, action) => {
+			acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
+			allUsers.add(action.actor_name);
+			return acc;
+		}, {});
+  
+		userDataByAction[actionName] = userCounts;
+	});
+  
+	const users = Array.from(allUsers);
+	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
+		actionName,
+		...counts
+	}));
+  
+	// Setup scales
+	const x0 = d3.scaleBand()
+		.rangeRound([0, width])
+		.paddingInner(0.1)
+		.domain(processedData.map(d => d.actionName));
+  
+	const x1 = d3.scaleBand()
+		.padding(0.05)
+		.domain(users)
+		.rangeRound([0, x0.bandwidth()]);
+  
+	const y = d3.scaleLinear()
+		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
+		.range([height, 0]);
+  
+	const color = d3.scaleOrdinal(d3.schemeCategory10).domain(users);
+  
+	// Create the grouped bars
+	const action = svg.selectAll(".action")
+		.data(processedData)
+		.enter().append("g")
+		.attr("class", "g")
+		.attr("transform", d => `translate(${x0(d.actionName)},0)`);
+  
+	action.selectAll("rect")
+		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
+		.enter().append("rect")
+		.attr("width", x1.bandwidth())
+		.attr("x", d => x1(d.key))
+		.attr("y", d => y(d.value))
+		.attr("height", d => height - y(d.value))
+		.attr("fill", d => color(d.key));
+  
+	// Add the axes
+	svg.append("g")
+		.attr("class", "axis")
+		.attr("transform", `translate(0,${height})`)
+		.call(d3.axisBottom(x0))
+		.selectAll("text")
+		.style("text-anchor", "end")
+		.attr("dx", "-.8em")
+		.attr("dy", ".15em")
+		.attr("transform", "rotate(-65)");
+  
+	svg.append("g")
+		.call(d3.axisLeft(y));
+  
+	// Legend
+	const legend = svg.selectAll(".legend")
+		.data(users)
+		.enter().append("g")
+		.attr("class", "legend")
+		.attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+  
+	legend.append("rect")
+		.attr("x", width - 18)
+		.attr("width", 18)
+		.attr("height", 18)
+		.style("fill", color);
+  
+	legend.append("text")
+		.attr("x", width - 24)
+		.attr("y", 9)
+		.attr("dy", ".35em")
+		  .style("text-anchor", "end")
+		  .text(d => d);
+  }
+
+function plotCombinedUsersSpiderChart() {
+	// Setup SVG and dimensions
+	const plotBox = d3.select("#plot-box2").html("");
+	const margin = { top: 50, right: 100, bottom: 50, left: 100 };
+	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+
+	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+	// const height = 600 - margin.top - margin.bottom;
+	const svg = plotBox.append("svg")
+	  .attr("width", width + margin.left + margin.right)
+	  .attr("height", height + margin.top + margin.bottom)
+	  .append("g")
+	  .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
+  
+	// Process data to get topics and users
+	const data = Object.values(globalState.finalData.action_dict);
+	const topics = Object.keys(globalState.finalData.action_dict).filter(topic => topic !== "Others" && topic !== "User Transformation"
+	&& topic !== "Verbal Communication" && topic !== "Raw Capture");
+	const users = [...new Set(data.flatMap(topic => topic.actions.map(action => action.actor_name)))];
+  
+	let maxCount = 0;
+	data.forEach(topic => {
+	  let topicCounts = new Map();
+	  topic.actions.forEach(action => {
+		if (action.action_type === "XRInteraction") {
+		  topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
+		}
+	  });
+	  let topicMax = Math.max(...topicCounts.values(), 0); 
+	//   console.log(topicMax);
+	  maxCount = Math.max(maxCount, topicMax); // Global max count
+	});
+	// console.log(maxCount);
+  
+	const rScale = d3.scaleLinear()
+	  .range([0, Math.min(width / 2, height / 2)])
+	  .domain([0, maxCount]);
+  
+	// Draw circular grids
+	const levels = 5; // Adjust based on your preference
+	for (let i = 0; i <= levels; i++) {
+	  svg.append("circle")
+		.attr("cx", 0)
+		.attr("cy", 0)
+		.attr("r", rScale(maxCount) / levels * i)
+		.style("fill", "none")
+		.style("stroke", "lightgrey")
+		.style("stroke-dasharray", "2,2");
+	}
+  
+	// Calculate angle for radial lines
+	const angleSlice = Math.PI * 2 / topics.length;
+  
+	// Draw radial lines and labels
+	topics.forEach((topic, index) => {
+	  const angle = angleSlice * index;
+	  svg.append("line")
+		.attr("x1", 0)
+		.attr("y1", 0)
+		.attr("x2", rScale(maxCount) * Math.cos(angle - Math.PI/2))
+		.attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
+		.style("stroke", "lightgrey");
+  
+	  svg.append("text")
+		.attr("x", rScale(maxCount * 1.1) * Math.cos(angle - Math.PI/2))
+		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
+		.text(topic)
+		.style("text-anchor", "middle")
+		.attr("alignment-baseline", "middle");
+	});
+  
+	const color = d3.scaleOrdinal(d3.schemeCategory10);
+  
+	// Plot radar chart area for each user
+	users.forEach((user, userIndex) => {
+	  let userData = topics.map(topicKey => {
+		//   console.log(topicKey);
+		const topic = globalState.finalData.action_dict[topicKey];
+		// console.log(topic);
+		// .find(d => d.broad_action_name === topicKey);
+		const count = topic.actions.filter(action => action.actor_name === user).length;
+		return {topic: topicKey, count};
+	  });
+  
+	  const radarLine = d3.lineRadial()
+		.curve(d3.curveLinearClosed)
+		.radius(d => rScale(d.count))
+		.angle((d, i) => i * angleSlice);
+  
+	  svg.append("path")
+		.datum(userData)
+		.attr("d", radarLine)
+		.style("fill", color(userIndex))
+		.style("fill-opacity", 0.1)
+		.style("stroke", color(userIndex))
+		.style("stroke-width", 2);
+	});
+  }
+  
+function plotScatterPlot(){
+	const plotBox = d3.select("#plot-box3").html("");
+    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+	const raycastDataWithUserInfo = [];
+
+    // Loop through each topic in globalState.finalData
+    Object.values(globalState.finalData.action_dict).forEach(topic => {
+		// console.log(topic);
+        // Check if the topic has actions and iterate through them
+        if (topic.actions) {
+            topic.actions.forEach(action => {
+				// console.log("jere>");
+                // Check if the action's specific action data type is Raycast and if it has valid specific action data
+                if (action.specific_action_data_type === "Raycast") {
+                    // Add the specific action data along with user info to the array
+                    raycastDataWithUserInfo.push({
+                        user: action.actor_name, // Saving user info
+                        data: action.specific_action_data // Saving specific action data (raycast data points)
+                    });
+                }
+            });
+        }
+    });
+console.log(raycastDataWithUserInfo);
+const scene1 = new THREE.Scene();
+    const camera1 = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    const renderer1 = new THREE.WebGLRenderer();
+    renderer1.setSize(width, height);
+
+    // Attach the renderer's canvas to the plotBox instead of document.body
+    plotBox.node().appendChild(renderer1.domElement);
+	const axesHelper = new THREE.AxesHelper(5);
+    scene1.add(axesHelper);
+	renderer1.setClearColor(0xffffff, 1);
+
+
+    // Adjust camera position based on the data's scale and positioning
+    camera1.position.set(0, 0, 10); // Example positioning, adjust as needed
+
+	const controls1 = new OrbitControls(camera1, renderer1.domElement);
+	controls1.enableZoom = true;
+
+    // Create a sphere for each data point
+    raycastDataWithUserInfo.forEach(item => {
+        const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
+        const material = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff }); // Random color
+        const sphere = new THREE.Mesh(geometry, material);
+        
+        sphere.position.set(...item.data);
+        scene1.add(sphere);
+    });
+
+    // Function to animate and render the scene
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer1.render(scene1, camera1);
+    }
+
+    animate();
+}
+
+
+  
 
 function setTimes(data) {
   // console.log(data.earliest_action_time);
@@ -1374,6 +1855,11 @@ function createLines(timestamp1, timestamp2) {
 	updateRangeDisplay(timestamp1,timestamp2);
 	createLineSegment(0);
 	createLineSegment(1);
+	createLineSegment(2);
+	createDeviceSegment(0);
+	createDeviceSegment(1);
+	createDeviceSegment(2);
+	createRayCastSegment();
 	updateSceneBasedOnSelections();
 	// initializeShadedAreaDrag();
 
@@ -1441,6 +1927,12 @@ export function dragged(event,d) {
     updateSceneBasedOnSelections();
     createLineSegment(0);
     createLineSegment(1);
+	createLineSegment(2);
+
+	createDeviceSegment(0);
+	createDeviceSegment(1);
+	createDeviceSegment(2);
+	createRayCastSegment();
     initializeShadedAreaDrag();
 
     // console.log('Dragging Event Ended');
@@ -1705,7 +2197,8 @@ function initializeOrUpdateSpeechBox() {
 		rangeDisplay.className = 'time-range-display-speechbox';
 		container.appendChild(rangeDisplay);
 	}
-	rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
+	// rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
+	rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
 	let speechBoxesContainer = document.getElementById("speech-boxes-container");
 	if (!speechBoxesContainer) {
@@ -1917,6 +2410,12 @@ function updateInterestBox() {
 	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
 	  createLineSegment(0);
 	  createLineSegment(1);
+	  createLineSegment(2);
+	
+	  createDeviceSegment(0);
+	  createDeviceSegment(1);
+	  createDeviceSegment(2);
+	  createRayCastSegment();
 	  updateSceneBasedOnSelections();
   
 	  dragStartX = event.x; 
@@ -2112,6 +2611,16 @@ async function initialize() {
 	// createSpeechBox();
 	createLineSegment(0);
 	createLineSegment(1);
+	createLineSegment(2);
+
+	createDeviceSegment(0);
+	createDeviceSegment(1);
+	createDeviceSegment(2);
+	createRayCastSegment();
+	// plotBarChart();
+	plotUserSpecificBarChart();
+	plotScatterPlot();
+	plotCombinedUsersSpiderChart();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
