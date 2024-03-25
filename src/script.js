@@ -70,10 +70,13 @@ const hsl = {
 	l: 0
 };
 const topicOfInterest = "";
-const colorScale = d3.scaleOrdinal()
-	.domain([0, 1, 2])
-	.range(["#1b9e77", "#d95f02", "#7570b3"]);
+// const colorScale = d3.scaleOrdinal()
+// 	.domain([0, 1, 2])
+// 	.range(["#1b9e77", "#d95f02", "#7570b3"]);
 
+	const colorScale = d3.scaleOrdinal()
+    .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
+    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -470,10 +473,10 @@ function updateSceneBasedOnSelections() {
     // console.log(topic);
       if (data[topic]) {
           data[topic].actions.forEach(action => {
+            if (action.action_type === "RawCapture") { return ; }
               const actionStartTime = parseTimeToMillis(action.start_time);
               const actionEndTime = parseTimeToMillis(action.end_time);
               const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-              // selectedKeywords.some(keyword => action.data.keywords.includes(keyword));
               const matchesSelectedKeywords = selectedKeywords.some(keyword => action.data.keywords.includes(keyword));
 
               if (matchesSelectedKeywords && isInTimeRange) {
@@ -606,18 +609,20 @@ jsonFiles.forEach((jsonData, index) => {
 	const avatarArray = await Promise.all([
     loadAvatarModel('3d_human_model/scene_1.gltf'),
     loadAvatarModel('3d_human_model/scene_2.gltf'), 
+    loadAvatarModel('3d_human_model/scene_2.gltf'), 
+
     // loadAvatarModel('RD_background_dense.glb')
 	]);
   const finalData = await Promise.all([
 
-		fetch('topic_oriented_analysis_full_data_with_user_transform.json').then(response => response.json()),
+		fetch('new_topic_oriented_analysis_full_data_with_user_transform.json').then(response => response.json()),
 		// fetch('topic_oriented_analysis_full_data.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
   // console.log(globalState.finalData.topics_dict["User Transformation"]);
   globalState.movementData = globalState.finalData.topics_dict["User Transformation"]; 
   delete globalState.finalData.topics_dict["User Transformation"];
-	globalState.avatars = [avatarArray[0], avatarArray[1]];
+	globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
 
 
 	setTimes(globalState.finalData);
@@ -1650,9 +1655,11 @@ function plotTreeMap() {
             value: count
         }))
     };
-    console.log(hierarchicalData);
+    // console.log(hierarchicalData);
 
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
+    // const color = d3.scaleOrdinal(d3.schemeCategory10);
+    // const customColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'];
+const color = d3.scaleOrdinal(customColors);
 
     // Select the body for SVG append, set dimensions, and create hierarchical data
     const svg = plotBox.append('svg')
@@ -2023,6 +2030,7 @@ function createLines(timestamp1, timestamp2) {
 	circle2.call(drag);
   
 	updateRangeDisplay(timestamp1,timestamp2);
+  updateXRSnapshot();
   plotSpatialExtent();
   // initializeShadedAreaDrag();
   
@@ -2095,6 +2103,7 @@ export function dragged(event,d) {
   const timeStamp1 = new Date(globalState.lineTimeStamp1);
   const timeStamp2 = globalState.lineTimeStamp2;
   updateRangeDisplay(timeStamp1, timeStamp2);
+  updateXRSnapshot();
   generateHierToolBar();
   plotTreeMap();
 
@@ -2103,6 +2112,7 @@ export function dragged(event,d) {
   plotSpatialExtent();
   createAvatarSegment(0);
   createAvatarSegment(1);
+  createAvatarSegment(2);
   updateSceneBasedOnSelections();
 }
 
@@ -2125,11 +2135,11 @@ function generateHierToolBar() {
       });
 
       if (isInTimeRange) {
-          if (topicName !== "Others") {
-              createTopicItem(topicName, topicDetails, toolbar);
-          } else {
-              othersTopicDetails = topicDetails;
-          }
+        if (topicName !== "Others" && topicName !== "Raw Capture") { // Skip "Others" and "Raw Capture"
+          createTopicItem(topicName, topicDetails, toolbar);
+        } else if (topicName === "Others") { // Save "Others" details for later
+          othersTopicDetails = topicDetails;
+        }
       }
   });
 
@@ -2175,8 +2185,8 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 //     // }
 // });
 filteredActions.forEach(action => {
-  // console.log(action);
-  // if (action === "User Transformation") { return ; }
+  console.log(action);
+  if (action.action_type === "RawCapture") { return ; }
   action.data.keywords.forEach((keyword, index) => {
     uniqueKeywords.add(keyword);
     // Assuming the keywords_relevance_to_user_interest array is aligned with keywords
@@ -2416,6 +2426,8 @@ function initializeOrUpdateSpeechBox() {
   });
 
   actionsToDisplay.forEach(action => {
+    // console.log(action); 
+    if (action.action_type === "RawCapture") { return ; }
       const speechBox = getSpeechData(action, selectedKeywords);
       if (speechBox)
        { speechBoxesContainer.appendChild(speechBox);
@@ -2542,7 +2554,25 @@ function updateInterestBox() {
   container.style.overflowWrap = "break-word";
   container.contentEditable = "true"; // Make it editable
 }
+function updateXRSnapshot(){
+  // const actionDictEntries = Object.entries(globalState.finalData.action_dict);
 
+  // // Filtering for Raw Capture actions and ensuring they are within the time range
+  // const rawCaptureEntries = actionDictEntries
+  //   .filter(([actionName, _]) => actionName === "Raw Capture")
+  //   .flatMap(([_, actionDetails]) => actionDetails.actions)
+  //   .filter(action => {
+  //     return action.start_time >= globalState.lineTimeStamp1 && action.end_time <= globalState.lineTimeStamp2;
+  //   });
+  //   if (rawCaptureEntries.length > 0) {
+  //   const imagePath = rawCaptureEntries[0].data.image_path; // Adjust based on actual structure if needed
+  //   document.getElementById("user-xr-snapshot").innerHTML = `<img src="${imagePath}" alt="XR Snapshot"/>`;
+  // } else {
+  //   console.log("No matching Raw Capture events found in the specified time range.");
+  // } 
+
+  
+}
 
 function updateRangeDisplay(time1, time2) {
   const indicatorSVG = d3.select("#indicator-svg");
@@ -2608,10 +2638,12 @@ function initializeShadedAreaDrag() {
   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
 
   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
+  updateXRSnapshot();
   generateHierToolBar();
   plotTreeMap();
   createAvatarSegment(0);
   createAvatarSegment(1);
+  createAvatarSegment(2);
   updateSceneBasedOnSelections();
   plotSpatialExtent();
 
@@ -2757,6 +2789,7 @@ async function initialize() {
   }, true);
 	createAvatarSegment(0);
 	createAvatarSegment(1);
+  createAvatarSegment(2);
   updateSceneBasedOnSelections();
   // plotUserSpecificBarChart();
   plotBarChart();
