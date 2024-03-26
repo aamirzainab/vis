@@ -2387,7 +2387,7 @@ function updateRangeDisplay(time1, time2) {
 
 function initializeShadedAreaDrag() {
   const indicatorSVG = d3.select("#indicator-svg");
-  const shadedArea = indicatorSVG.select(".shading"); // Assuming .shading is the class for your shaded area
+  const shadedArea = indicatorSVG.select(".shading"); 
 
   let dragStartX = null;
 
@@ -2396,7 +2396,6 @@ function initializeShadedAreaDrag() {
   };
 
   const dragged = (event) => {
-    // console.log(" r u here?");
     const dx = event.x - dragStartX; // Change in x
     const line1 = indicatorSVG.select("#time-indicator-line1");
     const line2 = indicatorSVG.select("#time-indicator-line2");
@@ -2411,11 +2410,12 @@ function initializeShadedAreaDrag() {
     circle1.attr("cx", line1X + dx);
     circle2.attr("cx", line2X + dx);
 
-  // Update globalState timestamps based on new line positions
   const newLine1Timestamp = x.invert(line1X + dx);
   const newLine2Timestamp = x.invert(line2X + dx);
   globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
+  console.log(newLine1Timestamp);
+  console.log(globalState.lineTimeStamp2); 
 
   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
   updateXRSnapshot();
@@ -2449,34 +2449,21 @@ function initializeShadedAreaDrag() {
 
 function createSharedAxis() {
   const { globalStartTime, globalEndTime, bins, unit } = globalState;
-  // console.log(new Date(globalStartTime));
-  // console.log(new Date(globalEndTime));
-
-  // Container setup
   const temporalViewContainer = d3.select("#temporal-view");
   const minWidth = document.getElementById('temporal-view').clientWidth;
-  // const minWidth = temporalViewContainer.width
   let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
   if (sharedAxisContainer.empty()) {
     sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
   }
 
   sharedAxisContainer.html("");
-
-  // Margin setup
-  // const margin = { top: 20, right: 30, bottom: 10, left: 80 };
-
-  // Time format for ticks
   const timeFormat = d3.timeFormat("%I:%M:%S");
-
-  // Calculate the total duration in minutes
-  // const totalDurationMinutes = (globalEndTime - globalStartTime) / (1000 * 60);
   const totalDuration = globalEndTime - globalStartTime;
   let intervalSizeMillis;
   if (unit === 'minutes') {
-    intervalSizeMillis = bins * 60 * 1000; // Convert minutes to milliseconds
+    intervalSizeMillis = bins * 60 * 1000;
   } else {
-    intervalSizeMillis = bins * 1000; // Convert seconds to milliseconds
+    intervalSizeMillis = bins * 1000; 
   }
 
   const totalDurationMillis = globalEndTime - globalStartTime;
@@ -2484,10 +2471,7 @@ function createSharedAxis() {
   const widthPerInterval = 100; // Fixed width for each interval
 
   const intervalDuration = totalDuration * (bins / 100);
-  // console.log("interval duration " + intervalDuration/(1000 * 60));
-  // const numberOfIntervals = Math.ceil(100 / bins);
   globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
-  // let localDynamicWidth = numberOfIntervals * widthPerInterval;
   globalState.dynamicWidth = Math.max(globalState.dynamicWidth, minWidth);
 
   // Adjust the scale to cover the dynamic width
@@ -2495,10 +2479,6 @@ function createSharedAxis() {
       .domain([new Date(globalStartTime), new Date(globalEndTime)])
       .range([0, globalState.dynamicWidth]);
 
-  // Setup the axis
-  // const xAxis = d3.axisTop(x)
-  //     // .ticks(d3.timeMinute.every(bins))
-  //     .tickFormat(timeFormat);
 
       const xAxis = d3.axisTop(x)
       .ticks(d3.timeMillisecond.every(intervalSizeMillis))
