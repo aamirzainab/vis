@@ -59,6 +59,10 @@ let globalState = {
 	currentLineSegments : [],
 	triangleMesh: [],
 	raycastLines : [],
+	scene2: undefined,
+	camera2:undefined,
+	renderer2:undefined,
+	controls2:undefined,
 };
 const userInterestTopic = "Data visualization, User1’s folooding data visualization near the Rockaways area";
 
@@ -70,11 +74,7 @@ const hsl = {
 	l: 0
 };
 const topicOfInterest = "";
-// const colorScale = d3.scaleOrdinal()
-// 	.domain(["User_1", "User_2", "0", "1"])
-// 	.range(["#92d050", "#ffc000", "#92d050", "#ffc000" ]);
-
-	const colorScale = d3.scaleOrdinal()
+const colorScale = d3.scaleOrdinal()
     .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
     .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
 
@@ -116,8 +116,6 @@ function fitCameraToObject(camera, object) {
 }
 
 
-
-
 export function updateIntervals() {
   createSharedAxis();
   createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
@@ -126,13 +124,11 @@ export function updateIntervals() {
 }
 
 function changeBinSize(newBinSize) {
-	// Assuming globalState also holds the current unit, update it based on the selected radio button
 	const unit = document.querySelector('input[name="unit"]:checked').value;
   
 	var event = new CustomEvent('binSizeChange', {
 		detail: { size: newBinSize, unit: unit }
 	});
-	// Pass both the new bin size and the unit to updateIntervals
 	updateIntervals(newBinSize, unit);
 	createPlotTemporal();
 	window.dispatchEvent(event);
@@ -144,18 +140,14 @@ function changeBinSize(newBinSize) {
   
   document.getElementById('unit-selection-container').addEventListener('change', function() {
 	const unit = document.querySelector('input[name="unit"]:checked').value;
-	// Get the current bin size from the dropdown
 	const currentBinSize = document.getElementById('binsDropdown').value;
-	// Trigger bin size change with the current size but updated unit
 	changeBinSize(currentBinSize);
 	console.log('Unit changed to:', unit);
   });
   
   window.addEventListener('binSizeChange', function(e) {
-	// Update both bins and unit in globalState based on the event detail
 	globalState.bins = e.detail.size;
 	globalState.unit = e.detail.unit;
-	// Assuming updateIntervals function can accept a second parameter for the unit
 	updateIntervals(e.detail.size, e.detail.unit);
 	console.log('Bin size changed to:', e.detail.size, 'Unit:', e.detail.unit);
   });
@@ -170,7 +162,6 @@ async function loadAvatarModel(filename) {
 	const avatar = gltf.scene;
 	avatar.scale.set(1, 1, 1);
 	avatar.name = filename;
-	// console.log(avatar.name);
 	globalState.scene.add(avatar);
 	avatarLoaded = true;
 	return avatar;
@@ -197,44 +188,15 @@ function parseData(dataString) {
 }
 
 
-// function toggleAnimation() {
-// 	isAnimating = !isAnimating;
-// 	updatePlayPauseButton();
-// 	if (isAnimating) {
-// 		animateVisualization();
-// 	}
-// }
-
-// function updatePlayPauseButton() {
-// 	const playIcon = document.getElementById('playIcon');
-// 	const pauseIcon = document.getElementById('pauseIcon');
-
-// 	if (isAnimating) {
-// 		playIcon.style.display = 'none';
-// 		pauseIcon.style.display = 'block';
-// 	} else {
-// 		playIcon.style.display = 'block';
-// 		pauseIcon.style.display = 'none';
-// 	}
-// }
-
 
 
 d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
-  // When a radio button is changed, retrieve the value
   var timeExtent = d3.select(this).attr('value');
-
-  // Log the current selection or do something else with it
-  // console.log("Time Extent selected:", timeExtent);
   toggleInstanceRange(timeExtent);
 });
 
 d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
-	// When a radio button is changed, retrieve the value
 	var timeExtent = d3.select(this).attr('value');
-
-	// Log the current selection or do something else with it
-	// console.log("Time Extent selected:", timeExtent);
 	toggleInstanceRange(timeExtent);
   });
 
@@ -262,6 +224,8 @@ window.onload = function() {
 		// console.log(globalState.currentLineSegments);
 		const userID = 0 ;
 		globalState.show[userID] = this.checked;
+		// clearBubbles();
+		// addBubbles();
 		// console.log(globalState.avatars.visible)
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
@@ -331,6 +295,7 @@ window.onload = function() {
 						globalState.scene.add(mesh);
 				});
 			}
+
 				
 		}
 		else {
@@ -1097,7 +1062,10 @@ function processMovementData() {
 function createPlotTemporal() {
 	// Assuming globalState.finalData is set and contains the topics_dict property
 	const data = globalState.finalData.action_dict ; 
-	delete data["Raw Capture"]; 
+
+// Destructuring the data object to exclude "Raw Capture"
+const {"Raw Capture": omitted, ...newData} = data;
+	// delete data["Raw Capture"]; 
 	const topicsData = Object.entries(data).flatMap(([topicName, topicDetails]) => {
 	  return topicDetails.actions.map(action => ({
 		topic: topicName,
@@ -1761,23 +1729,24 @@ function plotScatterPlot() {
 }
 
 
+
 function plotBubblePlot() {
     const plotBox = d3.select("#plot-box3").html("");
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(width, height);
-    plotBox.node().appendChild(renderer.domElement);
-    renderer.setClearColor(0xffffff, 1);
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    camera.position.set(0, 0, 100);
-    camera.up.set(0, 1, 0);
-    camera.lookAt(scene.position);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableRotate = false;
-    controls.enableZoom = true;
+     globalState.renderer2 = new THREE.WebGLRenderer();
+    globalState.renderer2.setSize(width, height);
+    plotBox.node().appendChild(globalState.renderer2.domElement);
+    globalState.renderer2.setClearColor(0xffffff, 1);
+     globalState.scene2 = new THREE.Scene();
+     globalState.camera2 = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    globalState.camera2.position.set(0, 0, 100);
+    globalState.camera2.up.set(0, 1, 0);
+    globalState.camera2.lookAt(globalState.scene2.position);
+    globalState.controls2 = new OrbitControls(globalState.camera2, globalState.renderer2.domElement);
+    globalState.controls2.enableRotate = false;
+    globalState.controls2.enableZoom = true;
     const loader = new THREE.TextureLoader();
     loader.load('bubble_map_background.png', function(texture) {
         const backgroundGeometry = new THREE.PlaneGeometry(width, height);
@@ -1788,88 +1757,100 @@ function plotBubblePlot() {
         });
         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
         backgroundMesh.position.set(0, 0, -1);
-        scene.add(backgroundMesh);
-
+        globalState.scene2.add(backgroundMesh);
         addBubbles();
     });
 
-    function addBubbles() {
-		const raycastDataWithUserInfo = [];
-		Object.values(globalState.finalData.action_dict).forEach(topic => {
-			if (topic.actions) {
-				topic.actions.forEach(action => {
-					if (action.specific_action_data_type === "Raycast") {
-						raycastDataWithUserInfo.push({
-							user: action.actor_name, 
-							data: action.specific_action_data 
-						});
-					}
-				});
-			}
-		});
-	
-
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        raycastDataWithUserInfo.forEach(item => {
-            const [x, y] = item.data;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        });
-
-        const gridWidth = 50;
-        const gridHeight = 15;
-        const userGrid = {};
-
-        raycastDataWithUserInfo.forEach(item => {
-            const [x, y] = item.data;
-            const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
-            const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
-            const gridKey = `${gridX},${gridY}`;
-
-            if (!userGrid[gridKey]) {
-                userGrid[gridKey] = {};
-            }
-            userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
-        });
-
-        const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).map(users => Math.max(...Object.values(users))))]).range([0.5, 40]);
-
-        Object.entries(userGrid).forEach(([key, users]) => {
-            const [gridX, gridY] = key.split(',').map(Number);
-            const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
-            const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
-            const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
-            const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
-            const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
-
-            const bubbleSize = bubbleSizeScale(users[dominantUser]);
-            const geometry = new THREE.CircleGeometry(bubbleSize, 32);
-            const material = new THREE.MeshBasicMaterial({
-                color: colorScale(dominantUser),
-                opacity: 0.65, 
-                transparent: true
-            });
-            const circle = new THREE.Mesh(geometry, material);
-            circle.position.set(scaledX, scaledY, 0);
-            scene.add(circle); 
-        });
-
-        const gridHelper = new THREE.GridHelper(Math.max(width, height), Math.max(gridWidth, gridHeight), 0x000000, 0x000000);
-        gridHelper.position.z = -99; 
-        scene.add(gridHelper);
-    }
-
-    function animate() {
+	function animate() {
         requestAnimationFrame(animate);
-        controls.update(); 
-        renderer.render(scene, camera);
+        globalState.controls2.update(); 
+        globalState.renderer2.render(globalState.scene2, globalState.camera2);
     }
-
-    animate(); 
+	animate();
 }
-	
+
+
+function addBubbles() {
+	const plotBox = d3.select("#plot-box3").html("");
+	const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+	const raycastDataWithUserInfo = [];
+	Object.values(globalState.finalData.action_dict).forEach(topic => {
+		if (topic.actions) {
+			topic.actions.forEach(action => {
+				if (action.specific_action_data_type === "Raycast") {
+					raycastDataWithUserInfo.push({
+						user: action.actor_name, 
+						data: action.specific_action_data, 
+						id:  parseInt(action.actor_name.replace("User_", "")) - 1, 
+					});
+				}
+			});
+		}
+	});
+
+	const filteredData = raycastDataWithUserInfo.filter(item => globalState.show[item.id]);
+	// console.log(filteredData); 
+
+	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	raycastDataWithUserInfo.forEach(item => {
+		const [x, y] = item.data;
+		if (x < minX) minX = x;
+		if (x > maxX) maxX = x;
+		if (y < minY) minY = y;
+		if (y > maxY) maxY = y;
+	});
+
+	const gridWidth = 50;
+	const gridHeight = 15;
+	const userGrid = {};
+
+	raycastDataWithUserInfo.forEach(item => {
+		const [x, y] = item.data;
+		const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
+		const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
+		const gridKey = `${gridX},${gridY}`;
+
+		if (!userGrid[gridKey]) {
+			userGrid[gridKey] = {};
+		}
+		userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
+	});
+
+	const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).map(users => Math.max(...Object.values(users))))]).range([0.5, 40]);
+
+	Object.entries(userGrid).forEach(([key, users]) => {
+		const [gridX, gridY] = key.split(',').map(Number);
+		const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
+		const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
+		const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
+		const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
+		const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
+
+		const bubbleSize = bubbleSizeScale(users[dominantUser]);
+		const geometry = new THREE.CircleGeometry(bubbleSize, 32);
+		const material = new THREE.MeshBasicMaterial({
+			color: colorScale(dominantUser),
+			opacity: 0.65, 
+			transparent: true
+		});
+		const circle = new THREE.Mesh(geometry, material);
+		circle.position.set(scaledX, scaledY, 0);
+		globalState.scene2.add(circle); 
+	});
+
+	const gridHelper = new THREE.GridHelper(Math.max(width, height), Math.max(gridWidth, gridHeight), 0x000000, 0x000000);
+	gridHelper.position.z = -99; 
+	globalState.scene2.add(gridHelper);
+}
+
+
+function clearBubbles() {
+    // globalState.scene2.children.forEach(child => {
+	// 			globalState.scene2.remove(child);
+    // });
+}
 
 
   
