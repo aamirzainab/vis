@@ -262,7 +262,7 @@ window.onload = function() {
 		// console.log(globalState.currentLineSegments);
 		const userID = 0 ;
 		globalState.show[userID] = this.checked;
-		console.log(globalState.avatars.visible)
+		// console.log(globalState.avatars.visible)
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
 			if (globalState.currentLineSegments[userID]) {
@@ -275,6 +275,12 @@ window.onload = function() {
 			}
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = true ; 
+			}
+			if (globalState.raycastLines[userID]) {
+				console.log(globalState.raycastLines[userID].length); 
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.add(mesh);
+				});
 			}
 				
 		}
@@ -294,6 +300,11 @@ window.onload = function() {
 
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = false ; 
+			}
+			if (globalState.raycastLines[userID]) {
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.remove(mesh);
+				});
 			}
 		}
 	});
@@ -315,6 +326,11 @@ window.onload = function() {
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = true ; 
 			}
+			if (globalState.raycastLines[userID]) {
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.add(mesh);
+				});
+			}
 				
 		}
 		else {
@@ -331,6 +347,11 @@ window.onload = function() {
 
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = false ; 
+			}
+			if (globalState.raycastLines[userID]) {
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.remove(mesh);
+				});
 			}
 		}
 	});
@@ -352,6 +373,11 @@ window.onload = function() {
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = true ; 
 			}
+			if (globalState.raycastLines[userID]) {
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.add(mesh);
+				});
+			}
 				
 		}
 		else {
@@ -369,6 +395,11 @@ window.onload = function() {
 			if (globalState.avatars[userID]) {
 				globalState.avatars[userID].visible = false ; 
 			}
+			if (globalState.raycastLines[userID]) {
+				globalState.raycastLines[userID].forEach(mesh => {
+						globalState.scene.remove(mesh);
+				});
+			}
 		}
 	});
 
@@ -379,42 +410,6 @@ window.onload = function() {
 
 };
 
-
-function showUserData(userID) {
-	if (Array.isArray(globalState.meshes[userID])) {
-		globalState.meshes[userID].forEach(mesh => {
-			if (mesh !== null) {
-				scene.add(mesh);
-			}
-		});
-	}
-	if (globalState.interactionMeshes[userID]) {
-		globalState.interactionMeshes[userID].forEach(sphere => {
-			if (sphere) scene.add(sphere);
-		});
-	}
-	if (globalState.speechMeshes[userID]) {
-		scene.add(globalState.speechMeshes[userID]);
-	}
-}
-
-function hideUserData(userID) {
-	if (Array.isArray(globalState.meshes[userID])) {
-		globalState.meshes[userID].forEach(mesh => {
-			if (mesh !== null) {
-				scene.remove(mesh);
-			}
-		});
-	}
-	if (globalState.interactionMeshes[userID]) {
-		globalState.interactionMeshes[userID].forEach(sphere => {
-			if (sphere) scene.remove(sphere);
-		});
-	}
-	if (globalState.speechMeshes[userID]) {
-		scene.remove(globalState.speechMeshes[userID]);
-	}
-}
 
 
 
@@ -476,75 +471,82 @@ function createDeviceSegment(id){
 	if (filteredData.length !== 0) {
 	  filteredData.forEach(entry => {
 		const spatialExent = entry.spatial_extent;
-	
-		const x = spatialExent[0][0];
-		const y = spatialExent[0][1];
-		const z = spatialExent[0][2];
+		const {x,y,z} = getCoordinates(spatialExent);
 		avatar.position.x = x ; 
 		avatar.position.z = z ; 
-		const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
-	//zainab chmage thios 
-		avatar.rotation.set(0, 0, 0);
-		avatar.setRotationFromEuler(euler);
+		// const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
+		// avatar.rotation.set(0, 0, 0);
+		// avatar.setRotationFromEuler(euler);
 	  });
 	  }
 	}
 
-		
-	function createRayCastSegment(id) {
-		// const scene = globalState.scene; // Assuming this is your THREE.Scene object
-		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
-		// if (!globalState.raycastLines[id]) {
-		// 	globalState.raycastLines[id] = [];
-		// }
-		if (globalState.raycastLines[id]) {
-			globalState.scene.remove(globalState.raycastLines[id]);
-			// globalState.currentLineSegments[id].geometry.dispose(); 
-			// globalState.currentLineSegments[id].material.dispose(); 
-			globalState.raycastLines[id] = null;
+		
+function createRayCastSegment(id) {
+		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+		if (globalState.raycastLines[0]) {
+			globalState.raycastLines[0].forEach(mesh => {
+				globalState.scene.remove(mesh); 
+			});
+			globalState.raycastLines[0] = []; 
 		}
-		// Clear existing lines from the scene
-		globalState.raycastLines.forEach(line => globalState.scene.remove(line));
-		globalState.raycastLines.length = 0; //
-		// console.log("r u hee>");
+		if (globalState.raycastLines[1]) {
+			globalState.raycastLines[1].forEach(mesh => {
+				globalState.scene.remove(mesh); 
+			});
+			globalState.raycastLines[1] = []; 
+		}
+		if (globalState.raycastLines[2]) {
+			globalState.raycastLines[2].forEach(mesh => {
+				globalState.scene.remove(mesh); 
+			});
+			globalState.raycastLines[2] = []; 
+		}
 	
-		// Loop through each topic in globalState.finalData.action_dict
 		Object.values(globalState.finalData.action_dict).forEach(topic => {
-			// Filter Raycast actions within the specified time range and has valid specific action data
 			topic.actions.filter(action => {
 				const actionStartTime = parseTimeToMillis(action.start_time);
 				const actionEndTime = parseTimeToMillis(action.end_time);
 				return action.specific_action_data_type === "Raycast" &&
 					   actionEndTime >= globalState.lineTimeStamp1 && 
 					   actionStartTime <= globalState.lineTimeStamp2 &&
-					   action.specific_action_data; // Ensure there's valid raycast data
+					   action.specific_action_data; 
 			}).forEach(action => {
-				// Assuming specific_action_data contains the target raycast position
-				const raycastPosition = action.specific_action_data; // Adjust based on your structure
+				
+				const raycastPosition = action.specific_action_data;
+				const {x,y,z} = getCoordinates(raycastPosition); 
 
 	
-				// Find the user's avatar to get the starting position for the line
 				let match = action.actor_name.match(/\d+/);
 				let id = match ? parseInt(match[0], 10) - 1 : null;
 				
 				const userAvatar = globalState.avatars[id]
-				// .find(avatar => avatar.name === action.actor_name);
-				if (!userAvatar) return; // Skip if no matching user avatar is found
+				if (!userAvatar) return;
 	
-				// Create a line from the user's position to the raycast position
 				const points = [
 					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
-					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
+					new THREE.Vector3(x,y,z)
 				];
-				console.log("heyyy");
 				const geometry = new THREE.BufferGeometry().setFromPoints(points);
 				const line = new THREE.Line(geometry, lineMaterial);
+				if (!globalState.raycastLines[id]) {
+					globalState.raycastLines[id] = [];
+				}
+				globalState.raycastLines[id].push(line);
+				// console.log("adding" + line  + " to scene  at id "  + id ); 
+				const lengt1 = globalState.scene.children.length ; 
+				// console.log("Number of objects in the scene before adding the line:", globalState.scene.children.length);
+
 				globalState.scene.add(line);
-				// globalState.scene.add(line);
-				globalState.raycastLines.push(line); 
+				const lengt2 = globalState.scene.children.length ;
+				console.log(lengt1 + " , "  + lengt2);
+				// console.log("Number of objects in the scene after  adding the line:", globalState.scene.children.length);
+
 			});
 		});
+		console.log("then came out "); 
+		// console.log(globalState.raycast Lines[id]); 
 	}
 	
 
@@ -584,12 +586,8 @@ function createLineSegment(id){
     // Assuming a method to interpret or mock spatial data from raw_log_text
 	if (filteredData.length !== 0) {
 		filteredData.forEach(entry => {
-			// console.log(entry.spatial_extent);
 			const spatialExent = entry.spatial_extent;
-			// console.log(spatialExent)
-			const x = spatialExent[0][0];
-			const y = spatialExent[0][1];
-			const z = spatialExent[0][2];
+			const {x,y,z} = getCoordinates(spatialExent);
 			positions.push(x, y, z);
 			const color = new THREE.Color().setHSL(hsl.h, hsl.s, 1);
 			colors.push(color.r, color.g, color.b);
@@ -607,14 +605,8 @@ function createLineSegment(id){
 		});
 
 		const line = new Line2(geometry, material);
-		// globalState.scene.add(line);
-		if (globalState.show[id])
-		{
 			globalState.scene.add(line);
-		}
-		// Store the reference to the current line segment
 		globalState.currentLineSegments[id] = line;
-		// line.computeLineDistances(); // If using a dashed line, this is necessary
 
 		return line;
 	}
@@ -623,9 +615,6 @@ function clearPreviousTriangles(id) {
 if (globalState.triangleMesh[id]) {
 	globalState.triangleMesh[id].forEach(mesh => {
 		globalState.scene.remove(mesh);
-		// Optionally dispose of the geometry and material
-		// mesh.geometry.dispose();
-		// mesh.material.dispose();
 	});
 	globalState.triangleMesh[id] = []; // Reset the array for this user
 }
@@ -670,7 +659,8 @@ function updateSceneBasedOnSelections() {
                     });
 
                     if (closestData) {
-                        const spatial_extent = closestData.spatial_extent; 
+                        const spatial_extent = closestData.spatial_extent;
+						const { x, y , z } = getCoordinates(spatial_extent);  
 
                         // Add triangle
                         const geometry = new THREE.BufferGeometry();
@@ -691,7 +681,7 @@ function updateSceneBasedOnSelections() {
                         const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
 
                         const triangleMesh = new THREE.Mesh(geometry, material);
-                        triangleMesh.position.set(spatial_extent[0][0], spatial_extent[0][1] + 0.1 , spatial_extent[0][2]);
+                        triangleMesh.position.set(x, y + 0.1 , z);
 						triangleMesh.userData = { type: 'clickableTriangle', actorName: action.actor_name, actionData: closestData };
 						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
 						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
@@ -703,10 +693,8 @@ function updateSceneBasedOnSelections() {
                             globalState.triangleMesh[id] = [];
                         }
                         globalState.triangleMesh[id].push(triangleMesh);
-						// if (globalState.show[id])
-						// {
 							globalState.scene.add(triangleMesh);
-						// }
+	
 						initializeInteraction();
                     }
                 }
@@ -1701,7 +1689,7 @@ function plotCombinedUsersSpiderChart() {
 // }
 
 function plotScatterPlot() {
-    const plotBox = d3.select("#plot-box3").html("");
+    const plotBox = d3.select("#plot-box2").html("");
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
@@ -1734,7 +1722,7 @@ function plotScatterPlot() {
     controls.enableRotate = false;
     controls.enableZoom = true;
 
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     raycastDataWithUserInfo.forEach(item => {
@@ -1764,7 +1752,7 @@ function plotScatterPlot() {
     });
 
     const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper);
+    scene.add(gridHelper); 
 
     function animate() {
         requestAnimationFrame(animate);
@@ -1774,6 +1762,225 @@ function plotScatterPlot() {
 
     animate();
 }
+
+
+// function plotBubblePlot() {
+//     const plotBox = d3.select("#plot-box3").html("");
+//     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+//     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+//     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+//     const renderer = new THREE.WebGLRenderer();
+//     renderer.setSize(width, height);
+//     plotBox.node().appendChild(renderer.domElement);
+//     renderer.setClearColor(0xffffff, 1);
+//     const scene = new THREE.Scene();
+//     const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+//     camera.position.set(0, 0, 100);
+//     camera.up.set(0, 1, 0);
+//     camera.lookAt(scene.position);
+//     const controls = new OrbitControls(camera, renderer.domElement);
+//     controls.enableRotate = false;
+//     controls.enableZoom = true;
+//     const loader = new THREE.TextureLoader();
+//     loader.load('bubble_map_background.png', function(texture) {
+//         const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+//         const backgroundMaterial = new THREE.MeshBasicMaterial({
+//             map: texture,
+//             opacity: 0.5, 
+//             transparent: true,
+//         });
+//         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+//         backgroundMesh.position.set(0, 0, -1);
+//         scene.add(backgroundMesh);
+
+//         addBubbles();
+//     });
+
+//     function addBubbles() {
+// 		const raycastDataWithUserInfo = [];
+// 		Object.values(globalState.finalData.action_dict).forEach(topic => {
+// 			if (topic.actions) {
+// 				topic.actions.forEach(action => {
+// 					if (action.specific_action_data_type === "Raycast") {
+// 						raycastDataWithUserInfo.push({
+// 							user: action.actor_name, 
+// 							data: action.specific_action_data 
+// 						});
+// 					}
+// 				});
+// 			}
+// 		});
+	
+
+//         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+//         raycastDataWithUserInfo.forEach(item => {
+//             const [x, y] = item.data;
+//             if (x < minX) minX = x;
+//             if (x > maxX) maxX = x;
+//             if (y < minY) minY = y;
+//             if (y > maxY) maxY = y;
+//         });
+
+//         const gridWidth = 50;
+//         const gridHeight = 15;
+//         const userGrid = {};
+
+//         raycastDataWithUserInfo.forEach(item => {
+//             const [x, y] = item.data;
+//             const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
+//             const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
+//             const gridKey = `${gridX},${gridY}`;
+
+//             if (!userGrid[gridKey]) {
+//                 userGrid[gridKey] = {};
+//             }
+//             userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
+//         });
+
+//         const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).map(users => Math.max(...Object.values(users))))]).range([0.5, 40]);
+
+//         Object.entries(userGrid).forEach(([key, users]) => {
+//             const [gridX, gridY] = key.split(',').map(Number);
+//             const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
+//             const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
+//             const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
+//             const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
+//             const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
+
+//             const bubbleSize = bubbleSizeScale(users[dominantUser]);
+//             const geometry = new THREE.CircleGeometry(bubbleSize, 32);
+//             const material = new THREE.MeshBasicMaterial({
+//                 color: colorScale(dominantUser),
+//                 opacity: 0.65, 
+//                 transparent: true
+//             });
+//             const circle = new THREE.Mesh(geometry, material);
+//             circle.position.set(scaledX, scaledY, 0);
+//             scene.add(circle); 
+//         });
+
+//         const gridHelper = new THREE.GridHelper(Math.max(width, height), Math.max(gridWidth, gridHeight), 0x000000, 0x000000);
+//         gridHelper.position.z = -99; 
+//         scene.add(gridHelper);
+//     }
+
+//     function animate() {
+//         requestAnimationFrame(animate);
+//         controls.update(); 
+//         renderer.render(scene, camera);
+//     }
+
+//     animate(); 
+// }
+function plotBubblePlot() {
+    const plotBox = d3.select("#plot-box3").html("");
+    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(width, height);
+    plotBox.node().appendChild(renderer.domElement);
+    renderer.setClearColor(0xffffff, 1);
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    camera.position.set(0, 0, 100);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(scene.position);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableRotate = false;
+    controls.enableZoom = true;
+
+    const loader = new THREE.TextureLoader();
+    loader.load('bubble_map_background.png', function(texture) {
+        texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearFilter;
+        const aspectRatio = texture.image.width / texture.image.height;
+        const backgroundGeometry = new THREE.PlaneGeometry(width, width / aspectRatio);
+        const backgroundMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            opacity: 0.5,
+            transparent: true,
+        });
+        const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+        backgroundMesh.position.set(0, 0, -1);
+        scene.add(backgroundMesh);
+
+        addBubbles();
+    });
+
+    function addBubbles() {
+		const raycastDataWithUserInfo = []; 
+        Object.values(globalState.finalData.action_dict).forEach(topic => {
+            if (topic.actions) {
+                topic.actions.forEach(action => {
+                    if (action.specific_action_data_type === "Raycast") {
+                        raycastDataWithUserInfo.push({
+                            user: action.actor_name,
+                            data: action.specific_action_data
+                        });
+                    }
+                });
+            }
+        });
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        raycastDataWithUserInfo.forEach(item => {
+            const [x, y] = item.data;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        });
+
+        // Adjust grid dimensions as needed for your visualization
+        const gridWidth = 50;
+        const gridHeight = 15;
+        const userGrid = {};
+
+        raycastDataWithUserInfo.forEach(item => {
+            const [x, y] = item.data;
+            const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
+            const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
+            const gridKey = `${gridX},${gridY}`;
+
+            if (!userGrid[gridKey]) {
+                userGrid[gridKey] = {};
+            }
+            userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
+        });
+
+        const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).map(users => Math.max(...Object.values(users))))]).range([0.5, 40]);
+
+        Object.entries(userGrid).forEach(([key, users]) => {
+            const [gridX, gridY] = key.split(',').map(Number);
+            const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
+            const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
+            const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
+			const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
+			const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
+			        // Boundary check for bubbles
+					if (scaledX >= (width / -2) && scaledX <= (width / 2) && scaledY >= (height / -2) && scaledY <= (height / 2)) {
+						const bubbleSize = bubbleSizeScale(users[dominantUser]);
+						const geometry = new THREE.CircleGeometry(bubbleSize, 32);
+						const material = new THREE.MeshBasicMaterial({
+							color: colorScale(dominantUser), // Ensure you have defined colorScale based on your needs
+							opacity: 0.65, 
+							transparent: true,
+						});
+						const circle = new THREE.Mesh(geometry, material);
+						circle.position.set(scaledX, scaledY, 0);
+						scene.add(circle);
+					}
+				});
+			}
+			
+			function animate() {
+				requestAnimationFrame(animate);
+				controls.update(); 
+				renderer.render(scene, camera);
+			}
+			
+			animate();
+		}			
 
 
   
@@ -2263,6 +2470,13 @@ function getSelectedTopics() {
 	return selectedKeywords;
   }
 
+function getCoordinates(spatial_extent){
+	const x = spatial_extent[0][2]; // UNITY Z 
+    const y = spatial_extent[0][1];
+    const z = -spatial_extent[0][0]; // Flippinh UNITY X
+	// console.log(x,y,z);
+	return {x,y,z} ; 
+  }
 
 
 
@@ -2275,7 +2489,8 @@ function parseTimeToMillis(customString) {
   let month = parseInt(dateStr.slice(2, 4), 10) - 1; // Month is 0-indexed in JS
   let day = parseInt(dateStr.slice(4, 6), 10);
 
-  let hours = parseInt(timeStr.slice(0, 2), 10);
+//   let hours = parseInt(timeStr.slice(0, 2), 10);
+  let hours = parseInt(timeStr.slice(0, 2), 10) + 4 ;
   let minutes = parseInt(timeStr.slice(2, 4), 10);
   let seconds = parseInt(timeStr.slice(4, 6), 10);
 
@@ -2364,6 +2579,7 @@ function getSpeechData(action, selectedKeywords) {
     speechBox.style.border = '1px solid grey';
     speechBox.style.borderRadius = '8px';
     speechBox.style.padding = '15px';
+	speechBox.style.marginBottom = '8px'; 
 	// console.log(selectedKeywords);
 
 	
@@ -2497,6 +2713,7 @@ function updateInterestBox() {
 		  img.src = imagePath;
 		  img.alt = "Raw Capture Image";
 		  img.style.maxWidth = '100%';
+		  img.style.objectFit = 'contain';
 		  img.style.display = index === 0 ? 'block' : 'none';
 		  imageWrapper.appendChild(img);
 		});
@@ -2843,8 +3060,9 @@ async function initialize() {
 	createRayCastSegment(2);
 	// plotBarChart();
 	plotUserSpecificBarChart();
-	plotScatterPlot();
 	plotCombinedUsersSpiderChart();
+	plotBubblePlot();
+	// plotScatterPlot();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
