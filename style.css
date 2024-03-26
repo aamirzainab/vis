@@ -316,12 +316,12 @@ html, body {
     bottom:490px;
     left: 1600px; 
     width: 300px; 
-    height: 150px; 
+    height: 240px; 
     background-color: #fff; 
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 5px; 
-    overflow: hidden; 
+    /* overflow: hidden;  */
     z-index: 101; 
     display: block; 
 }
