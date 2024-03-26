@@ -485,6 +485,9 @@ function createDeviceSegment(id){
 		
 function createRayCastSegment(id) {
 		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+		if (!globalState.raycastLines[id]) {
+			globalState.raycastLines[id] = [];
+		}
 		if (globalState.raycastLines[0]) {
 			globalState.raycastLines[0].forEach(mesh => {
 				globalState.scene.remove(mesh); 
@@ -526,27 +529,19 @@ function createRayCastSegment(id) {
 	
 				const points = [
 					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
-					new THREE.Vector3(x,y,z)
+					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
+					// new THREE.Vector3(x,y,z)
 				];
 				const geometry = new THREE.BufferGeometry().setFromPoints(points);
 				const line = new THREE.Line(geometry, lineMaterial);
-				if (!globalState.raycastLines[id]) {
-					globalState.raycastLines[id] = [];
-				}
-				globalState.raycastLines[id].push(line);
-				// console.log("adding" + line  + " to scene  at id "  + id ); 
+				
 				const lengt1 = globalState.scene.children.length ; 
-				// console.log("Number of objects in the scene before adding the line:", globalState.scene.children.length);
 
 				globalState.scene.add(line);
-				const lengt2 = globalState.scene.children.length ;
-				console.log(lengt1 + " , "  + lengt2);
-				// console.log("Number of objects in the scene after  adding the line:", globalState.scene.children.length);
+				globalState.raycastLines[id].push(line);
 
 			});
 		});
-		console.log("then came out "); 
-		// console.log(globalState.raycast Lines[id]); 
 	}
 	
 
