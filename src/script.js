@@ -1096,7 +1096,9 @@ function processMovementData() {
 // }
 function createPlotTemporal() {
 	// Assuming globalState.finalData is set and contains the topics_dict property
-	const topicsData = Object.entries(globalState.finalData.action_dict).flatMap(([topicName, topicDetails]) => {
+	const data = globalState.finalData.action_dict ; 
+	delete data["Raw Capture"]; 
+	const topicsData = Object.entries(data).flatMap(([topicName, topicDetails]) => {
 	  return topicDetails.actions.map(action => ({
 		topic: topicName,
 		startTime: parseTimeToMillis(action.start_time),
