@@ -129,6 +129,8 @@ async function loadAvatarModel(filename) {
 	avatar.name = filename;
   avatar.visible = true ;
 	globalState.scene.add(avatar);
+
+	avatar.position.y = -1 ; 
 	avatarLoaded = true;
 	return avatar;
 }
@@ -1720,7 +1722,7 @@ function createLines(timestamp1, timestamp2) {
 
 	updateRangeDisplay(timestamp1,timestamp2);
   updateXRSnapshot();
-  plotSpatialExtent();
+  // plotSpatialExtent();
   // initializeShadedAreaDrag();
 
 
@@ -1798,7 +1800,7 @@ export function dragged(event,d) {
 
   initializeOrUpdateSpeechBox();
   initializeShadedAreaDrag();
-  plotSpatialExtent();
+  // plotSpatialExtent();
   createAvatarSegment(0);
   createAvatarSegment(1);
   createAvatarSegment(2);
@@ -2423,7 +2425,7 @@ function initializeShadedAreaDrag() {
   createAvatarSegment(1);
   createAvatarSegment(2);
   updateSceneBasedOnSelections();
-  plotSpatialExtent();
+  // plotSpatialExtent();
 
   dragStartX = event.x;
 
@@ -2558,7 +2560,7 @@ async function initialize() {
     checkbox.dispatchEvent(new Event('change'));
   });
   initializeOrUpdateSpeechBox();
-  plotSpatialExtent();
+  // plotSpatialExtent();
   d3.select("body").on("click", function() {
     const contextMenu = d3.select("#context-menu");
     if (!contextMenu.empty()) {
