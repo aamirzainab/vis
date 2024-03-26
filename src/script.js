@@ -1759,114 +1759,6 @@ function plotScatterPlot() {
 }
 
 
-// function plotBubblePlot() {
-//     const plotBox = d3.select("#plot-box3").html("");
-//     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-//     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-//     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-//     const renderer = new THREE.WebGLRenderer();
-//     renderer.setSize(width, height);
-//     plotBox.node().appendChild(renderer.domElement);
-//     renderer.setClearColor(0xffffff, 1);
-//     const scene = new THREE.Scene();
-//     const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-//     camera.position.set(0, 0, 100);
-//     camera.up.set(0, 1, 0);
-//     camera.lookAt(scene.position);
-//     const controls = new OrbitControls(camera, renderer.domElement);
-//     controls.enableRotate = false;
-//     controls.enableZoom = true;
-//     const loader = new THREE.TextureLoader();
-//     loader.load('bubble_map_background.png', function(texture) {
-//         const backgroundGeometry = new THREE.PlaneGeometry(width, height);
-//         const backgroundMaterial = new THREE.MeshBasicMaterial({
-//             map: texture,
-//             opacity: 0.5, 
-//             transparent: true,
-//         });
-//         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-//         backgroundMesh.position.set(0, 0, -1);
-//         scene.add(backgroundMesh);
-
-//         addBubbles();
-//     });
-
-//     function addBubbles() {
-// 		const raycastDataWithUserInfo = [];
-// 		Object.values(globalState.finalData.action_dict).forEach(topic => {
-// 			if (topic.actions) {
-// 				topic.actions.forEach(action => {
-// 					if (action.specific_action_data_type === "Raycast") {
-// 						raycastDataWithUserInfo.push({
-// 							user: action.actor_name, 
-// 							data: action.specific_action_data 
-// 						});
-// 					}
-// 				});
-// 			}
-// 		});
-	
-
-//         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-//         raycastDataWithUserInfo.forEach(item => {
-//             const [x, y] = item.data;
-//             if (x < minX) minX = x;
-//             if (x > maxX) maxX = x;
-//             if (y < minY) minY = y;
-//             if (y > maxY) maxY = y;
-//         });
-
-//         const gridWidth = 50;
-//         const gridHeight = 15;
-//         const userGrid = {};
-
-//         raycastDataWithUserInfo.forEach(item => {
-//             const [x, y] = item.data;
-//             const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
-//             const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
-//             const gridKey = `${gridX},${gridY}`;
-
-//             if (!userGrid[gridKey]) {
-//                 userGrid[gridKey] = {};
-//             }
-//             userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
-//         });
-
-//         const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).map(users => Math.max(...Object.values(users))))]).range([0.5, 40]);
-
-//         Object.entries(userGrid).forEach(([key, users]) => {
-//             const [gridX, gridY] = key.split(',').map(Number);
-//             const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
-//             const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
-//             const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
-//             const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
-//             const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
-
-//             const bubbleSize = bubbleSizeScale(users[dominantUser]);
-//             const geometry = new THREE.CircleGeometry(bubbleSize, 32);
-//             const material = new THREE.MeshBasicMaterial({
-//                 color: colorScale(dominantUser),
-//                 opacity: 0.65, 
-//                 transparent: true
-//             });
-//             const circle = new THREE.Mesh(geometry, material);
-//             circle.position.set(scaledX, scaledY, 0);
-//             scene.add(circle); 
-//         });
-
-//         const gridHelper = new THREE.GridHelper(Math.max(width, height), Math.max(gridWidth, gridHeight), 0x000000, 0x000000);
-//         gridHelper.position.z = -99; 
-//         scene.add(gridHelper);
-//     }
-
-//     function animate() {
-//         requestAnimationFrame(animate);
-//         controls.update(); 
-//         renderer.render(scene, camera);
-//     }
-
-//     animate(); 
-// }
 function plotBubblePlot() {
     const plotBox = d3.select("#plot-box3").html("");
     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
@@ -1884,16 +1776,12 @@ function plotBubblePlot() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableRotate = false;
     controls.enableZoom = true;
-
     const loader = new THREE.TextureLoader();
     loader.load('bubble_map_background.png', function(texture) {
-        texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.minFilter = THREE.LinearFilter;
-        const aspectRatio = texture.image.width / texture.image.height;
-        const backgroundGeometry = new THREE.PlaneGeometry(width, width / aspectRatio);
+        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
         const backgroundMaterial = new THREE.MeshBasicMaterial({
             map: texture,
-            opacity: 0.5,
+            opacity: 0.5, 
             transparent: true,
         });
         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
@@ -1904,19 +1792,21 @@ function plotBubblePlot() {
     });
 
     function addBubbles() {
-		const raycastDataWithUserInfo = []; 
-        Object.values(globalState.finalData.action_dict).forEach(topic => {
-            if (topic.actions) {
-                topic.actions.forEach(action => {
-                    if (action.specific_action_data_type === "Raycast") {
-                        raycastDataWithUserInfo.push({
-                            user: action.actor_name,
-                            data: action.specific_action_data
-                        });
-                    }
-                });
-            }
-        });
+		const raycastDataWithUserInfo = [];
+		Object.values(globalState.finalData.action_dict).forEach(topic => {
+			if (topic.actions) {
+				topic.actions.forEach(action => {
+					if (action.specific_action_data_type === "Raycast") {
+						raycastDataWithUserInfo.push({
+							user: action.actor_name, 
+							data: action.specific_action_data 
+						});
+					}
+				});
+			}
+		});
+	
+
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         raycastDataWithUserInfo.forEach(item => {
             const [x, y] = item.data;
@@ -1926,7 +1816,6 @@ function plotBubblePlot() {
             if (y > maxY) maxY = y;
         });
 
-        // Adjust grid dimensions as needed for your visualization
         const gridWidth = 50;
         const gridHeight = 15;
         const userGrid = {};
@@ -1950,32 +1839,35 @@ function plotBubblePlot() {
             const dominantUser = Object.keys(users).reduce((a, b) => users[a] > users[b] ? a : b);
             const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
             const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
-			const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
-			const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
-			        // Boundary check for bubbles
-					if (scaledX >= (width / -2) && scaledX <= (width / 2) && scaledY >= (height / -2) && scaledY <= (height / 2)) {
-						const bubbleSize = bubbleSizeScale(users[dominantUser]);
-						const geometry = new THREE.CircleGeometry(bubbleSize, 32);
-						const material = new THREE.MeshBasicMaterial({
-							color: colorScale(dominantUser), // Ensure you have defined colorScale based on your needs
-							opacity: 0.65, 
-							transparent: true,
-						});
-						const circle = new THREE.Mesh(geometry, material);
-						circle.position.set(scaledX, scaledY, 0);
-						scene.add(circle);
-					}
-				});
-			}
-			
-			function animate() {
-				requestAnimationFrame(animate);
-				controls.update(); 
-				renderer.render(scene, camera);
-			}
-			
-			animate();
-		}			
+            const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
+            const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
+
+            const bubbleSize = bubbleSizeScale(users[dominantUser]);
+            const geometry = new THREE.CircleGeometry(bubbleSize, 32);
+            const material = new THREE.MeshBasicMaterial({
+                color: colorScale(dominantUser),
+                opacity: 0.65, 
+                transparent: true
+            });
+            const circle = new THREE.Mesh(geometry, material);
+            circle.position.set(scaledX, scaledY, 0);
+            scene.add(circle); 
+        });
+
+        const gridHelper = new THREE.GridHelper(Math.max(width, height), Math.max(gridWidth, gridHeight), 0x000000, 0x000000);
+        gridHelper.position.z = -99; 
+        scene.add(gridHelper);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); 
+        renderer.render(scene, camera);
+    }
+
+    animate(); 
+}
+	
 
 
   
