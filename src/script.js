@@ -130,7 +130,7 @@ async function loadAvatarModel(filename) {
   avatar.visible = true ;
 	globalState.scene.add(avatar);
 
-	avatar.position.y = -1 ; 
+	avatar.position.y = -1 ;
 	avatarLoaded = true;
 	return avatar;
 }
@@ -358,46 +358,6 @@ function hideUserData(userID) {
 
 
 
-
-// function animateVisualization() {
-// 	const jsonDatas = globalState.jsonDatas;
-// 	if (!isAnimating || jsonDatas.length === 0) return;
-
-// 	const globalStartTime = globalState.globalStartTime;
-// 	const globalEndTime = globalState.globalEndTime;
-// 	const totalTime = globalEndTime - globalStartTime;
-
-// 	const nextTimestamp = globalStartTime + globalState.currentTimestamp;
-// 	if (globalState.currentTimestamp < totalTime) {
-// 		const elapsedTime = globalState.currentTimestamp;
-// 		const binIndex = Math.floor(elapsedTime / globalState.intervalDuration);
-// 		globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
-// 		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-// 		jsonDatas.forEach((data, index) => {
-// 			// updateVisualization(nextTimestamp, index);
-// 			// updateVisualizationOcculus(nextTimestamp);
-// 		});
-
-// 		// updateTimeDisplay(nextTimestamp, globalStartTime);
-// 		// animateTemporalView(nextTimestamp);
-// 		createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-//     // initializeShadedAreaDrag();
-//     // console.log("left shading function, enetring toolbar ");
-//     generateHierToolBar();
-
-// 		const slider = document.querySelector('#slider-container input[type=range]');
-// 		if (slider) {
-// 			slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
-// 		}
-
-// 		globalState.currentTimestamp += animationStep;
-// 		requestAnimationFrame(animateVisualization);
-// 	} else {
-// 		isAnimating = false;
-// 		globalState.currentTimestamp = 0; // Reset for restart
-// 		toggleAnimation();
-// 	}
-// }
 function createTextSprite(message, fontSize = 30, fontFace = "Arial", textColor = "black", backgroundColor = "#bfbfbf") {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -531,9 +491,9 @@ const data = globalState.movementData.actions ;
 if (filteredData.length !== 0) {
   filteredData.forEach(entry => {
     const spatialExent = entry.spatial_extent;
-    const {x,y,z} = getCoordinates(spatialExent); 
+    const {x,y,z} = getCoordinates(spatialExent);
     avatar.position.x = x ;
-    // avatar.position.y = y ; 
+    // avatar.position.y = y ;
     avatar.position.z = z ;
     // const euler = new THREE.Euler(THREE.MathUtils.degToRad(spatialExent[1][0]), THREE.MathUtils.degToRad(spatialExent[1][1]), (THREE.MathUtils.degToRad(spatialExent[1][2])), 'XYZ');
     // avatar.rotation.set(0, 0, 0);
@@ -937,10 +897,14 @@ function createPlotTemporal() {
     .style("font-weight", "bold")
     .text("Topics");
   // Y scale for topics
+  const sortedDomain = topicsData.map(d => d.topic).filter(t => t !== "Others");
+  if (topicsData.some(d => d.topic === "Others")) {
+    sortedDomain.push("Others"); // Ensure "Others" is at the end
+  }
    yScale = d3.scaleBand()
     .rangeRound([0, height])
     .padding(0.1)
-    .domain(topicsData.map(d => d.topic));
+    .domain(sortedDomain);
 
     svg.append("g")
 	  .attr("class", "axis axis--y")
@@ -1128,8 +1092,8 @@ function plotBarChart() {
 
   let userDataByTopic = {};
   let allUsers = new Set();
-  const data = globalState.finalData.topics_dict ; 
-  delete data["Others"]; 
+  const data = globalState.finalData.topics_dict ;
+  delete data["Others"];
 
   Object.entries(data).forEach(([topic, details]) => {
     const userCounts = details.actions.reduce((acc, action) => {
@@ -1241,24 +1205,24 @@ function plotCombinedUsersSpiderChart() {
     .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
 
 
-  const withoutOther = globalState.finalData.topics_dict ; 
+  const withoutOther = globalState.finalData.topics_dict ;
   delete withoutOther["Others"];
-  const data = Object.values(withoutOther) ; 
+  const data = Object.values(withoutOther) ;
   let maxCount = 0;
   // let topicsWithCounts = data.map(topic => {
   //   const count = topic.actions.filter(action => action.action_type === "VerbalInteraction").length;
   //   return {
-  //     topic: topic.broad_topic_name,  
+  //     topic: topic.broad_topic_name,
   //     count: count
   //   };
-  // }).filter(topic => topic.count > 0); 
+  // }).filter(topic => topic.count > 0);
   // const topics = topicsWithCounts.map(t => t.topic);
   // const users = [...new Set(data.flatMap(topic => topic.actions.map(action => action.actor_name)))];
 
   // topicsWithCounts.forEach(topic => {
   //   maxCount = Math.max(maxCount, topic.count);
   // });
-  // console.log(maxCount) ; 
+  // console.log(maxCount) ;
 
   let maxCountsPerUser = {};
 
@@ -1271,15 +1235,15 @@ function plotCombinedUsersSpiderChart() {
         }
         // Increment count for this user in this topic
         maxCountsPerUser[action.actor_name][topic.broad_topic_name] = (maxCountsPerUser[action.actor_name][topic.broad_topic_name] || 0) + 1;
-  
+
         // Update the global maxCount if this user's count in the current topic is the highest encountered so far
         maxCount = Math.max(maxCount, maxCountsPerUser[action.actor_name][topic.broad_topic_name]);
       }
     });
   });
-  
+
   console.log(maxCount); // This now reflects the highest count for any user in any single topic
-  
+
   // Prepare topicsWithCounts array for visualization
   let topicsWithCounts = Object.entries(maxCountsPerUser).flatMap(([user, topics]) =>
     Object.entries(topics).map(([topic, count]) => ({
@@ -1288,7 +1252,7 @@ function plotCombinedUsersSpiderChart() {
       count
     }))
   ).filter(entry => entry.count > 0);
-  
+
   // Filtering unique topics after considering user-specific counts
   const topics = [...new Set(topicsWithCounts.map(entry => entry.topic))];
   const users = Object.keys(maxCountsPerUser);
@@ -1310,7 +1274,7 @@ const rScale = d3.scaleLinear()
       .style("stroke", "lightgrey")
       .style("stroke-dasharray", "2,2");
   }
-  // console.log(topics); 
+  // console.log(topics);
   const angleSlice = Math.PI * 2 / topics.length;
 
   // Draw radial lines and labels
@@ -1331,7 +1295,7 @@ const rScale = d3.scaleLinear()
       .attr("alignment-baseline", "middle");
   });
 
-  const color =colorScale ; 
+  const color =colorScale ;
 
   users.forEach((user, userIndex) => {
     let userData = topics.map(topicKey => {
@@ -1339,7 +1303,7 @@ const rScale = d3.scaleLinear()
       const count = topic.actions.filter(action => action.actor_name === user && action.action_type === "VerbalInteraction").length;
       return {topic: topicKey, count};
       });
-      console.log(userData); 
+      // console.log(userData);
 
     // Define the radar line generator
     const radarLine = d3.lineRadial()
@@ -1528,99 +1492,7 @@ function setTimes(data) {
   globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
 }
 
-// function setTimes(data) {
-//   const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-//   const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
 
-//   globalState.globalStartTime = Math.min(...globalStartTimes);
-//   console.log(globalState.globalStartTime);
-//   console.log(new Date(globalState.globalStartTime));
-//   const globalStartTime = globalState.globalStartTime;
-//   const somePadding = 0;
-//   globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-//   const globalEndTime = globalState.globalEndTime;
-//   const totalTime = globalEndTime - globalStartTime;
-//   globalState.intervalDuration = totalTime / globalState.bins;
-//   const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-//   globalState.intervals = Array.from({
-//       length: globalState.bins + 1
-//   }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-
-// }
-
-// function createTimeSlider(data) {
-// 	const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-// 	const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-// 	globalState.globalStartTime = Math.min(...globalStartTimes);
-// 	const globalStartTime = globalState.globalStartTime;
-// 	const somePadding = 0;
-// 	globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
-
-// 	const globalEndTime = globalState.globalEndTime;
-// 	const totalTime = globalEndTime - globalStartTime;
-// 	globalState.intervalDuration = totalTime / globalState.bins;
-
-// 	const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-// 	globalState.intervals = Array.from({
-// 		length: globalState.bins + 1
-// 	}, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-
-// 	const slider = d3.select('#slider-container').append('input')
-// 		.attr('type', 'range')
-// 		.attr('min', 0)
-// 		.attr('max', duration)
-// 		.attr('step', 'any')
-// 		.on('input', function() {
-// 			const elapsedMinutes = +this.value;
-// 			globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-// 			const binIndex = Math.floor((globalState.currentTimestamp) / intervalDuration);
-// 			globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-
-// 			globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-// 			if (isAnimating) {
-// 				toggleAnimation();
-// 				updatePlayPauseButton();
-// 			}
-// 			isAnimating = false; // Optionally pause animation
-// 			const timestamp = globalState.globalStartTime + currentTimestamp;
-// 			jsonDatas.forEach((data, index) => {
-// 				// updateVisualization(timestamp, index);
-// 				// updateVisualizationOcculus(timestamp);
-// 			});
-//       // updateTimeDisplay(timestamp, globalStartTime);
-// 			// animateTemporalView(timestamp);
-// 			createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-//       // initializeShadedAreaDrag();
-//       // console.log("left shading function, enetring toolbar ");
-//       generateHierToolBar();
-
-// 		});
-// 	slider.node().value = 0;
-// 	slider.on('input', function() {
-// 		const elapsedMinutes = +this.value;
-// 		globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-// 		const binIndex = Math.floor((globalState.currentTimestamp) / globalState.intervalDuration);
-// 		globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-// 		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-// 		if (isAnimating) {
-// 			toggleAnimation();
-// 			updatePlayPauseButton();
-// 		}
-// 		isAnimating = false; // Optionally pause animation
-// 		const timestamp = globalState.globalStartTime + globalState.currentTimestamp;
-// 		globalState.currentTimestamp = timestamp;
-// 		globalState.jsonDatas.forEach((data, index) => {
-// 			// updateVisualization(timestamp, index);
-// 			// updateVisualizationOcculus(timestamp);
-// 		});
-// 		// updateTimeDisplay(timestamp, globalState.globalStartTime);
-// 		// animateTemporalView(timestamp);
-// 		createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-//     // initializeShadedAreaDrag();
-//     // console.log("left shading function, enetring toolbar ");
-//     generateHierToolBar();
-// 	});;
-// }
 
 
 export function getGlobalState() {
@@ -1810,25 +1682,30 @@ export function dragged(event,d) {
 
 
 function generateHierToolBar() {
-  const data = globalState.finalData;
+  // const data = globalState.finalData;
+
+	const data = globalState.finalData.topics_dict ;
+	const {"Raw Capture": omitted, ...newData} = data;
+
   const toolbar = document.getElementById('hier-toolbar');
   toolbar.innerHTML = '';
 
   let othersTopicDetails = null;
 
-  // Process each topic and save "Others" for last
-  Object.entries(data.topics_dict).forEach(([topicName, topicDetails]) => {
+  Object.entries(newData).forEach(([topicName, topicDetails]) => {
+    // console.log(topicName);
       const isInTimeRange = topicDetails.actions.some(action => {
-        // console.log("THIS IS TOPIC NAME " + topicName);
           const actionStartTime = parseTimeToMillis(action.start_time);
           const actionEndTime = parseTimeToMillis(action.end_time);
           return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
       });
 
       if (isInTimeRange) {
-        if (topicName !== "Others" && topicName !== "Raw Capture") { // Skip "Others" and "Raw Capture"
+        if (topicName !== "Others") {
           createTopicItem(topicName, topicDetails, toolbar);
-        } else if (topicName === "Others") { // Save "Others" details for later
+        }
+        else {
+          // console.log("u came here!");
           othersTopicDetails = topicDetails;
         }
       }
@@ -1963,6 +1840,7 @@ filteredActions.forEach(action => {
 
 
 function createOthersItem(othersData, toolbar) {
+  // console.log("here?");
   const othersItem = document.createElement('li');
   const othersCheckbox = document.createElement('input');
   othersCheckbox.type = 'checkbox';
@@ -2038,11 +1916,11 @@ function getSelectedKeywords() {
   return selectedKeywords;
 }
 function getCoordinates(spatial_extent){
-	const x = spatial_extent[0][2]; // UNITY Z 
+	const x = spatial_extent[0][2]; // UNITY Z
     const y = spatial_extent[0][1];
     const z = -spatial_extent[0][0]; // Flippinh UNITY X
 	// console.log(x,y,z);
-	return {x,y,z} ; 
+	return {x,y,z} ;
   }
 
 
@@ -2141,7 +2019,7 @@ function getSpeechData(action, selectedKeywords) {
   speechBox.style.border = '1px solid grey'; // Grey border
   speechBox.style.borderRadius = '8px'; // Rounded corners
   speechBox.style.padding = '15px';
-  speechBox.style.marginBottom = '8px'; 
+  speechBox.style.marginBottom = '8px';
 
   const hasRelevantKeyword = selectedKeywords.some(keyword => action.data.keywords.includes(keyword));
   if (!hasRelevantKeyword) {
@@ -2257,7 +2135,7 @@ function updateInterestBox() {
 
 
 function updateXRSnapshot() {
- 
+
 const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
   const container = document.getElementById('user-xr-snapshot');
   container.innerHTML = '';
@@ -2286,7 +2164,7 @@ const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
         img.src = imagePath;
         img.alt = "Raw Capture Image";
         img.style.maxWidth = '100%';
-        img.style.objectFit = 'contain'; 
+        img.style.objectFit = 'contain';
         img.style.display = index === 0 ? 'block' : 'none';
         imageWrapper.appendChild(img);
       });
@@ -2387,22 +2265,26 @@ function updateRangeDisplay(time1, time2) {
 
 function initializeShadedAreaDrag() {
   const indicatorSVG = d3.select("#indicator-svg");
-  const shadedArea = indicatorSVG.select(".shading"); 
+  const shadedArea = indicatorSVG.select(".shading");
 
   let dragStartX = null;
 
   const dragstarted = (event) => {
     dragStartX = event.x;
+    // console.log("Drag started - x scale domain:", x.domain(), "range:", x.range());
   };
 
   const dragged = (event) => {
     const dx = event.x - dragStartX; // Change in x
+    // console.log("Dragging - dx:", dx); // Log the change in x
     const line1 = indicatorSVG.select("#time-indicator-line1");
     const line2 = indicatorSVG.select("#time-indicator-line2");
     const circle1 = indicatorSVG.select("#time-indicator-circle1");
     const circle2 = indicatorSVG.select("#time-indicator-circle2");
     let line1X = parseFloat(line1.attr("x1"));
     let line2X = parseFloat(line2.attr("x1"));
+    // console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
+    // console.log("Dragging - Current timestamps:", globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
     // Update positions based on drag
     line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
@@ -2414,8 +2296,8 @@ function initializeShadedAreaDrag() {
   const newLine2Timestamp = x.invert(line2X + dx);
   globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-  console.log(newLine1Timestamp);
-  console.log(globalState.lineTimeStamp2); 
+  // console.log(newLine1Timestamp);
+  // console.log(globalState.lineTimeStamp2);
 
   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
   updateXRSnapshot();
@@ -2432,6 +2314,7 @@ function initializeShadedAreaDrag() {
 };
 
   const dragended = () => {
+    // console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
   };
 
   const drag = d3.drag()
@@ -2443,7 +2326,6 @@ function initializeShadedAreaDrag() {
   shadedArea.call(drag);
 
 }
-
 
 
 
@@ -2463,7 +2345,7 @@ function createSharedAxis() {
   if (unit === 'minutes') {
     intervalSizeMillis = bins * 60 * 1000;
   } else {
-    intervalSizeMillis = bins * 1000; 
+    intervalSizeMillis = bins * 1000;
   }
 
   const totalDurationMillis = globalEndTime - globalStartTime;
