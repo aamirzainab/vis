@@ -67,7 +67,7 @@ let globalState = {
 	leftControls : [],
 	lineDrawing: [],
 };
-const userInterestTopic = "Data visualization, User1’s folooding data visualization near the Rockaways area";
+const userInterestTopic = "INSERT HERE";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
@@ -185,7 +185,7 @@ async function loadLine(filename,id) {
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		const filename = 'RealWorld/room132.glb';
+		const filename = 'VRGameScene.glb';
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
@@ -229,7 +229,7 @@ function toggleInstanceRange(selectedOption){
 	}
 	if (selectedOption === 'Range')
 	{
-	  console.log("here?");
+	//   console.log("here?");
 	  line2.style('display', null);
 	  circle2.style('display',null);
 	}
@@ -266,8 +266,8 @@ window.onload = function() {
 				globalState.lineDrawing[0].forEach(filename => {
 					const existingObject = globalState.scene.getObjectByName(filename);
 					if (existingObject) {
-						existingObject.visible = true ; 
-					  } 
+						existingObject.visible = true ;
+					  }
 				});
 			}
 
@@ -302,11 +302,11 @@ window.onload = function() {
 			if (globalState.lineDrawing[userID]) {
 				globalState.lineDrawing[0].forEach(filename => {
 					const existingObject = globalState.scene.getObjectByName(filename);
-					console.log("here?")
+					// console.log("here?")
 					if (existingObject) {
-						console.log(" and then here?");
-						existingObject.visible = false ; 
-					  } 
+						// console.log(" and then here?");
+						existingObject.visible = false ;
+					  }
 					globalState.scene.remove(existingObject);
 				});
 			}
@@ -346,8 +346,8 @@ window.onload = function() {
 				globalState.lineDrawing[0].forEach(filename => {
 					const existingObject = globalState.scene.getObjectByName(filename);
 					if (existingObject) {
-						existingObject.visible = true ; 
-					  } 
+						existingObject.visible = true ;
+					  }
 					// globalState.scene.add(existingObject);
 				});
 			}
@@ -383,8 +383,8 @@ window.onload = function() {
 				globalState.lineDrawing[0].forEach(filename => {
 					const existingObject = globalState.scene.getObjectByName(filename);
 					if (existingObject) {
-						existingObject.visible = false ; 
-					  } 
+						existingObject.visible = false ;
+					  }
 					// globalState.scene.remove(existingObject);
 				});
 			}
@@ -523,13 +523,13 @@ function createRayCastSegment(id) {
 				// Object selection
 				return action.formatted_data.action_property_specific_action === "Object selection" &&
 					   actionEndTime >= globalState.lineTimeStamp1 &&
-					   actionStartTime <= globalState.lineTimeStamp2 ; 
+					   actionStartTime <= globalState.lineTimeStamp2 ;
 			}).forEach(action => {
 
 				const raycastPosition = action.specific_action_data;
 				const x = raycastPosition[2];
 				const y = raycastPosition[1];
-				const z = -raycastPosition[0]; 
+				const z = -raycastPosition[0];
 
 
 				let match = action.actor_name.match(/\d+/);
@@ -564,19 +564,19 @@ function createLineDrawing(id) {
 			globalState.lineDrawing[0].forEach(filename => {
 				const existingObject = globalState.scene.getObjectByName(filename);
 				if (existingObject) {
-					existingObject.visible = false ; 
-				  } 
+					existingObject.visible = false ;
+				  }
 				globalState.scene.remove(existingObject);
 			});
-			
+
 		}
 		globalState.lineDrawing[0] = [];
 		if (globalState.lineDrawing[1]) {
 			globalState.lineDrawing[1].forEach(filename => {
 				const existingObject = globalState.scene.getObjectByName(filename);
 				if (existingObject) {
-					existingObject.visible = false ; 
-				  } 
+					existingObject.visible = false ;
+				  }
 				globalState.scene.remove(existingObject);
 			});
 		}
@@ -727,7 +727,7 @@ function updateSceneBasedOnSelections() {
                         const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
 
                         const triangleMesh = new THREE.Mesh(geometry, material);
-                        triangleMesh.position.set(x, y + 0.1 , z);
+                        triangleMesh.position.set(x, y + 0.5 , z);
 						triangleMesh.userData = { type: 'clickableTriangle', actorName: action.actor_name, actionData: closestData };
 						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
 						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
@@ -753,8 +753,13 @@ async function initializeScene() {
 	globalState.scene = new THREE.Scene();
 	globalState.scene.background = new THREE.Color(0xffffff);
 	const spatialView = document.getElementById('spatial-view');
-	globalState.camera = new THREE.PerspectiveCamera(25, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-	globalState.camera.position.set(0, 2, 10);
+	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	globalState.camera.position.set(1, 3, 7);
+	// globalState.camera = new THREE.PerspectiveCamera(25, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	// globalState.camera.position.set(0, 2, 10);
+
+
+// Vector3 {x: -0.036016289679411166, y: 1.0436690279916723, z: 6.527099877992734}
 	globalState.camera.updateProjectionMatrix();
 
 	globalState.renderer = new THREE.WebGLRenderer({
@@ -787,6 +792,7 @@ async function initializeScene() {
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
 	globalState.scene.add(gridHelper);
+	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
 		fetch('vr_new_action_oriented_analysis_full_data.json').then(response => response.json()),
@@ -1208,7 +1214,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#7e4695" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
 	  })
 	  .style("cursor", "pointer")
     .on("click", function(event, d) {
@@ -1222,7 +1228,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	//   .selectAll(".tick text") // select all the text elements for the y-axis ticks
 	//   .style("fill", function(d) { // conditional coloring based on user interest
 	// 	const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-	// 	return isUserInterest ? "#7e4695" : "#000"; // Purple for user interest topics, black for others
+	// 	return isUserInterest ? "#f08030" : "#000"; // Purple for user interest topics, black for others
 	//   });
 	svg.select(".axis--y").selectAll(".tick text")
     .style("cursor", "pointer")
@@ -1259,7 +1265,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  return width;
 	})
 	.attr("height", yScale.bandwidth())
-	.attr("fill", d => d.hasUserInterestAction ? "#7e4695" : "#d0d0d0");
+	.attr("fill", d => d.hasUserInterestAction ? "#f08030" : "#d0d0d0");
 	// .attr("fill", "#d0d0d0");
   }
 
@@ -1362,73 +1368,13 @@ const {"Raw Capture": omitted, ...newData} = data;
 				.attr("y", yScale(`${topicName}-${user}`))
 				.attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
 				.attr("height", newYHeight)
-				.attr("fill", d => action.has_user_action_of_interest ? "#7e4695" : "#d0d0d0");
+				.attr("fill", d => action.has_user_action_of_interest ? "#f08030" : "#d0d0d0");
 		});
 	});
 
   }
 
-function plotBarChart() {
-    const plotBox = d3.select("#plot-box1").html("");
-    const margin = { top: 60, right: 20, bottom: 180, left: 40 };
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
 
-    const svg = plotBox.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-		//  console.log(globalState.finalData.action_dict);
-    let processedData = Object.entries(globalState.finalData.action_dict).map(([actionName, actionDetails]) => {
-        // Count the number of actions for each broad action and flag if there's any action of user interest
-        let count = actionDetails.actions.length;
-        let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
-        return { actionName, count, hasUserActionOfInterest };
-    });
-	processedData = Object.entries(globalState.finalData.action_dict)
-	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
-	.map(([actionName, actionDetails]) => {
-		// Count the number of actions for each broad action and flag if there's any action of user interest
-		let count = actionDetails.actions.length;
-		let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
-		return { actionName, count, hasUserActionOfInterest };
-	});
-
-    const x = d3.scaleBand()
-        .range([0, width])
-        .padding(0.1)
-        .domain(processedData.map(d => d.actionName));
-
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(processedData, d => d.count)])
-        .range([height, 0]);
-
-    // Create bars
-    svg.selectAll(".bar")
-      .data(processedData)
-      .enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", d => x(d.actionName))
-        .attr("width", x.bandwidth())
-        .attr("y", d => y(d.count))
-        .attr("height", d => height - y(d.count))
-        .attr("fill", d => d.hasUserActionOfInterest ? "#7e4695" : "#d0d0d0"); // Change color based on user action of interest
-
-    // Add the x Axis
-    svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-          .style("text-anchor", "end")
-          .attr("dx", "-.8em")
-          .attr("dy", ".15em")
-          .attr("transform", "rotate(-65)");
-
-    // Add the y Axis
-    svg.append("g")
-        .call(d3.axisLeft(y));
-}
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
@@ -1531,6 +1477,98 @@ function plotUserSpecificBarChart() {
 	// 	  .text(d => d);
   }
 
+  function plotAverageDurationBarChart() {
+    const plotBox = d3.select("#plot-box3").html("");
+    const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = plotBox.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    let allUsers = new Set();
+    let actionDurations = {};
+
+    // Assuming globalState.finalData.action_dict exists and structured appropriately
+    Object.entries(globalState.finalData.action_dict)
+    .filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
+    .forEach(([actionName, actionDetails]) => {
+        const userDurations = actionDetails.actions.reduce((acc, action) => {
+            if (!acc[action.actor_name]) {
+                acc[action.actor_name] = { totalDuration: 0, count: 0 };
+            }
+            acc[action.actor_name].totalDuration += action.duration; // Assuming duration is a number
+            acc[action.actor_name].count += 1;
+            allUsers.add(action.actor_name);
+            return acc;
+        }, {});
+
+        actionDurations[actionName] = Object.fromEntries(
+            Object.entries(userDurations).map(([user, { totalDuration, count }]) => [user, totalDuration / count])
+        );
+    });
+
+    const users = Array.from(allUsers);
+    const processedData = Object.entries(actionDurations).map(([actionName, durations]) => ({
+        actionName,
+        ...durations
+    }));
+
+    // Setup scales
+    const x0 = d3.scaleBand()
+        .rangeRound([0, width])
+        .paddingInner(0.1)
+        .domain(processedData.map(d => d.actionName));
+
+    const x1 = d3.scaleBand()
+        .padding(0.05)
+        .domain(users)
+        .rangeRound([0, x0.bandwidth()]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
+        .range([height, 0]);
+
+    // const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Create the grouped bars
+    const action = svg.selectAll(".action")
+        .data(processedData)
+        .enter().append("g")
+        .attr("class", "g")
+        .attr("transform", d => `translate(${x0(d.actionName)},0)`);
+
+    action.selectAll("rect")
+        .data(d => users.map(key => ({ key, value: d[key] || 0 })))
+        .enter().append("rect")
+        .attr("width", x1.bandwidth())
+        .attr("x", d => x1(d.key))
+        .attr("y", d => y(d.value))
+        .attr("height", d => height - y(d.value))
+        .attr("fill", d => colorScale(d.key));
+
+    // Add the axes
+    svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x0))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+}
+
+
+
+
+
 function plotCombinedUsersSpiderChart() {
 	// Setup SVG and dimensions
 	const plotBox = d3.select("#plot-box2").html("");
@@ -1630,120 +1668,6 @@ function plotCombinedUsersSpiderChart() {
 	});
   }
 
-// function plotScatterPlot(){
-// 	const plotBox = d3.select("#plot-box3").html("");
-//     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-//     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-//     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-// 	const raycastDataWithUserInfo = [];
-
-//     // Loop through each topic in globalState.finalData
-//     Object.values(globalState.finalData.action_dict).forEach(topic => {
-// 		// console.log(topic);
-//         // Check if the topic has actions and iterate through them
-//         if (topic.actions) {
-//             topic.actions.forEach(action => {
-// 				// console.log("jere>");
-//                 // Check if the action's specific action data type is Raycast and if it has valid specific action data
-//                 if (action.specific_action_data_type === "Raycast") {
-//                     // Add the specific action data along with user info to the array
-//                     raycastDataWithUserInfo.push({
-//                         user: action.actor_name, // Saving user info
-//                         data: action.specific_action_data // Saving specific action data (raycast data points)
-//                     });
-//                 }
-//             });
-//         }
-//     });
-// console.log(raycastDataWithUserInfo);
-// // const scene1 = new THREE.Scene();
-// //     const camera1 = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-// //     const renderer1 = new THREE.WebGLRenderer();
-// //     renderer1.setSize(width, height);
-
-// //     // Attach the renderer's canvas to the plotBox instead of document.body
-// //     plotBox.node().appendChild(renderer1.domElement);
-// // 	const axesHelper = new THREE.AxesHelper(5);
-// //     scene1.add(axesHelper);
-// // 	const size = 10;
-// //     const divisions = 10;
-// //     const gridHelperXY = new THREE.GridHelper(size, divisions);
-// //     // const gridHelperYZ = new THREE.GridHelper(size, divisions);
-// //     // const gridHelperXZ = new THREE.GridHelper(size, divisions);
-// //     // gridHelperYZ.rotation.z = Math.PI / 2; // Rotate to YZ plane
-// //     // gridHelperXZ.rotation.x = Math.PI / 2; // Rotate to XZ plane
-// //     scene1.add(gridHelperXY);
-// //     // scene1.add(gridHelperYZ);
-// //     // scene1.add(gridHelperXZ);
-// // 	renderer1.setClearColor(0xffffff, 1);
-
-
-// //     // Adjust camera position based on the data's scale and positioning
-// //     camera1.position.set(0, 0, 10); // Example positioning, adjust as needed
-
-// // 	const controls1 = new OrbitControls(camera1, renderer1.domElement);
-// // 	controls1.enableZoom = true;
-
-// //     // Create a sphere for each data point
-// //     raycastDataWithUserInfo.forEach(item => {
-// //         const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
-// //         const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user)}); // Random color
-// //         const sphere = new THREE.Mesh(geometry, material);
-
-// //         sphere.position.set(...item.data);
-// //         scene1.add(sphere);
-// //     });
-
-// //     // Function to animate and render the scene
-// //     function animate() {
-// //         requestAnimationFrame(animate);
-// //         renderer1.render(scene1, camera1);
-// //     }
-
-// //     animate();
-// const scene = new THREE.Scene();
-// // Use an OrthographicCamera for 2D visualization
-// const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(width, height);
-// plotBox.node().appendChild(renderer.domElement); // Attach the renderer's canvas to the plotBox
-// const controls = new OrbitControls(camera, renderer.domElement);
-//     controls.enableRotate = false; // Disable rotation for a 2D view
-//     controls.enableZoom = true; // Enable zoom
-// renderer.setClearColor(0xffffff, 1); // Set background color to white
-
-// // Adjust camera position and look at the center of the scene
-// camera.position.set(0, 0, 100);
-// camera.lookAt(0, 0, 0);
-
-// const colorScale = d3.scaleOrdinal(d3.schemeCategory10); // Assuming you have a color scale
-
-// // Create a sphere for each data point
-// raycastDataWithUserInfo.forEach(item => {
-// 	const geometry = new THREE.CircleGeometry(5, 32); // Use CircleGeometry for 2D circles
-// 	const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user) });
-// 	const circle = new THREE.Mesh(geometry, material);
-
-// 	// Adjust positions; assuming item.data is an array of [x, y, z]
-// 	circle.position.set(item.data[0], item.data[1], 0); // Z is set to 0 as it's 2D
-// 	scene.add(circle);
-// });
-
-// // Optionally, add a GridHelper to visualize the 2D plane
-// const size = 10;
-// const divisions = 10;
-// const gridHelper = new THREE.GridHelper(size, divisions);
-// scene.add(gridHelper);
-
-// // Function to animate and render the scene
-// function animate() {
-// 	requestAnimationFrame(animate);
-// 	renderer.render(scene, camera);
-// }
-
-// animate();
-// }
 
 function plotScatterPlot() {
     const plotBox = d3.select("#plot-box2").html("");
@@ -2271,10 +2195,10 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
     topicItem.appendChild(topicCheckbox);
     topicItem.appendChild(label);
-	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#7e4695';}
+	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#f08030';}
 	if (globalState.finalData.action_dict[topicName].is_user_interest) {
-        label.innerHTML = `${topicName} <span style="color: #7e4695;">★</span>`;
-		label.style.color = '#7e4695';
+        label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
+		label.style.color = '#f08030';
     }
 
 
@@ -2307,7 +2231,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 			if (action.has_user_action_of_interest) {
 				// console.log(specificAction);
 				// console.log(action.)
-                keywordLabel.style.color = '#7e4695';
+                keywordLabel.style.color = '#f08030';
             }
 
             keywordItem.appendChild(keywordCheckbox);
@@ -2585,7 +2509,7 @@ function getSpeechData(action, selectedKeywords) {
     actionPropertyEl.appendChild(actionPropertyContent);
 
 	const relevantActionLine = document.createElement('div');
-	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #7e4695;">"${relevantKeyword}"</span></span>`;
+	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #f08030;">"${relevantKeyword}"</span></span>`;
 
     actionPropertyEl.appendChild(relevantActionLine);
 
@@ -2620,12 +2544,15 @@ function updateInterestBox() {
 	const topicInterestSpan = document.createElement("span");
 	topicInterestSpan.textContent = "Action of your interest: ";
 	topicInterestSpan.style.color = "white";
+	topicInterestSpan.style.fontWeight = "bold"; 
 
 	// Create "Next user interest topic" span
 	const nextInterestSpan = document.createElement("span");
 	nextInterestSpan.textContent = userInterestTopic;
-	nextInterestSpan.style.color = "#ffc000";
-
+	// nextInterestSpan.style.color = "#ffc000";
+	nextInterestSpan.style.color = "#333333"; 
+	nextInterestSpan.style.fontWeight = "bold"; 
+  
 	// Append both spans to the container
 	container.appendChild(topicInterestSpan);
 	container.appendChild(nextInterestSpan);
@@ -2776,29 +2703,26 @@ function updateInterestBox() {
 	};
 
 	const dragged = (event) => {
-	  // console.log(" r u here?");
-	  const dx = event.x - dragStartX; // Change in x
-	  const line1 = indicatorSVG.select("#time-indicator-line1");
-	  const line2 = indicatorSVG.select("#time-indicator-line2");
-	  const circle1 = indicatorSVG.select("#time-indicator-circle1");
-	  const circle2 = indicatorSVG.select("#time-indicator-circle2");
-	  let line1X = parseFloat(line1.attr("x1"));
-	  let line2X = parseFloat(line2.attr("x1"));
-
-	  // Update positions based on drag
-	  line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
-	  line2.attr("x1", line2X + dx).attr("x2", line2X + dx);
-	  circle1.attr("cx", line1X + dx);
-	  circle2.attr("cx", line2X + dx);
+		const dx = event.x - dragStartX;
+		const line1 = indicatorSVG.select("#time-indicator-line1");
+		const line2 = indicatorSVG.select("#time-indicator-line2");
+		const circle1 = indicatorSVG.select("#time-indicator-circle1");
+		const circle2 = indicatorSVG.select("#time-indicator-circle2");
 
 
-	  // Update globalState timestamps based on new line positions
-	  const newLine1Timestamp = x.invert(line1X + dx);
-	  const newLine2Timestamp = x.invert(line2X + dx);
-	  globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
-	//   .getTime();
-	  globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-	//   .getTime();
+		let line1X = parseFloat(line1.attr("x1")) + dx;
+		let line2X = parseFloat(line2.attr("x1")) + dx;
+
+		line1.attr("x1", line1X).attr("x2", line1X);
+		line2.attr("x1", line2X).attr("x2", line2X);
+		circle1.attr("cx", line1X);
+		circle2.attr("cx", line2X);
+
+		let buffer = 150 ;
+	  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
+	  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
+	  globalState.lineTimeStamp1 = newLine1Timestamp;
+	  globalState.lineTimeStamp2 = newLine2Timestamp;
 
 	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
 	  updateXRSnapshot();
@@ -3023,6 +2947,7 @@ async function initialize() {
 	createLineDrawing(1);
 	plotUserSpecificBarChart();
 	plotCombinedUsersSpiderChart();
+	plotAverageDurationBarChart();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
@@ -3036,6 +2961,7 @@ function animate() {
 	initializeInteraction();
 	requestAnimationFrame(animate);
 	globalState.controls.update();
+	// console.log(globalState.camera.position);
 	globalState.renderer.render(globalState.scene, globalState.camera);
 }
 export function getScene() {
