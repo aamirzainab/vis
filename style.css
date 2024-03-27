@@ -20,11 +20,11 @@ html, body {
     position: fixed;
     top: 0;
     height: 100%;
-    background-color: #f9f9f9;
+    /* background-color: #f9f9f9; */
     z-index: 100;
     overflow-y: auto;
     padding-bottom: 20px;
-    border: 2px solid #ccc; 
+    border: 2px solid #ccc;
 }
 
 #left-pane {
@@ -34,23 +34,25 @@ html, body {
     flex-direction: column;
 }
 .keyword-selected {
-    background-color: #d0d0d0; 
+    background-color: #e0e0e0; /* Light grey background */
   }
-
 #right-pane {
     right: 0;
     width: 25%;
     display: flex;
     flex-direction: column;
+    margin:0;
+    padding:0;
 }
 
 .plot-box {
     flex: 1;
     width: 100%;
     overflow-y: auto;
-    /* border: 1px solid #ddd; */
     margin-bottom: 10px;
-    border: 2px solid #ccc; 
+    border: 2px solid #ccc;
+    margin:0;
+    padding:0;
 }
 
 #spatial-view, #temporal-view {
@@ -71,7 +73,7 @@ html, body {
     position: absolute;
     top: 0;
     left: 300;
-    z-index: 1000; 
+    z-index: 1000;
     background-color: #f9f9f9;
     padding: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -85,8 +87,8 @@ html, body {
     left: 20%;
     padding: 5px;
     margin: 10px;
-    font-size: 1em; 
-    z-index: 2; 
+    font-size: 1em;
+    z-index: 2;
 }
 
 
@@ -100,12 +102,12 @@ html, body {
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     position: absolute;
-    padding: 10px;
+    padding: 5px;
     z-index: 101;
 }
 
 #obj-toolbar, #toolbar {
-    display: none; 
+    display: none;
 }
 
 #obj-toolbar ul, #obj-toolbar li, #toolbar .toggle, #user-toolbar input[type="checkbox"] {
@@ -118,7 +120,7 @@ html, body {
     display: flex;
     align-items: center;
     width: 100%;
-    display: none; 
+    display: none;
 }
 
 #slider-container input[type=range], #playPauseButton {
@@ -133,7 +135,7 @@ html, body {
 }
  #speech-plot-container {
         /* overflow-x: scroll; */
-      padding: 10px; 
+      padding: 10px;
       top:0;
 }
 
@@ -148,11 +150,11 @@ html, body {
 #controls-container {
     display: flex;
     align-items: center;
-    justify-content: space-between; 
+    justify-content: space-between;
     position: absolute;
-    top: 0; 
-    width: 100%; 
-    padding: 0 10px; 
+    top: 0;
+    width: 100%;
+    padding: 0 10px;
     z-index: 10;
 }
 
@@ -174,41 +176,28 @@ html, body {
     display:none;
 }
 
-#time-extent-toggle input[type="radio"] {
-    display: none; /* Hide the default radio button */
-}
-
-#time-extent-toggle label {
-    cursor: pointer;
-    padding: 5px 15px; /* Padding for label */
-    background-color: #f9f9f9; /* Default background color */
-    margin-left: -1px; /* Overlap the borders slightly */
-}
-
-#time-extent-toggle input[type="radio"]:checked + label {
-    background-color: #4892dc; /* Highlight color for selected option */
-    color: white; /* Text color for selected option */
-}
 
 #user-interest-topic-container {
     display: flex;
-    align-items: center; 
-   
+    align-items: center;
+
 }
 
 .user-interest-icon {
-    color: #7e4695; /* Purple color for the star */
+    color: #f08030; /* Purple color for the star */
     margin-right: 8px; /* Spacing between star and input box */
-    font-size: 20px; /* Size of the star */
+    font-size: 30px;
 }
 
 #user-interest-topic {
-    border: 2px solid #7e4695; /* Purple border */
-    background-color: #7e4695; /* Purple background */
+    border: 2px solid #f08030; /* Purple border */
+    background-color: #f08030; /* Purple background */
     color: #ffc000; /* Yellow text */
     padding: 5px 10px; /* Padding inside the text box */
     border-radius: 4px; /* Rounded corners */
+    font-size: 1.3em;
 }
+
 
 
 #bin-selection-container {
@@ -259,7 +248,7 @@ html, body {
 
 }
 /* #shared-axis-container {
-    margin-bottom: 0; 
+    margin-bottom: 0;
 } */
 
 #binsDropdown:focus, #binsDropdown option:hover, #binsDropdown option:checked {
@@ -274,6 +263,9 @@ html, body {
     width: 100%; /* Uses the full width of its container */
 }
 
+#hier-toolbar ul {
+    list-style-type: none;
+}
 #speech-box{
     overflow-y: auto;
     /* max-height:100%; */
@@ -283,19 +275,8 @@ html, body {
     flex-grow: 1;
 }
 
-#hier-toolbar ul {
-    list-style-type: none;
-}
-#hier-toolbar {
-    list-style: none;
-    flex-shrink: 0;
-    overflow-y: auto; /* Enables vertical scrolling within the toolbar */
-    max-height: 30%; /* Takes up 30% of the left pane's height */
-    width: 100%; /* Uses the full width of its container */
-}
-#hier-toolbar ul {
-    list-style-type: none;
-}
+
+
 
 #indicator-svg {
     pointer-events: none; /* Ignore mouse events; they "pass through" */
@@ -314,14 +295,73 @@ html, body {
     position: absolute;
     /* bottom: 20px; Adjust the distance from the bottom as needed */
     bottom:490px;
-    left: 1600px; 
-    width: 300px; 
-    height: 240px;  
-    background-color: #fff; 
+    left: 1600px;
+    width: 300px;
+    height: 240px;
+    background-color: #fff;
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 5px; 
+    padding: 5px;
     /* overflow: hidden;  */
-    z-index: 101; 
-    display: block; 
+    z-index: 101;
+    display: block;
 }
+
+#unit-minutes,
+#unit-seconds {
+    display: none; /* Hide the default radio buttons */
+}
+
+
+
+#unit-minutes:checked + label,
+#unit-seconds:checked + label {
+    background-color: #CCCCCC; /* Highlight color for selected option */
+    color: white; /* Text color for selected option */
+    font-size:1.2em;
+}
+
+.dropbtn {
+    border-radius: 3px;
+    padding: 10px 10px;
+    font-size: 1.1em; 
+    border: 2px solid #999;
+}
+
+
+
+.user-legend {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    height: 100px;
+    width:150px;
+}
+.user-legend-item {
+    font-size:1.1em;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-bottom: 10px; 
+}
+.user-legend-item span {
+    margin-left: 5px;
+}
+.user-legend-item:hover {
+    background-color: #f0f0f0; /* Change background color on hover */
+}
+.legend-square {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    margin-left:10px;
+    border-radius: 3px; /* Adjust the value to make the edges rounder */
+}
+.legend-checkbox {
+    margin-right: 15px;
+    border-radius: 3px; /* Adjust the value to make the edges rounder */
+}
+
+.highlight-1 { background-color: #92d050; }
+.highlight-2 { background-color: #ffc000 }
+.highlight-3 { background-color: #00b0f0 }

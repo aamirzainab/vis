@@ -29,7 +29,7 @@ let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 3;
 let x ;
-let yScale ; 
+let yScale ;
 let intervals;
 let globalState = {
 	currentTimestamp: 0,
@@ -75,8 +75,8 @@ const hsl = {
 };
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
-    .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
-    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
+    .domain(["User_1", "User_2", "User_3", "0", "1", "2"])
+    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]);
 
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
@@ -125,7 +125,7 @@ export function updateIntervals() {
 
 function changeBinSize(newBinSize) {
 	const unit = document.querySelector('input[name="unit"]:checked').value;
-  
+
 	var event = new CustomEvent('binSizeChange', {
 		detail: { size: newBinSize, unit: unit }
 	});
@@ -133,31 +133,31 @@ function changeBinSize(newBinSize) {
 	createPlotTemporal();
 	window.dispatchEvent(event);
   }
-  
+
   document.getElementById('binsDropdown').addEventListener('change', function() {
 	changeBinSize(this.value);
   });
-  
+
   document.getElementById('unit-selection-container').addEventListener('change', function() {
 	const unit = document.querySelector('input[name="unit"]:checked').value;
 	const currentBinSize = document.getElementById('binsDropdown').value;
 	changeBinSize(currentBinSize);
 	console.log('Unit changed to:', unit);
   });
-  
+
   window.addEventListener('binSizeChange', function(e) {
 	globalState.bins = e.detail.size;
 	globalState.unit = e.detail.unit;
 	updateIntervals(e.detail.size, e.detail.unit);
 	console.log('Bin size changed to:', e.detail.size, 'Unit:', e.detail.unit);
   });
-  
+
 
 
 
 async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
-	console.log(filename);
+	// console.log(filename);
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
 	avatar.scale.set(1, 1, 1);
@@ -170,7 +170,7 @@ async function loadAvatarModel(filename) {
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		const filename = 'RealWorld/room132.glb';
+		const filename = 'RD_background_dense_color_fix.glb';
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
@@ -224,8 +224,7 @@ window.onload = function() {
 		// console.log(globalState.currentLineSegments);
 		const userID = 0 ;
 		globalState.show[userID] = this.checked;
-		// clearBubbles();
-		// addBubbles();
+		plotOrUpdateBubblePlot();
 		// console.log(globalState.avatars.visible)
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
@@ -238,23 +237,23 @@ window.onload = function() {
 				});
 			}
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = true ; 
+				globalState.avatars[userID].visible = true ;
 			}
 			if (globalState.raycastLines[userID]) {
-				console.log(globalState.raycastLines[userID].length); 
+				console.log(globalState.raycastLines[userID].length);
 				globalState.raycastLines[userID].forEach(mesh => {
 						globalState.scene.add(mesh);
 				});
 			}
-				
+
 		}
 		else {
 			// console.log("here?");
-			
+
 			if (globalState.currentLineSegments[userID]) {
-				
+
 				globalState.scene.remove(globalState.currentLineSegments[userID]);
-				
+
 			}
 			if (globalState.triangleMesh[userID]) {
 				globalState.triangleMesh[userID].forEach(mesh => {
@@ -263,7 +262,7 @@ window.onload = function() {
 			}
 
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = false ; 
+				globalState.avatars[userID].visible = false ;
 			}
 			if (globalState.raycastLines[userID]) {
 				globalState.raycastLines[userID].forEach(mesh => {
@@ -274,9 +273,10 @@ window.onload = function() {
 	});
 
 	document.getElementById('toggle-user1').addEventListener('change', function() {
-		
+
 		const userID = 1 ;
 		globalState.show[userID] = this.checked;
+		plotOrUpdateBubblePlot();
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
 			if (globalState.currentLineSegments[userID]) {
@@ -288,7 +288,7 @@ window.onload = function() {
 				});
 			}
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = true ; 
+				globalState.avatars[userID].visible = true ;
 			}
 			if (globalState.raycastLines[userID]) {
 				globalState.raycastLines[userID].forEach(mesh => {
@@ -296,13 +296,13 @@ window.onload = function() {
 				});
 			}
 
-				
+
 		}
 		else {
 			if (globalState.currentLineSegments[userID]) {
-				
+
 				globalState.scene.remove(globalState.currentLineSegments[userID]);
-				
+
 			}
 			if (globalState.triangleMesh[userID]) {
 				globalState.triangleMesh[userID].forEach(mesh => {
@@ -311,7 +311,7 @@ window.onload = function() {
 			}
 
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = false ; 
+				globalState.avatars[userID].visible = false ;
 			}
 			if (globalState.raycastLines[userID]) {
 				globalState.raycastLines[userID].forEach(mesh => {
@@ -321,9 +321,10 @@ window.onload = function() {
 		}
 	});
 	document.getElementById('toggle-user2').addEventListener('change', function() {
-		
+
 		const userID = 2 ;
 		globalState.show[userID] = this.checked;
+		plotOrUpdateBubblePlot();
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
 			if (globalState.currentLineSegments[userID]) {
@@ -336,20 +337,20 @@ window.onload = function() {
 			}
 
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = true ; 
+				globalState.avatars[userID].visible = true ;
 			}
 			if (globalState.raycastLines[userID]) {
 				globalState.raycastLines[userID].forEach(mesh => {
 						globalState.scene.add(mesh);
 				});
 			}
-				
+
 		}
 		else {
 			if (globalState.currentLineSegments[userID]) {
-				
+
 				globalState.scene.remove(globalState.currentLineSegments[userID]);
-				
+
 			}
 			if (globalState.triangleMesh[userID]) {
 				globalState.triangleMesh[userID].forEach(mesh => {
@@ -358,7 +359,7 @@ window.onload = function() {
 			}
 
 			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = false ; 
+				globalState.avatars[userID].visible = false ;
 			}
 			if (globalState.raycastLines[userID]) {
 				globalState.raycastLines[userID].forEach(mesh => {
@@ -421,33 +422,35 @@ function createDeviceSegment(id){
 	// console.log(globalState.avatars);
 	const avatar = globalState.avatars[id];
 	console.log()
-	const linewidth = 7; 
-	// const data = globalState.finalData; 
+	const linewidth = 7;
+	// const data = globalState.finalData;
 	const data = globalState.finalData.action_dict["User Transformation"].actions;
 	  const filteredData = data.filter(action => {
 		  const actionStartTime = parseTimeToMillis(action.start_time);
 		  const actionEndTime = parseTimeToMillis(action.end_time);
 		  return action.action_type === "Transformation" &&
 				 action.formatted_data.action_property_specific_action === "XRCamera Transformation" &&
-		   action.actor_name == userID && 
+		   action.actor_name == userID &&
 				 actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
 	  });
-	
+
 	if (filteredData.length !== 0) {
 	  filteredData.forEach(entry => {
 		const spatialExent = entry.spatial_extent;
 		const {x,y,z} = getCoordinates(spatialExent);
-		avatar.position.x = x ; 
-		avatar.position.z = z ; 
-		// const euler = new THREE.Euler(0, THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
-		// avatar.rotation.set(0, 0, 0);
-		// avatar.setRotationFromEuler(euler);
+		avatar.position.x = x ;
+		avatar.position.z = z ;
+		// const {rotationx, rotationy, rotationz } = getRotationCoordinates(spatialExent);
+
+		const euler = new THREE.Euler(THREE.MathUtils.degToRad(spatialExent[1][0]), THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
+		avatar.rotation.set(0, 0, 0);
+		avatar.setRotationFromEuler(euler);
 	  });
 	  }
 	}
 
 
-		
+
 function createRayCastSegment(id) {
 		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 		if (!globalState.raycastLines[id]) {
@@ -455,43 +458,43 @@ function createRayCastSegment(id) {
 		}
 		if (globalState.raycastLines[0]) {
 			globalState.raycastLines[0].forEach(mesh => {
-				globalState.scene.remove(mesh); 
+				globalState.scene.remove(mesh);
 			});
-			globalState.raycastLines[0] = []; 
+			globalState.raycastLines[0] = [];
 		}
 		if (globalState.raycastLines[1]) {
 			globalState.raycastLines[1].forEach(mesh => {
-				globalState.scene.remove(mesh); 
+				globalState.scene.remove(mesh);
 			});
-			globalState.raycastLines[1] = []; 
+			globalState.raycastLines[1] = [];
 		}
 		if (globalState.raycastLines[2]) {
 			globalState.raycastLines[2].forEach(mesh => {
-				globalState.scene.remove(mesh); 
+				globalState.scene.remove(mesh);
 			});
-			globalState.raycastLines[2] = []; 
+			globalState.raycastLines[2] = [];
 		}
-	
+
 		Object.values(globalState.finalData.action_dict).forEach(topic => {
 			topic.actions.filter(action => {
 				const actionStartTime = parseTimeToMillis(action.start_time);
 				const actionEndTime = parseTimeToMillis(action.end_time);
 				return action.specific_action_data_type === "Raycast" &&
-					   actionEndTime >= globalState.lineTimeStamp1 && 
+					   actionEndTime >= globalState.lineTimeStamp1 &&
 					   actionStartTime <= globalState.lineTimeStamp2 &&
-					   action.specific_action_data; 
+					   action.specific_action_data;
 			}).forEach(action => {
-				
-				const raycastPosition = action.specific_action_data;
-				const {x,y,z} = getCoordinates(raycastPosition); 
 
-	
+				const raycastPosition = action.specific_action_data;
+				const {x,y,z} = getCoordinates(raycastPosition);
+
+
 				let match = action.actor_name.match(/\d+/);
 				let id = match ? parseInt(match[0], 10) - 1 : null;
-				
+
 				const userAvatar = globalState.avatars[id]
 				if (!userAvatar) return;
-	
+
 				const points = [
 					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
 					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
@@ -499,8 +502,8 @@ function createRayCastSegment(id) {
 				];
 				const geometry = new THREE.BufferGeometry().setFromPoints(points);
 				const line = new THREE.Line(geometry, lineMaterial);
-				
-				const lengt1 = globalState.scene.children.length ; 
+
+				const lengt1 = globalState.scene.children.length ;
 
 				globalState.scene.add(line);
 				globalState.raycastLines[id].push(line);
@@ -508,7 +511,7 @@ function createRayCastSegment(id) {
 			});
 		});
 	}
-	
+
 
 
 function createLineSegment(id){
@@ -532,14 +535,14 @@ function createLineSegment(id){
         const actionEndTime = parseTimeToMillis(action.end_time);
         return action.action_type === "Transformation" &&
                action.formatted_data.action_property_specific_action === "XRCamera Transformation" &&
-			   action.actor_name == userID && 
+			   action.actor_name == userID &&
                actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
     });
-	
+
 	if (globalState.currentLineSegments[id]) {
         globalState.scene.remove(globalState.currentLineSegments[id]);
-        // globalState.currentLineSegments[id].geometry.dispose(); 
-        // globalState.currentLineSegments[id].material.dispose(); 
+        // globalState.currentLineSegments[id].geometry.dispose();
+        // globalState.currentLineSegments[id].material.dispose();
         globalState.currentLineSegments[id] = null;
     }
 
@@ -582,9 +585,9 @@ if (globalState.triangleMesh[id]) {
 
 
 function updateSceneBasedOnSelections() {
-    const data = globalState.finalData.action_dict; 
-    const selectedTopics = getSelectedTopics(); 
-    const selectedKeywords = getSelectedKeywords(); 
+    const data = globalState.finalData.action_dict;
+    const selectedTopics = getSelectedTopics();
+    const selectedKeywords = getSelectedKeywords();
     const movementData = globalState.finalData.action_dict["User Transformation"].actions;
 
     // Clear previous triangles before redrawing
@@ -598,7 +601,7 @@ function updateSceneBasedOnSelections() {
                 const actionStartTime = parseTimeToMillis(action.start_time);
                 const actionEndTime = parseTimeToMillis(action.end_time);
                 const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-                const matchesSelectedKeywords = selectedKeywords.some(keyword => 
+                const matchesSelectedKeywords = selectedKeywords.some(keyword =>
                     action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
 
                 if (matchesSelectedKeywords && isInTimeRange) {
@@ -606,7 +609,7 @@ function updateSceneBasedOnSelections() {
                     // Finding the closest movement data
                     let closestData = null;
                     let minimumTimeDifference = Infinity;
-// movement data isn't checking the time range zainab 
+// movement data isn't checking the time range zainab
                     movementData.forEach(data => {
                         if (data.actor_name === actorName) {
                             const movementStartTime = parseTimeToMillis(data.start_time);
@@ -620,7 +623,7 @@ function updateSceneBasedOnSelections() {
 
                     if (closestData) {
                         const spatial_extent = closestData.spatial_extent;
-						const { x, y , z } = getCoordinates(spatial_extent);  
+						const { x, y , z } = getCoordinates(spatial_extent);
 
                         // Add triangle
                         const geometry = new THREE.BufferGeometry();
@@ -637,7 +640,7 @@ function updateSceneBasedOnSelections() {
 
 
                         // Choose a color based on the actor, or use a default color
-                        const color = colorScale(String(id));  
+                        const color = colorScale(String(id));
                         const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
 
                         const triangleMesh = new THREE.Mesh(geometry, material);
@@ -646,7 +649,7 @@ function updateSceneBasedOnSelections() {
 						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
 						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
 						const wireframe = new THREE.LineSegments(edges, lineMaterial); // Creates a wireframe (line segments) that represents the edges
-						triangleMesh.add(wireframe); 
+						triangleMesh.add(wireframe);
 
                         // Manage and add triangle mesh to the scene
                         if (!globalState.triangleMesh[id]) {
@@ -654,7 +657,7 @@ function updateSceneBasedOnSelections() {
                         }
                         globalState.triangleMesh[id].push(triangleMesh);
 							globalState.scene.add(triangleMesh);
-	
+
 						initializeInteraction();
                     }
                 }
@@ -667,8 +670,10 @@ async function initializeScene() {
 	globalState.scene = new THREE.Scene();
 	globalState.scene.background = new THREE.Color(0xffffff);
 	const spatialView = document.getElementById('spatial-view');
-	globalState.camera = new THREE.PerspectiveCamera(25, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-	globalState.camera.position.set(0, 2, 10);
+	// globalState.camera = new THREE.PerspectiveCamera(25, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	// globalState.camera.position.set(0, 2, 10);
+	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	globalState.camera.position.set(9, 2, 1);
 	globalState.camera.updateProjectionMatrix();
 
 	globalState.renderer = new THREE.WebGLRenderer({
@@ -701,6 +706,7 @@ async function initializeScene() {
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
 	globalState.scene.add(gridHelper);
+	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
 		fetch('new_action_oriented_analysis_full_data.json').then(response => response.json()),
@@ -709,7 +715,7 @@ async function initializeScene() {
 
   const avatarArray = await Promise.all([
     loadAvatarModel('ipad_user1.glb'),
-    loadAvatarModel('ipad_user1.glb'), 
+    loadAvatarModel('ipad_user1.glb'),
 	loadAvatarModel('ipad_user1.glb'),
 
 	]);
@@ -1060,13 +1066,10 @@ function processMovementData() {
 // 	animateLink();
 // }
 function createPlotTemporal() {
-	// Assuming globalState.finalData is set and contains the topics_dict property
-	const data = globalState.finalData.action_dict ; 
+	const data = globalState.finalData.action_dict ;
+	const {"Raw Capture": omitted, ...newData} = data;
 
-// Destructuring the data object to exclude "Raw Capture"
-const {"Raw Capture": omitted, ...newData} = data;
-	// delete data["Raw Capture"]; 
-	const topicsData = Object.entries(data).flatMap(([topicName, topicDetails]) => {
+	const topicsData = Object.entries(newData).flatMap(([topicName, topicDetails]) => {
 	  return topicDetails.actions.map(action => ({
 		topic: topicName,
 		startTime: parseTimeToMillis(action.start_time),
@@ -1116,9 +1119,9 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#7e4695" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
 	  })
-	  .style("cursor", "pointer") 
+	  .style("cursor", "pointer")
     .on("click", function(event, d) {
       // console.log("helloooo?");
       showContextMenu(event, d);
@@ -1130,10 +1133,10 @@ const {"Raw Capture": omitted, ...newData} = data;
 	//   .selectAll(".tick text") // select all the text elements for the y-axis ticks
 	//   .style("fill", function(d) { // conditional coloring based on user interest
 	// 	const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-	// 	return isUserInterest ? "#7e4695" : "#000"; // Purple for user interest topics, black for others
+	// 	return isUserInterest ? "#f08030" : "#000"; // Purple for user interest topics, black for others
 	//   });
 	svg.select(".axis--y").selectAll(".tick text")
-    .style("cursor", "pointer") 
+    .style("cursor", "pointer")
     .style("pointer-events", "all")
     .on("click", function(event, d) {
       showContextMenu(event, d);
@@ -1167,7 +1170,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  return width;
 	})
 	.attr("height", yScale.bandwidth())
-	.attr("fill", d => d.hasUserInterestAction ? "#7e4695" : "#d0d0d0");
+	.attr("fill", d => d.hasUserInterestAction ? "#f08030" : "#d0d0d0");
 	// .attr("fill", "#d0d0d0");
   }
 
@@ -1186,7 +1189,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 		.style("box-shadow", "0 4px 8px rgba(0,0,0,0.1)");
 	}
 	contextMenu.html("");
-  
+
 	// Add Normal View and Split View options
 	contextMenu.append("div").text("Normal View")
 	  .style("padding", "5px")
@@ -1197,9 +1200,9 @@ const {"Raw Capture": omitted, ...newData} = data;
 		d3.select("#plot-svg").selectAll("*").remove();
 		createPlotTemporal();
 		contextMenu.style("visibility", "hidden");
-  
+
 	  });
-  
+
 	contextMenu.append("div").text("Split View")
 	  .style("padding", "5px")
 	  .style("cursor", "pointer")
@@ -1209,7 +1212,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 		createSplitBars(topicName);
 		contextMenu.style("visibility", "hidden"); // Hide context menu
 	  });
-  
+
 	// Position the menu at the mouse position
 	contextMenu.style("left", (event.pageX + 10) + "px")
 	  .style("top", (event.pageY + 10) + "px")
@@ -1222,7 +1225,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	const userActions = topicDetails.actions;
 	const users = [...new Set(userActions.map(a => a.actor_name))];
 	const svg = d3.select("#plot-svg > g");
-  
+
 	// We need to adjust the original y scale to insert new bars. Let's calculate new domain.
 	const allTopics = Object.keys(globalState.finalData.action_dict);
 	let newDomain = [];
@@ -1234,11 +1237,11 @@ const {"Raw Capture": omitted, ...newData} = data;
 			newDomain.push(topic);
 		}
 	});
-  
+
 	// Recalculate the y positions based on the new domain
 	yScale.domain(newDomain).padding(0.1);
 	const newYHeight = yScale.bandwidth();
-  
+
 	// Redraw the y-axis
 	svg.select(".axis--y").call(d3.axisLeft(yScale));
 	const backgroundLines = svg.selectAll(".background-line").data(newDomain);
@@ -1249,17 +1252,17 @@ const {"Raw Capture": omitted, ...newData} = data;
 	.attr("width", globalState.dynamicWidth)
 	.attr("height", yScale.bandwidth())
 	.attr("fill", "#e8e8e8");
-  
+
 	backgroundLines.exit().remove();
-  
+
 	svg.selectAll(".bar").transition().duration(500)
 		.attr("y", d => yScale(d.topic))
 		.attr("height", newYHeight);
-  
+
 		svg.selectAll(".background-line").transition().duration(500)
 		.attr("y", (d) => yScale(d))
 		.attr("height", newYHeight);
-  
+
 	// Add new bars for each user action under the selected topic
 	users.forEach((user, index) => {
 		userActions.filter(a => a.actor_name === user).forEach(action => {
@@ -1270,132 +1273,72 @@ const {"Raw Capture": omitted, ...newData} = data;
 				.attr("y", yScale(`${topicName}-${user}`))
 				.attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
 				.attr("height", newYHeight)
-				.attr("fill", d => action.has_user_action_of_interest ? "#7e4695" : "#d0d0d0"); 
+				.attr("fill", d => action.has_user_action_of_interest ? "#f08030" : "#d0d0d0");
 		});
 	});
-  
+
   }
 
-function plotBarChart() {
-    const plotBox = d3.select("#plot-box1").html(""); 
-    const margin = { top: 60, right: 20, bottom: 180, left: 40 };
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom; 
 
-    const svg = plotBox.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-		//  console.log(globalState.finalData.action_dict);
-    let processedData = Object.entries(globalState.finalData.action_dict).map(([actionName, actionDetails]) => {
-        // Count the number of actions for each broad action and flag if there's any action of user interest
-        let count = actionDetails.actions.length;
-        let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
-        return { actionName, count, hasUserActionOfInterest };
-    });
-	processedData = Object.entries(globalState.finalData.action_dict)
-	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
-	.map(([actionName, actionDetails]) => {
-		// Count the number of actions for each broad action and flag if there's any action of user interest
-		let count = actionDetails.actions.length;
-		let hasUserActionOfInterest = actionDetails.actions.some(action => action.has_user_action_of_interest);
-		return { actionName, count, hasUserActionOfInterest };
-	});
-
-    const x = d3.scaleBand()
-        .range([0, width])
-        .padding(0.1)
-        .domain(processedData.map(d => d.actionName));
-
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(processedData, d => d.count)])
-        .range([height, 0]);
-
-    // Create bars
-    svg.selectAll(".bar")
-      .data(processedData)
-      .enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", d => x(d.actionName))
-        .attr("width", x.bandwidth())
-        .attr("y", d => y(d.count))
-        .attr("height", d => height - y(d.count))
-        .attr("fill", d => d.hasUserActionOfInterest ? "#7e4695" : "#d0d0d0"); // Change color based on user action of interest
-
-    // Add the x Axis
-    svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x))
-        .selectAll("text")  
-          .style("text-anchor", "end")
-          .attr("dx", "-.8em")
-          .attr("dy", ".15em")
-          .attr("transform", "rotate(-65)");
-
-    // Add the y Axis
-    svg.append("g")
-        .call(d3.axisLeft(y));
-}
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
 	const margin = { top: 60, right: 20, bottom: 180, left: 40 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-	const height = 500 - margin.top - margin.bottom; 
-  
+	const height = 500 - margin.top - margin.bottom;
+
 	const svg = plotBox.append("svg")
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom)
 		.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-  
+
 	// Assuming globalState.finalData.action_dict exists and is structured appropriately
 	let allUsers = new Set();
 	let userDataByAction = {};
-  
+
 	Object.entries(globalState.finalData.action_dict)
-	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture") 
+	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
 	.forEach(([actionName, actionDetails]) => {
 		const userCounts = actionDetails.actions.reduce((acc, action) => {
 			acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
 			allUsers.add(action.actor_name);
 			return acc;
 		}, {});
-  
+
 		userDataByAction[actionName] = userCounts;
 	});
-  
+
 	const users = Array.from(allUsers);
 	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
 		actionName,
 		...counts
 	}));
-  
+
 	// Setup scales
 	const x0 = d3.scaleBand()
 		.rangeRound([0, width])
 		.paddingInner(0.1)
 		.domain(processedData.map(d => d.actionName));
-  
+
 	const x1 = d3.scaleBand()
 		.padding(0.05)
 		.domain(users)
 		.rangeRound([0, x0.bandwidth()]);
-  
+
 	const y = d3.scaleLinear()
 		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
 		.range([height, 0]);
-  
-	const color = colorScale; 
-  
+
+	const color = colorScale;
+
 	// Create the grouped bars
 	const action = svg.selectAll(".action")
 		.data(processedData)
 		.enter().append("g")
 		.attr("class", "g")
 		.attr("transform", d => `translate(${x0(d.actionName)},0)`);
-  
+
 	action.selectAll("rect")
 		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
 		.enter().append("rect")
@@ -1404,7 +1347,7 @@ function plotUserSpecificBarChart() {
 		.attr("y", d => y(d.value))
 		.attr("height", d => height - y(d.value))
 		.attr("fill", d => colorScale(d.key));
-  
+
 	// Add the axes
 	svg.append("g")
 		.attr("class", "axis")
@@ -1414,23 +1357,32 @@ function plotUserSpecificBarChart() {
 		.style("text-anchor", "end")
 		.attr("dx", "-.8em")
 		.attr("dy", ".15em")
-		.attr("transform", "rotate(-65)");
-  
+		.attr("transform", "rotate(-65)")
+		.style("font-size", "9px");
+
 	svg.append("g")
 		.call(d3.axisLeft(y));
-  
+	svg.append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 0 - margin.left)
+		.attr("x", 0 - (height / 2))
+		.attr("dy", "1em")
+		.style("text-anchor", "middle")
+		.text("Count")
+		.style("font-size", "12px");
+
 	// const legend = svg.selectAll(".legend")
 	// 	.data(users)
 	// 	.enter().append("g")
 	// 	.attr("class", "legend")
 	// 	.attr("transform", (d, i) => "translate(0," + i * 20 + ")");
-  
+
 	// legend.append("rect")
 	// 	.attr("x", width - 18)
 	// 	.attr("width", 18)
 	// 	.attr("height", 18)
 	// 	.style("fill", colo);
-  
+
 	// legend.append("text")
 	// 	.attr("x", width - 24)
 	// 	.attr("y", 9)
@@ -1452,13 +1404,13 @@ function plotCombinedUsersSpiderChart() {
 	  .attr("height", height + margin.top + margin.bottom)
 	  .append("g")
 	  .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
-  
+
 	// Process data to get topics and users
 	const data = Object.values(globalState.finalData.action_dict);
 	const topics = Object.keys(globalState.finalData.action_dict).filter(topic => topic !== "Others" && topic !== "User Transformation"
 	&& topic !== "Verbal Communication" && topic !== "Raw Capture");
 	const users = [...new Set(data.flatMap(topic => topic.actions.map(action => action.actor_name)))];
-  
+
 	let maxCount = 0;
 	data.forEach(topic => {
 	  let topicCounts = new Map();
@@ -1467,16 +1419,16 @@ function plotCombinedUsersSpiderChart() {
 		  topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
 		}
 	  });
-	  let topicMax = Math.max(...topicCounts.values(), 0); 
+	  let topicMax = Math.max(...topicCounts.values(), 0);
 	//   console.log(topicMax);
 	  maxCount = Math.max(maxCount, topicMax); // Global max count
 	});
 	// console.log(maxCount);
-  
+
 	const rScale = d3.scaleLinear()
 	  .range([0, Math.min(width / 2, height / 2)])
 	  .domain([0, maxCount]);
-  
+
 	// Draw circular grids
 	const levels = 5; // Adjust based on your preference
 	for (let i = 0; i <= levels; i++) {
@@ -1488,10 +1440,10 @@ function plotCombinedUsersSpiderChart() {
 		.style("stroke", "lightgrey")
 		.style("stroke-dasharray", "2,2");
 	}
-  
+
 	// Calculate angle for radial lines
 	const angleSlice = Math.PI * 2 / topics.length;
-  
+
 	// Draw radial lines and labels
 	topics.forEach((topic, index) => {
 	  const angle = angleSlice * index;
@@ -1501,17 +1453,17 @@ function plotCombinedUsersSpiderChart() {
 		.attr("x2", rScale(maxCount) * Math.cos(angle - Math.PI/2))
 		.attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
 		.style("stroke", "lightgrey");
-  
+
 	  svg.append("text")
-		.attr("x", rScale(maxCount * 1.1) * Math.cos(angle - Math.PI/2))
+		.attr("x", rScale(maxCount * 1.3) * Math.cos(angle - Math.PI/2))
 		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
 		.text(topic)
 		.style("text-anchor", "middle")
 		.attr("alignment-baseline", "middle");
 	});
-  
+
 	const color = colorScale;
-  
+
 	// Plot radar chart area for each user
 	users.forEach((user, userIndex) => {
 	  let userData = topics.map(topicKey => {
@@ -1522,12 +1474,12 @@ function plotCombinedUsersSpiderChart() {
 		const count = topic.actions.filter(action => action.actor_name === user).length;
 		return {topic: topicKey, count};
 	  });
-  
+
 	  const radarLine = d3.lineRadial()
 		.curve(d3.curveLinearClosed)
 		.radius(d => rScale(d.count))
 		.angle((d, i) => i * angleSlice);
-  
+
 	  svg.append("path")
 		.datum(userData)
 		.attr("d", radarLine)
@@ -1537,7 +1489,7 @@ function plotCombinedUsersSpiderChart() {
 		.style("stroke-width", 2);
 	});
   }
-  
+
 // function plotScatterPlot(){
 // 	const plotBox = d3.select("#plot-box3").html("");
 //     const margin = { top: 10, right: 10, bottom: 10, left: 10 };
@@ -1598,7 +1550,7 @@ function plotCombinedUsersSpiderChart() {
 // //         const geometry = new THREE.SphereGeometry(0.1, 32, 32); // Sphere radius and detail
 // //         const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user)}); // Random color
 // //         const sphere = new THREE.Mesh(geometry, material);
-        
+
 // //         sphere.position.set(...item.data);
 // //         scene1.add(sphere);
 // //     });
@@ -1665,8 +1617,8 @@ function plotScatterPlot() {
             topic.actions.forEach(action => {
                 if (action.specific_action_data_type === "Raycast") {
                     raycastDataWithUserInfo.push({
-                        user: action.actor_name, 
-                        data: action.specific_action_data 
+                        user: action.actor_name,
+                        data: action.specific_action_data
                     });
                 }
             });
@@ -1680,7 +1632,7 @@ function plotScatterPlot() {
     plotBox.node().appendChild(renderer.domElement);
     renderer.setClearColor(0xffffff, 1);
     camera.position.set(0, 0, 100);
-	camera.up.set(0, -1, 0); 
+	camera.up.set(0, -1, 0);
 	camera.lookAt(scene.position);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -1705,19 +1657,19 @@ function plotScatterPlot() {
 
     raycastDataWithUserInfo.forEach(item => {
         const [x, y] = item.data;
-		const scaledX = -((x - dataCenterX) * scaleX); 
+		const scaledX = -((x - dataCenterX) * scaleX);
         const scaledY = -((y - dataCenterY) * scaleY);
-    
+
         const geometry = new THREE.CircleGeometry(5, 32);
         const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user) });
         const circle = new THREE.Mesh(geometry, material);
-    
-        circle.position.set(scaledX, scaledY, 0); 
+
+        circle.position.set(scaledX, scaledY, 0);
         scene.add(circle);
     });
 
     const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper); 
+    scene.add(gridHelper);
 
     function animate() {
         requestAnimationFrame(animate);
@@ -1728,9 +1680,11 @@ function plotScatterPlot() {
     animate();
 }
 
+
 function plotOrUpdateBubblePlot() {
 	const plotBox = d3.select("#plot-box3").html("");
     const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+	// const margin = {}
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
      globalState.renderer2 = new THREE.WebGLRenderer();
@@ -1775,9 +1729,11 @@ function plotOrUpdateBubblePlot() {
 				});
 			}
 		});
+		const gridMarginRatio = 0.1; // Example: Contract the grid by 10% on each side
+		const effectiveWidth = width * (1 - gridMarginRatio * 2); // Apply margin to both sides
+		const effectiveHeight = height * (1 - gridMarginRatio * 2);
 
 		const filteredData = raycastDataWithUserInfo.filter(item => globalState.show[item.id]);
-
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         filteredData.forEach(item => {
             const [x, y] = item.data;
@@ -1807,8 +1763,8 @@ function plotOrUpdateBubblePlot() {
 
 		Object.entries(userGrid).forEach(([key, users]) => {
 		const [gridX, gridY] = key.split(',').map(Number);
-		const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
-		const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
+		const centerX = minX + ((gridX ) / gridWidth) * (maxX - minX);
+		const centerY = minY + ((gridY) / gridHeight) * (maxY - minY);
 		const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
 		const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
 
@@ -1821,12 +1777,13 @@ function plotOrUpdateBubblePlot() {
 				transparent: true,
 			});
 			const circle = new THREE.Mesh(geometry, material);
-			circle.position.set(scaledX , scaledY, 0); 
+			circle.position.set(scaledX , scaledY, 0); // Adjust position to avoid overlap
 			globalState.scene2.add(circle);
 		});
 	});
 
     }
+
 
     function animate() {
         requestAnimationFrame(animate);
@@ -1839,7 +1796,8 @@ function plotOrUpdateBubblePlot() {
 
 
 
-  
+
+
 
 function setTimes(data) {
   // console.log(data.earliest_action_time);
@@ -1934,7 +1892,7 @@ export function getGlobalState() {
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
 	// const height = parseInt(svg.style("height")) - margin.top ;
-	const height = parseInt(d3.select("#speech-plot-container").style("height")); 
+	const height = parseInt(d3.select("#speech-plot-container").style("height"));
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1980,7 +1938,7 @@ function createLines(timestamp1, timestamp2) {
 	.on("drag", dragged)
 	.on("end", dragended);
 
-	
+
 	let line1 = svg.select('#time-indicator-line1');
 
 	if (line1.empty()) {
@@ -2034,8 +1992,8 @@ function createLines(timestamp1, timestamp2) {
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	
-	createRayCastSegment(0); 
+
+	createRayCastSegment(0);
 	createRayCastSegment(1);
 	createRayCastSegment(2);
 	updateSceneBasedOnSelections();
@@ -2048,15 +2006,15 @@ function createLines(timestamp1, timestamp2) {
 
 export function dragged(event,d) {
 	const svgElement = document.querySelector("#temporal-view svg");
-	const container = document.getElementById("temporal-view"); 
+	const container = document.getElementById("temporal-view");
 	const indicatorSvg = document.getElementById('indicator-svg');
 	indicatorSvg.style.overflow = "visible";
-  
+
 	const height = parseInt(d3.select(svgElement).style("height")) - margin.top - margin.bottom;
-  
+
 	let newXPosition = event.x - margin.left;
 	let newTimestamp = x.invert(newXPosition);
-  
+
 	const id = d3.select(this).attr('id');
 	const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
 	 const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
@@ -2066,7 +2024,7 @@ export function dragged(event,d) {
 	const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
 	let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
 	const minDistanceMillis = 5000;
-  
+
 	if (newTimestamp > new Date(globalState.globalEndTime)) {
 	  newTimestamp = new Date(globalState.globalEndTime);
 	  newXPosition = x(newTimestamp);
@@ -2089,7 +2047,7 @@ export function dragged(event,d) {
 	}
 	newXPosition = x(new Date(newTimestamp));
 	// console.log("setting posoitons.." + newXPosition);
-  
+
 	d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
 	d3.select(circleId).attr('cx', newXPosition + margin.left);
 
@@ -2111,8 +2069,8 @@ export function dragged(event,d) {
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	
-	createRayCastSegment(0); 
+
+	createRayCastSegment(0);
 	createRayCastSegment(1);
 	createRayCastSegment(2);
     initializeShadedAreaDrag();
@@ -2124,35 +2082,30 @@ export function dragged(event,d) {
 
 function generateHierToolBar() {
 //   const data = globalState.finalData;
-  const data = globalState.finalData.action_dict;
+//   const data = globalState.finalData.action_dict;
+  const data = globalState.finalData.action_dict ;
+//   const {"Raw Capture": omitted, ...newData} = data;
+
   const toolbar = document.getElementById('hier-toolbar');
   toolbar.innerHTML = '';
 
   let othersTopicDetails = null;
 
-  // Process each topic and save "Others" for last
   Object.entries(data).forEach(([broadActionName, actionDetails]) => {
 	//   console.log(broadActionName);
-	  if (broadActionName === "User Transformation") { return ; }
+	  if (broadActionName === "User Transformation" || broadActionName === "Raw Capture") { return ; }
       const isInTimeRange = actionDetails.actions.some(action => {
-        // console.log("THIS IS TOPIC NAME " + topicName);
           const actionStartTime = parseTimeToMillis(action.start_time);
           const actionEndTime = parseTimeToMillis(action.end_time);
           return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
       });
 
       if (isInTimeRange) {
-        //   if (topicName !== "Others") {
             createTopicItem(broadActionName, actionDetails, toolbar);
-        //   } else {
-            //   othersTopicDetails = topicDetails;
-        //   }
+
       }
   });
 
-//   if (othersTopicDetails !== null) {
-//       createOthersItem(othersTopicDetails, toolbar);
-//   }
 }
 
 
@@ -2169,13 +2122,13 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
     topicItem.appendChild(topicCheckbox);
     topicItem.appendChild(label);
-	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#7e4695';}
+	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#f08030';}
 	if (globalState.finalData.action_dict[topicName].is_user_interest) {
-        label.innerHTML = `${topicName} <span style="color: #7e4695;">★</span>`;
-		label.style.color = '#7e4695';
-    } 
+        label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
+		label.style.color = '#f08030';
+    }
 
-	
+
 
     const keywordsList = document.createElement('ul');
     const addedActions = new Set(); // Set to track added specific actions
@@ -2189,7 +2142,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
         // Check if this specific action has already been added
         if (!addedActions.has(specificAction)) {
-            addedActions.add(specificAction); 
+            addedActions.add(specificAction);
 
             const keywordItem = document.createElement('li');
             const keywordCheckbox = document.createElement('input');
@@ -2205,20 +2158,20 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 			if (action.has_user_action_of_interest) {
 				// console.log(specificAction);
 				// console.log(action.)
-                keywordLabel.style.color = '#7e4695';
+                keywordLabel.style.color = '#f08030';
             }
 
             keywordItem.appendChild(keywordCheckbox);
             keywordItem.appendChild(keywordLabel);
             keywordsList.appendChild(keywordItem);
-				
-		  
+
+
             // Event listener for each specific action checkbox
             keywordCheckbox.addEventListener('change', function() {
 				if (this.checked) {
 					// console.log("here>");
 					this.parentNode.classList.add('keyword-selected');
-				  } 
+				  }
 				  else {
 					this.parentNode.classList.remove('keyword-selected');
 				  }
@@ -2270,7 +2223,7 @@ function createOthersItem(othersData, toolbar) {
   othersCheckbox.addEventListener('change', function() {
     initializeOrUpdateSpeechBox();
 	updateSceneBasedOnSelections();
-    
+
   });
   othersItem.appendChild(label);
   toolbar.appendChild(othersItem);
@@ -2327,12 +2280,19 @@ function getSelectedTopics() {
   }
 
 function getCoordinates(spatial_extent){
-	const x = spatial_extent[0][2]; // UNITY Z 
+	const x = spatial_extent[0][2]; // UNITY Z
     const y = spatial_extent[0][1];
     const z = -spatial_extent[0][0]; // Flippinh UNITY X
 	// console.log(x,y,z);
-	return {x,y,z} ; 
+	return {x,y,z} ;
   }
+
+function getRotationCoordinates(spatial_extent){
+	const x = spatial_extent[1][0];
+	const y = spatial_extent[1][1];
+	const z = spatial_extent[1][2];
+	return {x,y,z} ;
+}
 
 
 
@@ -2435,16 +2395,16 @@ function getSpeechData(action, selectedKeywords) {
     speechBox.style.border = '1px solid grey';
     speechBox.style.borderRadius = '8px';
     speechBox.style.padding = '15px';
-	speechBox.style.marginBottom = '8px'; 
+	speechBox.style.marginBottom = '8px';
 	// console.log(selectedKeywords);
 
-	
-	// const hasRelevantKeyword = action.formatted_data.action_property_specific_action && selectedKeywords.some(keyword => 
+
+	// const hasRelevantKeyword = action.formatted_data.action_property_specific_action && selectedKeywords.some(keyword =>
 	// 	action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
-	  
-	  const relevantKeyword = selectedKeywords.find(keyword => 
+
+	  const relevantKeyword = selectedKeywords.find(keyword =>
         action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
-    
+
 		if (!relevantKeyword) {
 			return null;
 		  }
@@ -2483,7 +2443,7 @@ function getSpeechData(action, selectedKeywords) {
     actionPropertyEl.appendChild(actionPropertyContent);
 
 	const relevantActionLine = document.createElement('div');
-	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #7e4695;">"${relevantKeyword}"</span></span>`;
+	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #f08030;">"${relevantKeyword}"</span></span>`;
 
     actionPropertyEl.appendChild(relevantActionLine);
 
@@ -2518,12 +2478,15 @@ function updateInterestBox() {
 	const topicInterestSpan = document.createElement("span");
 	topicInterestSpan.textContent = "Action of your interest: ";
 	topicInterestSpan.style.color = "white";
+	topicInterestSpan.style.fontWeight = "bold"; 
 
 	// Create "Next user interest topic" span
 	const nextInterestSpan = document.createElement("span");
 	nextInterestSpan.textContent = userInterestTopic;
-	nextInterestSpan.style.color = "#ffc000";
-
+	// nextInterestSpan.style.color = "#ffc000";
+	nextInterestSpan.style.color = "#333333"; 
+	nextInterestSpan.style.fontWeight = "bold"; 
+  
 	// Append both spans to the container
 	container.appendChild(topicInterestSpan);
 	container.appendChild(nextInterestSpan);
@@ -2539,30 +2502,30 @@ function updateInterestBox() {
   function updateXRSnapshot() {
 	// Choose the correct data source based on your structure. Adjust as necessary.
 	const rawCaptureData =  globalState.finalData.action_dict["Raw Capture"];
-  
+
 	const container = document.getElementById('user-xr-snapshot');
 	container.innerHTML = ''; // Clear previous content
-  
+
 	// Create a title element
 	const titleElement = document.createElement('div');
 	titleElement.style.textAlign = 'center';
 	titleElement.style.marginBottom = '10px';
 	titleElement.id = 'imageTitle';
 	container.appendChild(titleElement);
-  
+
 	if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
 	  const filteredActions = rawCaptureData.actions.filter(action => {
 		const actionStartTime = parseTimeToMillis(action.start_time);
 		const actionEndTime = parseTimeToMillis(action.end_time);
 		return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
 	  });
-  
+
 	  if (filteredActions.length >= 1) {
 		const imageWrapper = document.createElement('div');
 		imageWrapper.style.position = 'relative';
 		imageWrapper.style.maxWidth = '500px';
 		imageWrapper.style.margin = 'auto';
-  
+
 		filteredActions.forEach((action, index) => {
 		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
 		  const img = document.createElement('img');
@@ -2573,12 +2536,12 @@ function updateInterestBox() {
 		  img.style.display = index === 0 ? 'block' : 'none';
 		  imageWrapper.appendChild(img);
 		});
-  
+
 		// Update the title with the actor name of the first image
 		updateTitle(filteredActions[0].actor_name);
-  
+
 		container.appendChild(imageWrapper);
-  
+
 		// Navigation arrows functionality
 		addNavigationArrows(imageWrapper, filteredActions);
 	  } else {
@@ -2588,7 +2551,7 @@ function updateInterestBox() {
 	  titleElement.innerHTML = 'No raw capture data available';
 	}
   }
-  
+
   function addNavigationArrows(imageWrapper, filteredActions) {
 	const prevArrow = document.createElement('button');
 	prevArrow.innerHTML = '&#10094;';
@@ -2597,7 +2560,7 @@ function updateInterestBox() {
 	prevArrow.style.left = '10px';
 	prevArrow.style.zIndex = '10';
 	prevArrow.style.cursor = 'pointer';
-  
+
 	const nextArrow = document.createElement('button');
 	nextArrow.innerHTML = '&#10095;';
 	nextArrow.style.position = 'absolute';
@@ -2605,22 +2568,22 @@ function updateInterestBox() {
 	nextArrow.style.right = '10px';
 	nextArrow.style.zIndex = '10';
 	nextArrow.style.cursor = 'pointer';
-  
+
 	let currentIndex = 0;
 	prevArrow.onclick = () => {
 	  currentIndex = (currentIndex - 1 + filteredActions.length) % filteredActions.length;
 	  changeImage(currentIndex, imageWrapper, filteredActions);
 	};
-  
+
 	nextArrow.onclick = () => {
 	  currentIndex = (currentIndex + 1) % filteredActions.length;
 	  changeImage(currentIndex, imageWrapper, filteredActions);
 	};
-  
+
 	imageWrapper.appendChild(prevArrow);
 	imageWrapper.appendChild(nextArrow);
   }
-  
+
   function changeImage(index, imageWrapper, filteredActions) {
 	Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
 	  img.style.display = imgIndex === index ? 'block' : 'none';
@@ -2628,7 +2591,7 @@ function updateInterestBox() {
 	// Update the title with the actor name of the current image
 	updateTitle(filteredActions[index].actor_name);
   }
-  
+
   function updateTitle(actorName) {
 	const titleElement = document.getElementById('imageTitle');
 	if (titleElement) {
@@ -2672,58 +2635,56 @@ function updateInterestBox() {
 	const dragstarted = (event) => {
 	  dragStartX = event.x;
 	};
-  
+
 	const dragged = (event) => {
-	  // console.log(" r u here?");
-	  const dx = event.x - dragStartX; // Change in x
-	  const line1 = indicatorSVG.select("#time-indicator-line1");
-	  const line2 = indicatorSVG.select("#time-indicator-line2");
-	  const circle1 = indicatorSVG.select("#time-indicator-circle1");
-	  const circle2 = indicatorSVG.select("#time-indicator-circle2");
-	  let line1X = parseFloat(line1.attr("x1"));
-	  let line2X = parseFloat(line2.attr("x1"));
-  
-	  // Update positions based on drag
-	  line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
-	  line2.attr("x1", line2X + dx).attr("x2", line2X + dx);
-	  circle1.attr("cx", line1X + dx);
-	  circle2.attr("cx", line2X + dx);
-  
-  
-	  // Update globalState timestamps based on new line positions
-	  const newLine1Timestamp = x.invert(line1X + dx);
-	  const newLine2Timestamp = x.invert(line2X + dx);
-	  globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
-	//   .getTime();
-	  globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-	//   .getTime();
-  
+		const dx = event.x - dragStartX;
+		const line1 = indicatorSVG.select("#time-indicator-line1");
+		const line2 = indicatorSVG.select("#time-indicator-line2");
+		const circle1 = indicatorSVG.select("#time-indicator-circle1");
+		const circle2 = indicatorSVG.select("#time-indicator-circle2");
+
+
+		let line1X = parseFloat(line1.attr("x1")) + dx;
+		let line2X = parseFloat(line2.attr("x1")) + dx;
+
+		line1.attr("x1", line1X).attr("x2", line1X);
+		line2.attr("x1", line2X).attr("x2", line2X);
+		circle1.attr("cx", line1X);
+		circle2.attr("cx", line2X);
+		// console.log(margin.left);
+		let buffer = 150 ;
+
+	  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
+	  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
+	  globalState.lineTimeStamp1 = newLine1Timestamp;
+	  globalState.lineTimeStamp2 = newLine2Timestamp;
+
 	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
 	  updateXRSnapshot();
 	  createLineSegment(0);
 	  createLineSegment(1);
 	  createLineSegment(2);
-	
+
 	  createDeviceSegment(0);
 	  createDeviceSegment(1);
 	  createDeviceSegment(2);
-	  
-	createRayCastSegment(0); 
+
+	createRayCastSegment(0);
 	createRayCastSegment(1);
 	createRayCastSegment(2);
 	  updateSceneBasedOnSelections();
-  
-	  dragStartX = event.x; 
+
+	  dragStartX = event.x;
 	};
-  
+
 	const dragended = () => {
 	};
-  
+
 	const drag = d3.drag()
 	  .on("start", dragstarted)
 	  .on("drag", dragged)
 	  .on("end", dragended);
-  
+
 	shadedArea.call(drag);
   }
 
@@ -2749,7 +2710,7 @@ function createSharedAxis() {
 	const { globalStartTime, globalEndTime, bins, unit } = globalState;
 	// console.log(new Date(globalStartTime));
 	// console.log(new Date(globalEndTime));
-	 
+
 	// Container setup
 	const temporalViewContainer = d3.select("#temporal-view");
 	const minWidth = document.getElementById('temporal-view').clientWidth;
@@ -2758,65 +2719,65 @@ function createSharedAxis() {
 	if (sharedAxisContainer.empty()) {
 	  sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
 	}
-  
+
 	sharedAxisContainer.html("");
-  
+
 	// Margin setup
 	// const margin = { top: 20, right: 30, bottom: 10, left: 80 };
-  
+
 	// Time format for ticks
 	const timeFormat = d3.timeFormat("%I:%M:%S");
-  
+
 	// Calculate the total duration in minutes
 	// const totalDurationMinutes = (globalEndTime - globalStartTime) / (1000 * 60);
 	const totalDuration = globalEndTime - globalStartTime;
 	let intervalSizeMillis;
 	if (unit === 'minutes') {
 	  intervalSizeMillis = bins * 60 * 1000; // Convert minutes to milliseconds
-	} else { 
+	} else {
 	  intervalSizeMillis = bins * 1000; // Convert seconds to milliseconds
 	}
-  
+
 	const totalDurationMillis = globalEndTime - globalStartTime;
 	const numberOfIntervals = Math.ceil(totalDurationMillis / intervalSizeMillis);
 	const widthPerInterval = 100; // Fixed width for each interval
-  
+
 	const intervalDuration = totalDuration * (bins / 100);
 	// console.log("interval duration " + intervalDuration/(1000 * 60));
 	// const numberOfIntervals = Math.ceil(100 / bins);
 	globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
 	// let localDynamicWidth = numberOfIntervals * widthPerInterval;
 	globalState.dynamicWidth = Math.max(globalState.dynamicWidth, minWidth);
-  
+
 	// Adjust the scale to cover the dynamic width
 	x = d3.scaleTime()
 		.domain([new Date(globalStartTime), new Date(globalEndTime)])
 		.range([0, globalState.dynamicWidth]);
-  
+
 	// Setup the axis
 	// const xAxis = d3.axisTop(x)
 	//     // .ticks(d3.timeMinute.every(bins))
 	//     .tickFormat(timeFormat);
-  
+
 		const xAxis = d3.axisTop(x)
 		.ticks(d3.timeMillisecond.every(intervalSizeMillis))
 		.tickFormat(timeFormat);
-  
+
 	// Create SVG for the axis
 	const svg = sharedAxisContainer.append("svg")
 		.attr("width", globalState.dynamicWidth + margin.left + margin.right)
 		.attr("height", 50)
 		.append("g")
 		.attr("transform", `translate(${margin.left}, ${margin.top})`);
-  
+
 	svg.append("g")
 		.attr("class", "x-axis")
 		.call(xAxis);
-  
+
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
   }
-  
+
 
 
 
@@ -2858,7 +2819,7 @@ function createSharedAxis() {
 			if (globalState.triangleMesh[0] && globalState.triangleMesh[1])
 			{
 
-				let interactiveObjects = [...globalState.triangleMesh[0], ...globalState.triangleMesh[1]]; 
+				let interactiveObjects = [...globalState.triangleMesh[0], ...globalState.triangleMesh[1]];
 				var intersects = raycaster.intersectObjects(interactiveObjects, true);
 				console.log(intersects);
 				var clickableIntersects = intersects.filter(intersect => intersect.object.userData.type === 'clickableTriangle');
@@ -2888,7 +2849,7 @@ async function initialize() {
 	const binsDropdown = document.getElementById('binsDropdown');
 	console.log(binsDropdown);
 	globalState.bins = binsDropdown.value;
-  
+
 	createSharedAxis();
 	createPlotTemporal();
 
@@ -2911,13 +2872,12 @@ async function initialize() {
 	createDeviceSegment(0);
 	createDeviceSegment(1);
 	createDeviceSegment(2);
-	createRayCastSegment(0); 
+	createRayCastSegment(0);
 	createRayCastSegment(1);
 	createRayCastSegment(2);
-	// plotBarChart();
 	plotUserSpecificBarChart();
 	plotCombinedUsersSpiderChart();
-	plotOrUpdateBubblePlot(); 
+	plotOrUpdateBubblePlot();
 	// plotScatterPlot();
   }
 initialize();
