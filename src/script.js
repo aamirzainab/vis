@@ -18,11 +18,6 @@ import {
 import {
 	Line2
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
-import {
-	loadAndPlotTemporal,
-	animateTemporalView,
-	getXScale
-} from "./temporal.js"
 
 let speechEnabled = false;
 let xrInteractionEnabled = false;
@@ -1522,9 +1517,11 @@ function createLines(timestamp1, timestamp2) {
   const dynamicWidth = globalState.dynamicWidth;
 	const y1 = 55;
   const alignX = 10 ;
-
+  
   let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
   let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
+  console.log(`Creating lines at positions: ${xPosition1} and ${xPosition2}`);
+  console.log(`For timestamps: ${new Date(timestamp1)} and ${new Date(timestamp2)}`);
 
 	let circle1 = svg.select('#time-indicator-circle1');
   circle1.attr('class', 'interactive');
@@ -1541,6 +1538,83 @@ function createLines(timestamp1, timestamp2) {
 	function dragended(event, d) {
 		d3.select(this).classed("active", false);
 	}
+  function dragged(event,d) {
+    const svgElement = document.querySelector("#temporal-view svg");
+    const container = document.getElementById("temporal-view");
+    const svg = d3.select("#plot-svg");
+    const indicatorSvg = document.getElementById('indicator-svg');
+    indicatorSvg.style.overflow = "visible";
+  
+  
+    const height = parseInt(d3.select(svgElement).style("height")) - margin.top - margin.bottom;
+  
+    let newXPosition = event.x - margin.left;
+    let newTimestamp = x.invert(newXPosition);
+  
+    const id = d3.select(this).attr('id');
+    const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
+    const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
+    const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
+    const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
+    const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
+    const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
+    let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
+    const minDistanceMillis = 5000;
+  
+    if (newTimestamp > new Date(globalState.globalEndTime)) {
+      newTimestamp = new Date(globalState.globalEndTime);
+      newXPosition = x(newTimestamp);
+    }
+    if (isLine1) {
+        newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
+    } else {
+        newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
+    }
+    if (isLine1) {
+      globalState.lineTimeStamp1 = newTimestamp;
+      globalState.lineTimeStamp2 = otherTimestamp;
+      globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
+      const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
+      globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
+      globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+    } else {
+      globalState.lineTimeStamp2 = newTimestamp;
+      globalState.lineTimeStamp1 = otherTimestamp;
+    }
+    newXPosition = x(new Date(newTimestamp));
+  
+    d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
+    // d3.select(this).attr('x1', newXPosition).attr('x2', newXPosition);
+    d3.select(circleId).attr('cx', newXPosition + margin.left);
+    d3.select(circleId).attr('cx', newXPosition);
+  
+  
+    if (isAnimating) {
+        toggleAnimation();
+        updatePlayPauseButton();
+    }
+    isAnimating = false;
+  
+    createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    // updateTimeDisplay(newTimestamp, globalState.globalStartTime);
+    const timeStamp1 = new Date(globalState.lineTimeStamp1);
+    const timeStamp2 = globalState.lineTimeStamp2;
+    updateRangeDisplay(timeStamp1, timeStamp2);
+    updateXRSnapshot();
+    generateHierToolBar();
+    plotTreeMap();
+  
+    initializeOrUpdateSpeechBox();
+    initializeShadedAreaDrag();
+    // plotSpatialExtent();
+    createAvatarSegment(0);
+    createAvatarSegment(1);
+    createAvatarSegment(2);
+    updateSceneBasedOnSelections();
+  }
+
+
+
 	var drag = d3.drag()
 		.on("start", dragstarted)
 		.on("drag", dragged)
@@ -1604,80 +1678,7 @@ function createLines(timestamp1, timestamp2) {
 
 
 
-export function dragged(event,d) {
-  const svgElement = document.querySelector("#temporal-view svg");
-  const container = document.getElementById("temporal-view");
-  const svg = d3.select("#plot-svg");
-  const indicatorSvg = document.getElementById('indicator-svg');
-  indicatorSvg.style.overflow = "visible";
 
-
-  const height = parseInt(d3.select(svgElement).style("height")) - margin.top - margin.bottom;
-
-  let newXPosition = event.x - margin.left;
-  let newTimestamp = x.invert(newXPosition);
-
-  const id = d3.select(this).attr('id');
-  const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
-  const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
-  const otherCircleId = isLine1 ? '#time-indicator-circle2' : '#time-indicator-circle1';
-  const lineId = isLine1 ? 'time-indicator-line1' : 'time-indicator-line2';
-  const otherLineId = isLine1 ? 'time-indicator-line2' : 'time-indicator-line1';
-  const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
-  let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
-  const minDistanceMillis = 5000;
-
-  if (newTimestamp > new Date(globalState.globalEndTime)) {
-    newTimestamp = new Date(globalState.globalEndTime);
-    newXPosition = x(newTimestamp);
-  }
-  if (isLine1) {
-      newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
-  } else {
-      newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
-  }
-  if (isLine1) {
-    globalState.lineTimeStamp1 = newTimestamp;
-    globalState.lineTimeStamp2 = otherTimestamp;
-    globalState.currentTimestamp = newTimestamp - globalState.globalStartTime;
-    const binIndex = Math.floor(globalState.currentTimestamp / globalState.intervalDuration);
-    globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-    globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-  } else {
-    globalState.lineTimeStamp2 = newTimestamp;
-    globalState.lineTimeStamp1 = otherTimestamp;
-  }
-  newXPosition = x(new Date(newTimestamp));
-
-  d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
-  // d3.select(this).attr('x1', newXPosition).attr('x2', newXPosition);
-  d3.select(circleId).attr('cx', newXPosition + margin.left);
-  d3.select(circleId).attr('cx', newXPosition);
-
-
-  if (isAnimating) {
-      toggleAnimation();
-      updatePlayPauseButton();
-  }
-  isAnimating = false;
-
-  createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-  // updateTimeDisplay(newTimestamp, globalState.globalStartTime);
-  const timeStamp1 = new Date(globalState.lineTimeStamp1);
-  const timeStamp2 = globalState.lineTimeStamp2;
-  updateRangeDisplay(timeStamp1, timeStamp2);
-  updateXRSnapshot();
-  generateHierToolBar();
-  plotTreeMap();
-
-  initializeOrUpdateSpeechBox();
-  initializeShadedAreaDrag();
-  // plotSpatialExtent();
-  createAvatarSegment(0);
-  createAvatarSegment(1);
-  createAvatarSegment(2);
-  updateSceneBasedOnSelections();
-}
 
 
 
@@ -1917,8 +1918,8 @@ function getSelectedKeywords() {
 }
 function getCoordinates(spatial_extent){
 	const x = spatial_extent[0][2]; // UNITY Z
-    const y = spatial_extent[0][1];
-    const z = -spatial_extent[0][0]; // Flippinh UNITY X
+  const y = spatial_extent[0][1];
+  const z = -spatial_extent[0][0]; // Flippinh UNITY X
 	// console.log(x,y,z);
 	return {x,y,z} ;
   }
@@ -2239,7 +2240,7 @@ function updateRangeDisplay(time1, time2) {
 
   const line1X = parseFloat(d3.select('#time-indicator-line1').attr('x1'));
   const line2X = parseFloat(d3.select('#time-indicator-line2').attr('x1'));
-  const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1')); // Assuming both lines have the same y1
+  const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1')); 
   const yEnd = parseFloat(d3.select('#time-indicator-line1').attr('y2'));
   const height = yEnd - yStart;
   const xStart = Math.min(line1X, line2X);
@@ -2271,20 +2272,20 @@ function initializeShadedAreaDrag() {
 
   const dragstarted = (event) => {
     dragStartX = event.x;
-    // console.log("Drag started - x scale domain:", x.domain(), "range:", x.range());
+    console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
   };
 
   const dragged = (event) => {
-    const dx = event.x - dragStartX; // Change in x
-    // console.log("Dragging - dx:", dx); // Log the change in x
+    const dx = event.x - dragStartX;
+    console.log("Dragging - Raw dx:", dx); 
     const line1 = indicatorSVG.select("#time-indicator-line1");
     const line2 = indicatorSVG.select("#time-indicator-line2");
     const circle1 = indicatorSVG.select("#time-indicator-circle1");
     const circle2 = indicatorSVG.select("#time-indicator-circle2");
     let line1X = parseFloat(line1.attr("x1"));
     let line2X = parseFloat(line2.attr("x1"));
-    // console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
-    // console.log("Dragging - Current timestamps:", globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
+    console.log("Dragging - Current timestamps:", new Date(globalState.lineTimeStamp1), new Date (globalState.lineTimeStamp2));
 
     // Update positions based on drag
     line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
@@ -2294,10 +2295,12 @@ function initializeShadedAreaDrag() {
 
   const newLine1Timestamp = x.invert(line1X + dx);
   const newLine2Timestamp = x.invert(line2X + dx);
+
+  // const newLine1Timestamp = x.invert(line1X );
+  // const newLine2Timestamp = x.invert(line2X);
   globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-  // console.log(newLine1Timestamp);
-  // console.log(globalState.lineTimeStamp2);
+  
 
   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
   updateXRSnapshot();
@@ -2307,14 +2310,13 @@ function initializeShadedAreaDrag() {
   createAvatarSegment(1);
   createAvatarSegment(2);
   updateSceneBasedOnSelections();
-  // plotSpatialExtent();
 
   dragStartX = event.x;
 
 };
 
   const dragended = () => {
-    // console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
+    console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
   };
 
   const drag = d3.drag()
@@ -2356,7 +2358,6 @@ function createSharedAxis() {
   globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
   globalState.dynamicWidth = Math.max(globalState.dynamicWidth, minWidth);
 
-  // Adjust the scale to cover the dynamic width
   x = d3.scaleTime()
       .domain([new Date(globalStartTime), new Date(globalEndTime)])
       .range([0, globalState.dynamicWidth]);
