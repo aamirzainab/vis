@@ -56,7 +56,7 @@ let globalState = {
   sprites: [],
 };
 const userInterestTopic = "Emergency Management";
-// const margin =
+let buffer = 0 ;
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
 const hsl = {
@@ -65,9 +65,6 @@ const hsl = {
 	l: 0
 };
 const topicOfInterest = "";
-// const colorScale = d3.scaleOrdinal()
-// 	.domain([0, 1, 2])
-// 	.range(["#1b9e77", "#d95f02", "#7570b3"]);
 
 	const colorScale = d3.scaleOrdinal()
     .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
@@ -351,7 +348,33 @@ function hideUserData(userID) {
 	}
 }
 
+function createLegend() {
+  const legend = d3.select("#user-legend")
+      .append("svg");
 
+  const data = ["User 1", "User 2", "User 3"];
+
+  const legendItems = legend.selectAll(".legend-item")
+      .data(data)
+      .enter()
+      .append("g")
+      .attr("class", "legend-item")
+      .attr("transform", (d, i) => `translate(0, ${i * 35})`); // Increase the vertical spacing
+
+  legendItems.append("rect")
+      .attr("width", 20) // Increase the width of the rectangles
+      .attr("height", 20) // Increase the height of the rectangles
+      .attr("rx", 5) // Horizontal corner radius
+      .attr("ry", 5) // Vertical corner radius
+      .style("fill", d => colorScale(d));
+
+  legendItems.append("text")
+      .attr("x", 30) // Increase the horizontal position of the text
+      .attr("y", 14) // Increase the vertical position of the text
+      .attr("dy", ".35em")
+      .style("font-size", "1.1em") // Increase the font size
+      .text(d => d);
+}
 
 function createTextSprite(message, fontSize = 30, fontFace = "Arial", textColor = "black", backgroundColor = "#bfbfbf") {
   const canvas = document.createElement('canvas');
@@ -400,11 +423,12 @@ function addTextOverlay(text) {
   textElement.style.padding = '8px';
   textElement.style.margin = '4px';
   textElement.style.background = 'rgba(255, 255, 255, 0.8)';
-  textElement.style.background = '#bfbfbf';
+  textElement.style.background = '#e0e0e0';
   textElement.style.color = 'black';
   textElement.style.maxWidth = '250px'; // Set a maximum width for text wrapping
   textElement.style.wordWrap = 'break-word';
   textElement.textContent = text;
+  textElement.style.borderRadius = '8px';
 
   container.appendChild(textElement);
 }
@@ -506,10 +530,8 @@ async function initializeScene() {
   globalState.scene = new THREE.Scene();
   globalState.scene.background = new THREE.Color(0xffffff);
   const spatialView = document.getElementById('spatial-view');
-  globalState.camera = new THREE.PerspectiveCamera(60, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-  // globalState.camera.position.set(0, 10, 10);
-	globalState.camera.position.set(0, 2, 5);
-
+  globalState.camera = new THREE.PerspectiveCamera(70, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
+	globalState.camera.position.set(9, 2, 1);
   globalState.camera.updateProjectionMatrix();
 
   globalState.renderer = new THREE.WebGLRenderer({
@@ -912,7 +934,7 @@ function createPlotTemporal() {
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#7e4695" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
 	  })
     .style("cursor", "pointer")
     .on("click", function(event, d) {
@@ -932,7 +954,7 @@ function createPlotTemporal() {
     // })
   //   .style("fill", function(d) {
   //     const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-  //     return isUserInterest ? "#7e4695" : "#000";
+  //     return isUserInterest ? "#f08030" : "#000";
   //   });
 
     svg.select(".axis--y").selectAll(".tick text")
@@ -963,7 +985,7 @@ function createPlotTemporal() {
     return width;
   })
   .attr("height", yScale.bandwidth())
-  .attr("fill", d => d.hasUserInterestKeyword ? "#7e4695" : "#d0d0d0");
+  .attr("fill", d => d.hasUserInterestKeyword ? "#f08030" : "#d0d0d0");
   // .attr("fill", "#d0d0d0");
 }
 
@@ -1066,7 +1088,7 @@ function createSplitBars(topicName) {
               .attr("y", yScale(`${topicName}-${user}`))
               .attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
               .attr("height", newYHeight)
-              .attr("fill", d => action.has_user_interest_keyword ? "#7e4695" : "#d0d0d0");
+              .attr("fill", d => action.has_user_interest_keyword ? "#f08030" : "#d0d0d0");
       });
   });
 
@@ -1075,7 +1097,7 @@ function createSplitBars(topicName) {
 
 function plotBarChart() {
   const plotBox1 = d3.select("#plot-box1").html("");
-  const margin = { top: 20, right: 20, bottom: 100, left: 40 };
+  const margin = { top: 20, right: 20, bottom: 140, left: 40 };
   const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
   const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
@@ -1149,7 +1171,7 @@ function plotBarChart() {
       .attr("x", d => x1(d.key))
       .attr("y", d => y(d.value))
       .attr("height", d => height - y(d.value))
-      .attr("fill", d => color(d.key));
+      .attr("fill", d => colorScale(d.key));
 
   // Add the axes
   svg.append("g")
@@ -1160,31 +1182,42 @@ function plotBarChart() {
     .style("text-anchor", "end")
     .attr("dx", "-.8em")
     .attr("dy", ".15em")
-    .attr("transform", "rotate(-65)");
+    .attr("transform", "rotate(-65)")
+    .style("font-size", "9px");
+    // .style("word-wrap", "break-word")
+    // .style("white-space", "normal");
 
   svg.append("g")
       .attr("class", "axis")
       .call(d3.axisLeft(y));
 
+      svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x", 0 - (height / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Count")
+      .style("font-size", "12px");
   // Legend
-  const legend = svg.selectAll(".legend")
-      .data(users)
-      .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+  // const legend = svg.selectAll(".legend")
+  //     .data(users)
+  //     .enter().append("g")
+  //     .attr("class", "legend")
+  //     .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
 
-  legend.append("rect")
-      .attr("x", width - 18)
-      .attr("width", 18)
-      .attr("height", 18)
-      .style("fill", color);
+  // legend.append("rect")
+  //     .attr("x", width - 18)
+  //     .attr("width", 18)
+  //     .attr("height", 18)
+  //     .style("fill", color);
 
-  legend.append("text")
-      .attr("x", width - 24)
-      .attr("y", 9)
-      .attr("dy", ".35em")
-      .style("text-anchor", "end")
-      .text(d => d);
+  // legend.append("text")
+  //     .attr("x", width - 24)
+  //     .attr("y", 9)
+  //     .attr("dy", ".35em")
+  //     .style("text-anchor", "end")
+  //     .text(d => d);
 }
 
 
@@ -1204,20 +1237,6 @@ function plotCombinedUsersSpiderChart() {
   delete withoutOther["Others"];
   const data = Object.values(withoutOther) ;
   let maxCount = 0;
-  // let topicsWithCounts = data.map(topic => {
-  //   const count = topic.actions.filter(action => action.action_type === "VerbalInteraction").length;
-  //   return {
-  //     topic: topic.broad_topic_name,
-  //     count: count
-  //   };
-  // }).filter(topic => topic.count > 0);
-  // const topics = topicsWithCounts.map(t => t.topic);
-  // const users = [...new Set(data.flatMap(topic => topic.actions.map(action => action.actor_name)))];
-
-  // topicsWithCounts.forEach(topic => {
-  //   maxCount = Math.max(maxCount, topic.count);
-  // });
-  // console.log(maxCount) ;
 
   let maxCountsPerUser = {};
 
@@ -1282,12 +1301,17 @@ const rScale = d3.scaleLinear()
       .attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
       .style("stroke", "lightgrey");
 
-    svg.append("text")
-      .attr("x", rScale(maxCount * 1.1) * Math.cos(angle - Math.PI/2))
+    const label = svg.append("text")
+      .attr("x", rScale(maxCount * 1.35) * Math.cos(angle - Math.PI/2))
       .attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
       .text(topic)
       .style("text-anchor", "middle")
+      .style("font-size", "10px")
       .attr("alignment-baseline", "middle");
+      if (topic === "Social Services and Welfare") {
+        label.attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2)); // Adjust the multiplier (1.5) as needed
+    }
+
   });
 
   const color =colorScale ;
@@ -1323,7 +1347,7 @@ const rScale = d3.scaleLinear()
 
 function plotTreeMap() {
 	const plotBox = d3.select("#plot-box3").html("");
-	const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
@@ -1349,7 +1373,7 @@ function plotTreeMap() {
     };
     // console.log(hierarchicalData);
 
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
+    const color = d3.scaleOrdinal(d3.schemeTableau10);
     // const customColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'];
 // // const color = d3.scaleOrdinal(customColors);
 
@@ -1517,11 +1541,13 @@ function createLines(timestamp1, timestamp2) {
   const dynamicWidth = globalState.dynamicWidth;
 	const y1 = 55;
   const alignX = 10 ;
-  
+
   let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
   let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
-  console.log(`Creating lines at positions: ${xPosition1} and ${xPosition2}`);
-  console.log(`For timestamps: ${new Date(timestamp1)} and ${new Date(timestamp2)}`);
+  // console.log(`Creating lines at positions: ${xPosition1} and ${xPosition2}`);
+  // console.log(`For timestamps: ${new Date(timestamp1)} and ${new Date(timestamp2)}`);
+  // console.log(" CREATELINES Line 1 At this timestamp" + new Date(timestamp1) + " have this position " + xPosition1);
+  // console.log("CREATELINES Line 2 At this timestamp" + new Date(timestamp2) + " have this position " + xPosition2);
 
 	let circle1 = svg.select('#time-indicator-circle1');
   circle1.attr('class', 'interactive');
@@ -1544,13 +1570,13 @@ function createLines(timestamp1, timestamp2) {
     const svg = d3.select("#plot-svg");
     const indicatorSvg = document.getElementById('indicator-svg');
     indicatorSvg.style.overflow = "visible";
-  
-  
+
+
     const height = parseInt(d3.select(svgElement).style("height")) - margin.top - margin.bottom;
-  
+
     let newXPosition = event.x - margin.left;
     let newTimestamp = x.invert(newXPosition);
-  
+
     const id = d3.select(this).attr('id');
     const isLine1 = id === 'time-indicator-line1' || id === 'time-indicator-circle1';
     const circleId = isLine1 ? '#time-indicator-circle1' : '#time-indicator-circle2';
@@ -1560,7 +1586,7 @@ function createLines(timestamp1, timestamp2) {
     const timestampKey = isLine1 ? 'lineTimeStamp1' : 'lineTimeStamp2';
     let otherTimestamp = globalState[isLine1 ? 'lineTimeStamp2' : 'lineTimeStamp1'];
     const minDistanceMillis = 5000;
-  
+
     if (newTimestamp > new Date(globalState.globalEndTime)) {
       newTimestamp = new Date(globalState.globalEndTime);
       newXPosition = x(newTimestamp);
@@ -1582,19 +1608,19 @@ function createLines(timestamp1, timestamp2) {
       globalState.lineTimeStamp1 = otherTimestamp;
     }
     newXPosition = x(new Date(newTimestamp));
-  
+
     d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
     // d3.select(this).attr('x1', newXPosition).attr('x2', newXPosition);
     d3.select(circleId).attr('cx', newXPosition + margin.left);
     d3.select(circleId).attr('cx', newXPosition);
-  
-  
+
+
     if (isAnimating) {
         toggleAnimation();
         updatePlayPauseButton();
     }
     isAnimating = false;
-  
+
     createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
     // updateTimeDisplay(newTimestamp, globalState.globalStartTime);
     const timeStamp1 = new Date(globalState.lineTimeStamp1);
@@ -1603,7 +1629,7 @@ function createLines(timestamp1, timestamp2) {
     updateXRSnapshot();
     generateHierToolBar();
     plotTreeMap();
-  
+
     initializeOrUpdateSpeechBox();
     initializeShadedAreaDrag();
     // plotSpatialExtent();
@@ -1675,6 +1701,74 @@ function createLines(timestamp1, timestamp2) {
 
 }
 
+function initializeShadedAreaDrag() {
+  const indicatorSVG = d3.select("#indicator-svg");
+  const shadedArea = indicatorSVG.select(".shading");
+
+  let dragStartX = null;
+
+  const dragstarted = (event) => {
+    dragStartX = event.x;
+    console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
+  };
+
+  function dragged(event,d) {
+    const dx = event.x - dragStartX;
+    const line1 = indicatorSVG.select("#time-indicator-line1");
+    const line2 = indicatorSVG.select("#time-indicator-line2");
+    const circle1 = indicatorSVG.select("#time-indicator-circle1");
+    const circle2 = indicatorSVG.select("#time-indicator-circle2");
+
+
+    let line1X = parseFloat(line1.attr("x1")) + dx;
+    let line2X = parseFloat(line2.attr("x1")) + dx;
+
+    line1.attr("x1", line1X).attr("x2", line1X);
+    line2.attr("x1", line2X).attr("x2", line2X);
+    circle1.attr("cx", line1X);
+    circle2.attr("cx", line2X);
+    let buffer = 150 ;
+  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
+  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
+  globalState.lineTimeStamp1 = newLine1Timestamp;
+  globalState.lineTimeStamp2 = newLine2Timestamp;
+
+
+
+  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
+  updateXRSnapshot();
+  generateHierToolBar();
+  plotTreeMap();
+  createAvatarSegment(0);
+  createAvatarSegment(1);
+  createAvatarSegment(2);
+  updateSceneBasedOnSelections();
+
+  dragStartX = event.x;
+
+}
+
+function dragended(event, d) {
+  // let finalXPosition = event.x - margin.left;
+  // let correctedTimestamp = x.invert(finalXPosition);
+  // let expectedXPosition = x(correctedTimestamp);
+  // buffer = Math.abs(finalXPosition - expectedXPosition)
+  // console.log(finalXPosition  + " , " + expectedXPosition + ", " + "ended drag");
+
+
+  // d3.select(this).classed("active", false);
+}
+
+  const drag = d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended);
+
+
+  shadedArea.call(drag);
+
+}
+
 
 
 
@@ -1683,7 +1777,6 @@ function createLines(timestamp1, timestamp2) {
 
 
 function generateHierToolBar() {
-  // const data = globalState.finalData;
 
 	const data = globalState.finalData.topics_dict ;
 	const {"Raw Capture": omitted, ...newData} = data;
@@ -1694,7 +1787,6 @@ function generateHierToolBar() {
   let othersTopicDetails = null;
 
   Object.entries(newData).forEach(([topicName, topicDetails]) => {
-    // console.log(topicName);
       const isInTimeRange = topicDetails.actions.some(action => {
           const actionStartTime = parseTimeToMillis(action.start_time);
           const actionEndTime = parseTimeToMillis(action.end_time);
@@ -1706,7 +1798,7 @@ function generateHierToolBar() {
           createTopicItem(topicName, topicDetails, toolbar);
         }
         else {
-          // console.log("u came here!");
+
           othersTopicDetails = topicDetails;
         }
       }
@@ -1731,8 +1823,8 @@ function createTopicItem(topicName, topicDetails, toolbar) {
   topicItem.appendChild(topicCheckbox);
   topicItem.appendChild(label);
   if (globalState.finalData.topics_dict[topicName].is_user_interest) {
-    label.innerHTML = `${topicName} <span style="color: #7e4695;">★</span>`;
-      label.style.color = '#7e4695';}
+    label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
+      label.style.color = '#f08030';}
 
   // Filter actions within the time range first before extracting unique keywords
   const filteredActions = topicDetails.actions.filter(action => {
@@ -1813,8 +1905,7 @@ filteredActions.forEach(action => {
     keywordLabel.htmlFor = keywordCheckbox.id;
     keywordLabel.textContent = keyword;
     if (userInterestKeywords.has(keyword)) {
-      keywordLabel.style.color = '#7e4695'; // Purple color for text
-      // Additional styling can be applied as needed
+      keywordLabel.style.color = '#f08030'; // Purple color for text
     }
 
 
@@ -1825,15 +1916,10 @@ filteredActions.forEach(action => {
 
   topicItem.appendChild(keywordsList);
   toolbar.appendChild(topicItem);
-
-  // Listener for the broad topic checkbox to check/uncheck all keywords
   topicCheckbox.addEventListener('change', function() {
     const childCheckboxes = this.parentNode.querySelectorAll('.keyword-checkbox');
     childCheckboxes.forEach(childCheckbox => {
       childCheckbox.checked = this.checked;
-      // if (this.checked) {  this.parentNode.classList.add('keyword-selected');}
-      // else {  this.parentNode.classList.remove('keyword-selected');}
-      // this.parentNode.classList.add('keyword-selected');
       childCheckbox.dispatchEvent(new Event('change'));
     });
   });
@@ -2030,7 +2116,7 @@ function getSpeechData(action, selectedKeywords) {
   // Speaker Element
   const speakerEl = document.createElement('div');
   speakerEl.className = 'speaker';
-  speakerEl.textContent = `[SPEAKER: ${action.actor_name}]`;
+  speakerEl.textContent = `[${action.actor_name}]`;
 
   // // Audience Element
   // // if (action.action_type === "Verbal Communication ") {
@@ -2052,7 +2138,7 @@ function getSpeechData(action, selectedKeywords) {
   let processedText = action.data.raw_text;
   if (action.data.highlighted_texts && action.data.highlighted_texts.length > 0) {
     action.data.highlighted_texts.forEach(text => {
-      const highlightedText = `<span style="background-color: #7e4695; color: white;">${text}</span>`;
+      const highlightedText = `<span style="background-color: #f08030; color: white;">${text}</span>`;
       processedText = processedText.replace(text, highlightedText);
     });
   }
@@ -2116,11 +2202,14 @@ function updateInterestBox() {
   const topicInterestSpan = document.createElement("span");
   topicInterestSpan.textContent = "Topic of your interest: ";
   topicInterestSpan.style.color = "white";
+  topicInterestSpan.style.fontWeight = "bold"; 
 
   // Create "Next user interest topic" span
   const nextInterestSpan = document.createElement("span");
   nextInterestSpan.textContent = userInterestTopic;
-  nextInterestSpan.style.color = "#ffc000";
+  // nextInterestSpan.style.color = "#ffc000";
+  nextInterestSpan.style.color = "#333333"; 
+  nextInterestSpan.style.fontWeight = "bold"; 
 
   // Append both spans to the container
   container.appendChild(topicInterestSpan);
@@ -2240,7 +2329,7 @@ function updateRangeDisplay(time1, time2) {
 
   const line1X = parseFloat(d3.select('#time-indicator-line1').attr('x1'));
   const line2X = parseFloat(d3.select('#time-indicator-line2').attr('x1'));
-  const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1')); 
+  const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1'));
   const yEnd = parseFloat(d3.select('#time-indicator-line1').attr('y2'));
   const height = yEnd - yStart;
   const xStart = Math.min(line1X, line2X);
@@ -2264,70 +2353,70 @@ function updateRangeDisplay(time1, time2) {
   }
 }
 
-function initializeShadedAreaDrag() {
-  const indicatorSVG = d3.select("#indicator-svg");
-  const shadedArea = indicatorSVG.select(".shading");
+// function initializeShadedAreaDrag() {
+//   const indicatorSVG = d3.select("#indicator-svg");
+//   const shadedArea = indicatorSVG.select(".shading");
 
-  let dragStartX = null;
+//   let dragStartX = null;
 
-  const dragstarted = (event) => {
-    dragStartX = event.x;
-    console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
-  };
+//   const dragstarted = (event) => {
+//     dragStartX = event.x;
+//     console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
+//   };
 
-  const dragged = (event) => {
-    const dx = event.x - dragStartX;
-    console.log("Dragging - Raw dx:", dx); 
-    const line1 = indicatorSVG.select("#time-indicator-line1");
-    const line2 = indicatorSVG.select("#time-indicator-line2");
-    const circle1 = indicatorSVG.select("#time-indicator-circle1");
-    const circle2 = indicatorSVG.select("#time-indicator-circle2");
-    let line1X = parseFloat(line1.attr("x1"));
-    let line2X = parseFloat(line2.attr("x1"));
-    console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
-    console.log("Dragging - Current timestamps:", new Date(globalState.lineTimeStamp1), new Date (globalState.lineTimeStamp2));
+//   const dragged = (event) => {
+//     const dx = event.x - dragStartX;
+//     // console.log("Dragging - Raw dx:", dx);
+//     const line1 = indicatorSVG.select("#time-indicator-line1");
+//     const line2 = indicatorSVG.select("#time-indicator-line2");
+//     const circle1 = indicatorSVG.select("#time-indicator-circle1");
+//     const circle2 = indicatorSVG.select("#time-indicator-circle2");
+//     let line1X = parseFloat(line1.attr("x1"));
+//     let line2X = parseFloat(line2.attr("x1"));
+//     // console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
 
-    // Update positions based on drag
-    line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
-    line2.attr("x1", line2X + dx).attr("x2", line2X + dx);
-    circle1.attr("cx", line1X + dx);
-    circle2.attr("cx", line2X + dx);
+//     // Update positions based on drag
+//     line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
+//     line2.attr("x1", line2X + dx).attr("x2", line2X + dx);
+//     circle1.attr("cx", line1X + dx);
+//     circle2.attr("cx", line2X + dx);
 
-  const newLine1Timestamp = x.invert(line1X + dx);
-  const newLine2Timestamp = x.invert(line2X + dx);
+//   const newLine1Timestamp = x.invert(line1X + dx);
+//   const newLine2Timestamp = x.invert(line2X + dx);
 
-  // const newLine1Timestamp = x.invert(line1X );
-  // const newLine2Timestamp = x.invert(line2X);
-  globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
-  globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-  
+//   globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
+//   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
 
-  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
-  updateXRSnapshot();
-  generateHierToolBar();
-  plotTreeMap();
-  createAvatarSegment(0);
-  createAvatarSegment(1);
-  createAvatarSegment(2);
-  updateSceneBasedOnSelections();
-
-  dragStartX = event.x;
-
-};
-
-  const dragended = () => {
-    console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
-  };
-
-  const drag = d3.drag()
-    .on("start", dragstarted)
-    .on("drag", dragged)
-    .on("end", dragended);
+//     console.log("INITIALIZE Line 1 At this timestamp" + new Date(globalState.lineTimeStamp1) + " have this position " + line1X + dx);
+//     console.log("INITIALIZE Line 1 At this timestamp" + new Date(globalState.lineTimeStamp2) + " have this position " + line2X + dx);
 
 
-  shadedArea.call(drag);
+//   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
+//   updateXRSnapshot();
+//   generateHierToolBar();
+//   plotTreeMap();
+//   createAvatarSegment(0);
+//   createAvatarSegment(1);
+//   createAvatarSegment(2);
+//   updateSceneBasedOnSelections();
 
-}
+//   dragStartX = event.x;
+
+// };
+
+//   const dragended = () => {
+//     console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
+//   };
+
+//   const drag = d3.drag()
+//     .on("start", dragstarted)
+//     .on("drag", dragged)
+//     .on("end", dragended);
+
+
+//   shadedArea.call(drag);
+
+// }
 
 
 
@@ -2377,9 +2466,6 @@ function createSharedAxis() {
   svg.append("g")
       .attr("class", "x-axis")
       .call(xAxis);
-
-  // Enable horizontal scrolling
-  // sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
 }
 
 
@@ -2409,7 +2495,7 @@ async function initialize() {
   const binsDropdown = document.getElementById('binsDropdown');
   console.log(binsDropdown);
   globalState.bins = binsDropdown.value;
-
+  createLegend();
   createSharedAxis();
   createPlotTemporal();
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);

@@ -20,8 +20,8 @@ html, body {
     background-color: #f9f9f9;
     z-index: 100;
     overflow-y: auto;
-    padding-bottom: 20px;
-    border: 2px solid #ccc; 
+    /* padding-bottom: 20px; */
+    border: 2px solid #ccc;
 }
 
 #left-pane {
@@ -32,22 +32,26 @@ html, body {
 }
 
 .keyword-selected {
-    background-color: #d0d0d0; /* Light grey background */
+    background-color: #e0e0e0; /* Light grey background */
   }
+
 #right-pane {
     right: 0;
     width: 25%;
     display: flex;
     flex-direction: column;
+    margin:0;
+    padding:0;
 }
 
 .plot-box {
     flex: 1;
     width: 100%;
     overflow-y: auto;
-    border: 1px solid #ddd;
     margin-bottom: 10px;
-    border: 2px solid #ccc;
+    border: 1px solid #ccc;
+    margin:0;
+    padding:0;
 }
 
 #spatial-view, #temporal-view {
@@ -56,7 +60,8 @@ html, body {
     overflow-y: auto;
     left: 20%;
     right: 25%;
-    border: 4px solid #ccc;
+    /* border: 4px solid #ccc; */
+
 }
 
 
@@ -68,11 +73,9 @@ html, body {
     position: absolute;
     top: 200px;
     left: 700px;
-    z-index: 1000; 
-    /* background-color: #f9f9f9; */
-    /* padding: 10px; */
-    /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
-    display: block; 
+    z-index: 1000;
+    display: block;
+
 }
 
 #range-display {
@@ -82,8 +85,8 @@ html, body {
     left: 20%;
     padding: 5px;
     margin: 10px;
-    font-size: 1em; 
-    z-index: 2; 
+    font-size: 1.2em;
+    z-index: 2;
 }
 
 
@@ -102,7 +105,7 @@ html, body {
 }
 
 #obj-toolbar, #toolbar, #user-toolbar {
-    display: none; 
+    display: none;
 }
 
 #obj-toolbar ul, #obj-toolbar li, #toolbar .toggle, #user-toolbar input[type="checkbox"] {
@@ -115,7 +118,7 @@ html, body {
     display: flex;
     align-items: center;
     width: 100%;
-    display: none; 
+    display: none;
 }
 
 #slider-container input[type=range], #playPauseButton {
@@ -129,7 +132,7 @@ html, body {
     height: 24px;
 }
  #speech-plot-container {
-      padding: 10px; 
+      padding: 10px;
       top:0;
       position: relative;
 }
@@ -145,11 +148,11 @@ html, body {
 #controls-container {
     display: flex;
     align-items: center;
-    justify-content: space-between; 
+    justify-content: space-between;
     position: absolute;
-    top: 0; 
-    width: 100%; 
-    padding: 0 10px; 
+    top: 0;
+    width: 100%;
+    padding: 0 10px;
     z-index: 10;
 }
 
@@ -189,39 +192,23 @@ html, body {
 
 #user-interest-topic-container {
     display: flex;
-    align-items: center; 
-   
+    align-items: center;
+
 }
 
 .user-interest-icon {
-    color: #7e4695; /* Purple color for the star */
+    color: #f08030; /* Purple color for the star */
     margin-right: 8px; /* Spacing between star and input box */
-    font-size: 20px; /* Size of the star */
+    font-size: 2.2em; /* Size of the star */
 }
 
 #user-interest-topic {
-    border: 2px solid #7e4695; /* Purple border */
-    background-color: #7e4695; /* Purple background */
+    border: 2px solid #f08030; /* Purple border */
+    background-color: #f08030; /* Purple background */
     color: #ffc000; /* Yellow text */
     padding: 5px 10px; /* Padding inside the text box */
     border-radius: 4px; /* Rounded corners */
-}
-
-
-#bin-selection-container {
-    /* position: absolute; */
-    /* top: 0px; Align it vertically */
-    /* left: 0px; Place it to the right within the parent container */
-    /* border: 1px solid #ccc; A light grey border as in the screenshot */
-    /* border-radius: 4px; Slightly rounded corners for the container */
-    /* background-color: #fff; A white background for the dropdown */
-    /* padding: 5px 10px; Some padding around the text and arrow */
-    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); A subtle shadow for depth */
-    /* cursor: pointer; Change the cursor to indicate it's a dropdown */
-    /* display: flex; Align the label and dropdown arrow */
-    /* align-items: center; Center them vertically */
-    /* justify-content: space-between; Put space between the label and arrow */
-    /* width: auto; Set to auto, or specify a width */
+    font-size: 1.3em;
 }
 
 #bin-selection-container select {
@@ -229,13 +216,12 @@ html, body {
     background-color: transparent; /* Make it transparent to show the container's color */
     border: none; /* No borders */
     padding: 5px 8px; /* Same padding for visual consistency */
-    font-size: 1.23em; /* Large, readable text */
+    font-size: 1.3em; /* Large, readable text */
     color: #333; /* A dark grey for text to make it readable */
     cursor: pointer; /* Indicate it's a dropdown */
 }
 
 #bin-selection-container::after {
-    /* content: '▼'; Add a downward arrow */
     color: #333; /* Same color as the dropdown text for consistency */
     padding-right: 10px; /* Space before the arrow */
 }
@@ -246,9 +232,6 @@ html, body {
     cursor: pointer;
 
 }
-/* #shared-axis-container {
-    margin-bottom: 0; 
-} */
 
 #binsDropdown:focus, #binsDropdown option:hover, #binsDropdown option:checked {
     outline: none;
@@ -263,6 +246,9 @@ html, body {
 }
 #hier-toolbar ul {
     list-style-type: none;
+}
+#hier-toolbar ul ul {
+    padding-left: 5px; /* Adjust this value to your desired indentation */
 }
 
 
@@ -293,7 +279,7 @@ html, body {
 #indicator-svg {
     /* position: absolute; */
     z-index: 2; /* Ensure it's above the plot but not higher than necessary */
-    left: 1000px ; 
+    left: 1000px ;
     /* border: 1px solid red; */
     /* overflow: visible; */
     /* width: calc(100% - y-axis width); Adjust this to not cover the y-axis */
@@ -314,14 +300,49 @@ html, body {
 #user-xr-snapshot {
     position: absolute;
     bottom:490px;
-    left: 1600px; 
-    width: 300px; 
-    height: 240px; 
-    background-color: #fff; 
+    left: 1600px;
+    width: 300px;
+    height: 240px;
+    background-color: #fff;
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 5px; 
+    padding: 5px;
     /* overflow: hidden;  */
-    z-index: 101; 
-    display: block; 
+    z-index: 101;
+    display: block;
 }
+
+#user-legend {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    height: 120px;
+    width:150px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    display: block; /* Or flex, depending on your content */
+}
+
+#unit-minutes,
+#unit-seconds {
+    display: none; 
+}
+
+
+#unit-minutes:checked + label,
+#unit-seconds:checked + label {
+    background-color: #CCCCCC; /* Highlight color for selected option */
+    color: white; /* Text color for selected option */
+    font-size:1.2em;
+}
+
+.dropbtn {
+    border-radius: 3px;
+    padding: 10px 10px;
+    font-size: 1.1em; 
+    border: 2px solid #999;
+}
+
