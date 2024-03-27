@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Action Dashboard</title>
+    <title>VR Dashboard</title>
     <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
 
     <div id="spatial-view">
         <div id="user-toolbar" class="toolbar">
+            <style>
+                .highlight-1 { background-color: #92d050; }
+                .highlight-2 { background-color: #ffc000 }
+                .highlight-3 { background-color: #00b0f0 }
+            </style>
             <div class="toggle">
                 <input type="checkbox" id="toggle-user0" name="userVisibility" checked>
-                <label for="toggle-user0">User 1</label>
+                <label for="toggle-user0" class="highlight-1">User 1</label>
             </div>
             <div class="toggle">
                 <input type="checkbox" id="toggle-user1" name="userVisibility" checked>
-                <label for="toggle-user1">User 2</label>
+                <label for="toggle-user1" class="highlight-2">User 2</label>
             </div>
-            <div class="toggle">
-                <input type="checkbox" id="toggle-user2" name="userVisibility" checked>
-                <label for="toggle-user2">User 3</label>
-            </div>
+
         </div>
     </div>
         <div id="range-display"></div>
