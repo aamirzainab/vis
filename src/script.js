@@ -497,14 +497,7 @@ function createControllerSegment(id, rightOrLeft){
 	}
 }
 
-
-
-
-
-
-
 function createRayCastSegment(id) {
-	// console.log("did u enter raycast seg");
 		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 		if (!globalState.raycastLines[id]) {
 			globalState.raycastLines[id] = [];
@@ -521,12 +514,7 @@ function createRayCastSegment(id) {
 			});
 			globalState.raycastLines[1] = [];
 		}
-		if (globalState.raycastLines[2]) {
-			globalState.raycastLines[2].forEach(mesh => {
-				globalState.scene.remove(mesh);
-			});
-			globalState.raycastLines[2] = [];
-		}
+
 
 		Object.values(globalState.finalData.action_dict).forEach(topic => {
 			topic.actions.filter(action => {
@@ -539,29 +527,26 @@ function createRayCastSegment(id) {
 			}).forEach(action => {
 
 				const raycastPosition = action.specific_action_data;
-				const {x,y,z} = getCoordinates(raycastPosition);
-				console.log(x,y,z);
+				const x = raycastPosition[2];
+				const y = raycastPosition[1];
+				const z = -raycastPosition[0]; 
 
 
-				// let match = action.actor_name.match(/\d+/);
-				// let id = match ? parseInt(match[0], 10) - 1 : null;
-				// // console.log(id);
+				let match = action.actor_name.match(/\d+/);
+				let id = match ? parseInt(match[0], 10) - 1 : null;
 
-				// const userAvatar = globalState.leftControls[id]
-				// if (!userAvatar) return;
+				const userAvatar = globalState.leftControls[id]
+				if (!userAvatar) return;
 
-				// const points = [
-				// 	new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
-				// 	new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
-				// 	// new THREE.Vector3(x,y,z)
-				// ];
-				// const geometry = new THREE.BufferGeometry().setFromPoints(points);
-				// const line = new THREE.Line(geometry, lineMaterial);
+				const points = [
+					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
+					new THREE.Vector3(x, y,z)
+				];
+				const geometry = new THREE.BufferGeometry().setFromPoints(points);
+				const line = new THREE.Line(geometry, lineMaterial);
 
-				// const lengt1 = globalState.scene.children.length ;
-
-				// globalState.scene.add(line);
-				// globalState.raycastLines[id].push(line);
+				globalState.scene.add(line);
+				globalState.raycastLines[id].push(line);
 
 			});
 		});
