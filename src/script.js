@@ -64,7 +64,7 @@ let globalState = {
 	renderer2:undefined,
 	controls2:undefined,
 };
-const userInterestTopic = "Data visualization, User1’s folooding data visualization near the Rockaways area";
+const userInterestTopic = "Data visualization, User1’s flooding data visualization near the Rockaways area";
 
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
