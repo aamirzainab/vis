@@ -64,7 +64,7 @@ let globalState = {
 	renderer2:undefined,
 	controls2:undefined,
 };
-const userInterestTopic = "Data visualization, User1’s flooding data visualization near the Rockaways area";
+const userInterestTopic = "Data visualization";
 
 const margin = { top: 20, right: 30, bottom: 10, left: 140 };
 
@@ -76,7 +76,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User_1", "User_2", "User_3", "0", "1", "2"])
-    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]);
+    .range(["#8dd3c7", "#fdcdac", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
@@ -452,7 +452,7 @@ function createDeviceSegment(id){
 
 
 function createRayCastSegment(id) {
-		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+
 		if (!globalState.raycastLines[id]) {
 			globalState.raycastLines[id] = [];
 		}
@@ -498,12 +498,11 @@ function createRayCastSegment(id) {
 				const points = [
 					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
 					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
-					// new THREE.Vector3(x,y,z)
 				];
+				const lineMaterial = new THREE.LineBasicMaterial({ color: colorScale(id) });
 				const geometry = new THREE.BufferGeometry().setFromPoints(points);
 				const line = new THREE.Line(geometry, lineMaterial);
 
-				const lengt1 = globalState.scene.children.length ;
 
 				globalState.scene.add(line);
 				globalState.raycastLines[id].push(line);
@@ -705,7 +704,7 @@ async function initializeScene() {
 
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
-	globalState.scene.add(gridHelper);
+	// globalState.scene.add(gridHelper);
 	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
@@ -1085,7 +1084,8 @@ function createPlotTemporal() {
 	const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
 	  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
 	const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-	const height = temporalViewHeight - margin.top - margin.bottom;
+	let height = temporalViewHeight - margin.top - margin.bottom;
+	 height = 350;
 	const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
@@ -1097,7 +1097,7 @@ function createPlotTemporal() {
 	  .attr('transform', `translate(${margin.left},${margin.top})`);
 
 	  svg.append("text")
-	  .attr("y", -10)
+	  .attr("y", -7)
 	  .attr("x", -40)
 	  .style("text-anchor", "middle")
 	  .style("font-weight", "bold")
@@ -1119,7 +1119,7 @@ function createPlotTemporal() {
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest
 	  })
 	  .style("cursor", "pointer")
     .on("click", function(event, d) {
@@ -1170,7 +1170,7 @@ function createPlotTemporal() {
 	  return width;
 	})
 	.attr("height", yScale.bandwidth())
-	.attr("fill", d => d.hasUserInterestAction ? "#f08030" : "#d0d0d0");
+	.attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0");
 	// .attr("fill", "#d0d0d0");
   }
 
@@ -1273,17 +1273,42 @@ function createPlotTemporal() {
 				.attr("y", yScale(`${topicName}-${user}`))
 				.attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
 				.attr("height", newYHeight)
-				.attr("fill", d => action.has_user_action_of_interest ? "#f08030" : "#d0d0d0");
+				.attr("fill", d => action.has_user_action_of_interest ? "#80b1d3" : "#d0d0d0");
 		});
 	});
 
+  }
+
+  function wrapText(text, width) {
+	text.each(function() {
+	  var text = d3.select(this),
+		  words = text.text().split(/\s+/).reverse(),
+		  word,
+		  line = [],
+		  lineNumber = 0,
+		  lineHeight = 1.1, // ems
+		  y = text.attr("y"),
+		  dy = parseFloat(text.attr("dy") || 0),
+		  tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+	  
+	  while (word = words.pop()) {
+		line.push(word);
+		tspan.text(line.join(" "));
+		if (tspan.node().getComputedTextLength() > width) {
+		  line.pop(); // remove the word that was just added
+		  tspan.text(line.join(" "));
+		  line = [word]; // start a new line with the removed word
+		  tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+		}
+	  }
+	});
   }
 
 
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+	const margin = { top: 20, right: 20, bottom: 140, left: 50 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	const height = 500 - margin.top - margin.bottom;
 
@@ -1357,19 +1382,26 @@ function plotUserSpecificBarChart() {
 		.style("text-anchor", "end")
 		.attr("dx", "-.8em")
 		.attr("dy", ".15em")
+		.call(wrapText, x1.bandwidth()+50)
 		.attr("transform", "rotate(-65)")
-		.style("font-size", "9px");
+		.style("font-size", "1.2em");
 
 	svg.append("g")
-		.call(d3.axisLeft(y));
+		.call(d3.axisLeft(y))
+		.selectAll(".tick text") // Select all tick texts
+      .style("font-family", "Lato")
+      .style("font-size", "1.2em");
+
+		
 	svg.append("text")
 		.attr("transform", "rotate(-90)")
 		.attr("y", 0 - margin.left)
 		.attr("x", 0 - (height / 2))
 		.attr("dy", "1em")
 		.style("text-anchor", "middle")
+		.style("font-family", "Lato")
 		.text("Count")
-		.style("font-size", "12px");
+		.style("font-size", "0.8em");
 
 	// const legend = svg.selectAll(".legend")
 	// 	.data(users)
@@ -1398,6 +1430,8 @@ function plotCombinedUsersSpiderChart() {
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+	const threshold = 10;
+	const minPositiveValue = 30; 
 	// const height = 600 - margin.top - margin.bottom;
 	const svg = plotBox.append("svg")
 	  .attr("width", width + margin.left + margin.right)
@@ -1416,7 +1450,13 @@ function plotCombinedUsersSpiderChart() {
 	  let topicCounts = new Map();
 	  topic.actions.forEach(action => {
 		if (action.action_type === "XRInteraction") {
-		  topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
+			let currentCount = (topicCounts.get(action.actor_name) || 0) + 1;
+
+			// currentCount = Math.min(currentCount, threshold);
+			topicCounts.set(action.actor_name, currentCount);
+			
+
+		//   topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
 		}
 	  });
 	  let topicMax = Math.max(...topicCounts.values(), 0);
@@ -1459,6 +1499,7 @@ function plotCombinedUsersSpiderChart() {
 		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
 		.text(topic)
 		.style("text-anchor", "middle")
+		.style("font-size", "0.8em")
 		.attr("alignment-baseline", "middle");
 	});
 
@@ -1467,11 +1508,11 @@ function plotCombinedUsersSpiderChart() {
 	// Plot radar chart area for each user
 	users.forEach((user, userIndex) => {
 	  let userData = topics.map(topicKey => {
-		//   console.log(topicKey);
 		const topic = globalState.finalData.action_dict[topicKey];
-		// console.log(topic);
-		// .find(d => d.broad_action_name === topicKey);
-		const count = topic.actions.filter(action => action.actor_name === user).length;
+		let count = topic.actions.filter(action => action.actor_name === user && action.action_type === "XRInteraction").length;
+		count = count === 0 ? minPositiveValue : count;
+		// Apply the threshold here
+		// count = Math.min(count, threshold);
 		return {topic: topicKey, count};
 	  });
 
@@ -1892,7 +1933,8 @@ export function getGlobalState() {
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
 	// const height = parseInt(svg.style("height")) - margin.top ;
-	const height = parseInt(d3.select("#speech-plot-container").style("height"));
+	let height = parseInt(d3.select("#speech-plot-container").style("height"));
+	height = 430;
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1913,7 +1955,7 @@ function createLines(timestamp1, timestamp2) {
 		circle1 = svg.append('circle')
 			.attr('id', 'time-indicator-circle1')
 			.attr('r', 5)
-			.style('fill', '#82caeb');
+			.style('fill', '#9e9e9e');
 	}
 
 	let circle2 = svg.select('#time-indicator-circle2');
@@ -1922,7 +1964,7 @@ function createLines(timestamp1, timestamp2) {
 		circle2 = svg.append('circle')
 			.attr('id', 'time-indicator-circle2')
 			.attr('r', 5)
-			.style('fill', '#82caeb');
+			.style('fill', '#9e9e9e');
 	}
 
 
@@ -1950,7 +1992,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition1)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
 		.attr('class', 'interactive')
@@ -1971,7 +2013,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition2)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
 		.attr('class', 'interactive')
@@ -2124,8 +2166,8 @@ function createTopicItem(topicName, topicDetails, toolbar) {
     topicItem.appendChild(label);
 	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#f08030';}
 	if (globalState.finalData.action_dict[topicName].is_user_interest) {
-        label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
-		label.style.color = '#f08030';
+        label.innerHTML = `${topicName} <span style="color: #80b1d3;">★</span>`;
+		label.style.color = '#80b1d3';
     }
 
 
@@ -2158,7 +2200,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 			if (action.has_user_action_of_interest) {
 				// console.log(specificAction);
 				// console.log(action.)
-                keywordLabel.style.color = '#f08030';
+                keywordLabel.style.color = '#80b1d3';
             }
 
             keywordItem.appendChild(keywordCheckbox);
@@ -2339,7 +2381,8 @@ function initializeOrUpdateSpeechBox() {
 	const hierToolbar = document.getElementById('hier-toolbar');
 	let offsetHeight = hierToolbar.offsetHeight;
 	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-	container.style.marginTop = `${offsetHeight}px`;
+	// container.style.marginTop = `${offsetHeight}px`;
+	container.style.top = `${offsetHeight}px`;
 
 	let rangeDisplay = document.querySelector('.time-range-display-speechbox');
 	if (!rangeDisplay) {
@@ -2349,7 +2392,8 @@ function initializeOrUpdateSpeechBox() {
 	}
 	// rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
 	rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
-
+	rangeDisplay.style.marginTop = "10px"; 
+	rangeDisplay.style.marginBottom = "10px";
 	let speechBoxesContainer = document.getElementById("speech-boxes-container");
 	if (!speechBoxesContainer) {
 		speechBoxesContainer = document.createElement('div');
@@ -2396,6 +2440,8 @@ function getSpeechData(action, selectedKeywords) {
     speechBox.style.borderRadius = '8px';
     speechBox.style.padding = '15px';
 	speechBox.style.marginBottom = '8px';
+	speechBox.style.marginRight = '8px';
+	speechBox.style.marginLeft = '8px';
 	// console.log(selectedKeywords);
 
 
@@ -2443,7 +2489,7 @@ function getSpeechData(action, selectedKeywords) {
     actionPropertyEl.appendChild(actionPropertyContent);
 
 	const relevantActionLine = document.createElement('div');
-	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #f08030;">"${relevantKeyword}"</span></span>`;
+	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #80b1d3;">"${relevantKeyword}"</span></span>`;
 
     actionPropertyEl.appendChild(relevantActionLine);
 
@@ -2478,15 +2524,15 @@ function updateInterestBox() {
 	const topicInterestSpan = document.createElement("span");
 	topicInterestSpan.textContent = "Action of your interest: ";
 	topicInterestSpan.style.color = "white";
-	topicInterestSpan.style.fontWeight = "bold"; 
+	topicInterestSpan.style.fontWeight = "bold";
 
 	// Create "Next user interest topic" span
 	const nextInterestSpan = document.createElement("span");
 	nextInterestSpan.textContent = userInterestTopic;
 	// nextInterestSpan.style.color = "#ffc000";
-	nextInterestSpan.style.color = "#333333"; 
-	nextInterestSpan.style.fontWeight = "bold"; 
-  
+	nextInterestSpan.style.color = "#333333";
+	nextInterestSpan.style.fontWeight = "bold";
+
 	// Append both spans to the container
 	container.appendChild(topicInterestSpan);
 	container.appendChild(nextInterestSpan);
@@ -2509,7 +2555,8 @@ function updateInterestBox() {
 	// Create a title element
 	const titleElement = document.createElement('div');
 	titleElement.style.textAlign = 'center';
-	titleElement.style.marginBottom = '10px';
+	titleElement.style.marginBottom = '5px';
+	titleElement.style.marginTop = '5px';
 	titleElement.id = 'imageTitle';
 	container.appendChild(titleElement);
 
@@ -2523,16 +2570,16 @@ function updateInterestBox() {
 	  if (filteredActions.length >= 1) {
 		const imageWrapper = document.createElement('div');
 		imageWrapper.style.position = 'relative';
-		imageWrapper.style.maxWidth = '500px';
-		imageWrapper.style.margin = 'auto';
+		// imageWrapper.style.maxWidth = '500px';
+		// imageWrapper.style.margin = 'auto';
 
 		filteredActions.forEach((action, index) => {
 		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
 		  const img = document.createElement('img');
 		  img.src = imagePath;
 		  img.alt = "Raw Capture Image";
-		  img.style.maxWidth = '100%';
-		  img.style.objectFit = 'contain';
+		  img.style.width = '360px';
+		  img.style.height = '240px';
 		  img.style.display = index === 0 ? 'block' : 'none';
 		  imageWrapper.appendChild(img);
 		});
@@ -2619,7 +2666,7 @@ function updateInterestBox() {
 		.attr("y", yStart)
 		.attr("width", shadingWidth)
 		.attr("height", height)
-		.attr("fill", "#43afe2")
+		.attr("fill", "#9e9e9e")
 		.attr("fill-opacity", 0.5);
 	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
 	const rangeDisplay = document.getElementById("range-display");
@@ -2713,7 +2760,7 @@ function createSharedAxis() {
 
 	// Container setup
 	const temporalViewContainer = d3.select("#temporal-view");
-	const minWidth = document.getElementById('temporal-view').clientWidth;
+	const minWidth = document.getElementById('temporal-view').clientWidth - margin.right - margin.left;
 	// const minWidth = temporalViewContainer.width
 	let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
 	if (sharedAxisContainer.empty()) {
@@ -2847,7 +2894,6 @@ function onWindowResize() {
 async function initialize() {
 	await initializeScene();
 	const binsDropdown = document.getElementById('binsDropdown');
-	console.log(binsDropdown);
 	globalState.bins = binsDropdown.value;
 
 	createSharedAxis();

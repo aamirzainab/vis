@@ -3,8 +3,12 @@ html, body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    font-family: 'Arial', sans-serif;
-    font-size:14px;
+    font-size: 18px; 
+    font-family: "Lato", sans-serif;
+    font-weight: 500;
+    font-style: normal;
+
+    /* background-color: #eaeaea; */
 }
 
 *, *::before, *::after {
@@ -22,9 +26,9 @@ html, body {
     height: 100%;
     /* background-color: #f9f9f9; */
     z-index: 100;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     padding-bottom: 20px;
-    border: 2px solid #ccc;
+    /* border: 2px solid #ccc; */
 }
 
 #left-pane {
@@ -48,9 +52,9 @@ html, body {
 .plot-box {
     flex: 1;
     width: 100%;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     margin-bottom: 10px;
-    border: 2px solid #ccc;
+    border: 1px solid #ccc;
     margin:0;
     padding:0;
 }
@@ -58,7 +62,7 @@ html, body {
 #spatial-view, #temporal-view {
     width: 55%;
     position: relative;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     left: 20%;
     right: 25%;
 }
@@ -69,38 +73,31 @@ html, body {
     height: 65%;
     position: relative;
 }
-#user-toolbar {
-    position: absolute;
-    top: 0;
-    left: 300;
-    z-index: 1000;
-    background-color: #f9f9f9;
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    display: block; /* Or flex, depending on your content */
-}
+
 
 #range-display {
     position: relative;
-    color: #4892dc;
+    color: #4f4f4f;
     bottom: 0;
     left: 20%;
     padding: 5px;
     margin: 10px;
-    font-size: 1em;
+    font-size: 1.2em;
     z-index: 2;
 }
+
 
 
 #temporal-view {
     height: 35%;
     overflow-x: auto;
+    overflow-y: auto;
     display: block;
 }
 
 .toolbar, #obj-toolbar, #toolbar, #user-toolbar, #bin-selection-container {
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* background-color: #f9f9f9; */
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
     position: absolute;
     padding: 5px;
     z-index: 101;
@@ -168,7 +165,7 @@ html, body {
     padding: 5px 10px;
     background-color: #fff;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    /* border-radius: 4px; */
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -184,14 +181,14 @@ html, body {
 }
 
 .user-interest-icon {
-    color: #f08030; /* Purple color for the star */
+    color: #80b1d3; /* Purple color for the star */
     margin-right: 8px; /* Spacing between star and input box */
-    font-size: 30px;
+    font-size: 2.2em;
 }
 
 #user-interest-topic {
-    border: 2px solid #f08030; /* Purple border */
-    background-color: #f08030; /* Purple background */
+    border: 2px solid #80b1d3; /* Purple border */
+    background-color: #80b1d3; /* Purple background */
     color: #ffc000; /* Yellow text */
     padding: 5px 10px; /* Padding inside the text box */
     border-radius: 4px; /* Rounded corners */
@@ -200,28 +197,13 @@ html, body {
 
 
 
-#bin-selection-container {
-    /* position: absolute; */
-    /* top: 0px; Align it vertically */
-    /* left: 0px; Place it to the right within the parent container */
-    /* border: 1px solid #ccc; A light grey border as in the screenshot */
-    /* border-radius: 4px; Slightly rounded corners for the container */
-    /* background-color: #fff; A white background for the dropdown */
-    /* padding: 5px 10px; Some padding around the text and arrow */
-    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); A subtle shadow for depth */
-    /* cursor: pointer; Change the cursor to indicate it's a dropdown */
-    /* display: flex; Align the label and dropdown arrow */
-    /* align-items: center; Center them vertically */
-    /* justify-content: space-between; Put space between the label and arrow */
-    /* width: auto; Set to auto, or specify a width */
-}
 
 #bin-selection-container select {
     appearance: none; /* Remove default styling */
     background-color: transparent; /* Make it transparent to show the container's color */
     border: none; /* No borders */
     padding: 5px 8px; /* Same padding for visual consistency */
-    font-size: 1.23em; /* Large, readable text */
+    font-size: 1.01em; /* Large, readable text */
     color: #333; /* A dark grey for text to make it readable */
     cursor: pointer; /* Indicate it's a dropdown */
 }
@@ -230,8 +212,8 @@ html, body {
     /* content: '▼'; Add a downward arrow */
     color: #333; /* Same color as the dropdown text for consistency */
     padding-right: 10px; /* Space before the arrow */
+    font-size: 1.01em;
 }
-
 
 #timeDisplay {
     position: absolute;
@@ -257,22 +239,29 @@ html, body {
 }
 #hier-toolbar {
     list-style: none;
-     flex-shrink: 0;
+    flex-shrink: 0;
     overflow-y: auto; /* Enables vertical scrolling within the toolbar */
     max-height: 30%; /* Takes up 30% of the left pane's height */
     width: 100%; /* Uses the full width of its container */
+    /* border-radius: 3px;  */
+    border: 2px solid #ccc; /* Adds a border around the toolbar */
+    font-size: 1em;
 }
 
 #hier-toolbar ul {
     list-style-type: none;
+    font-size:0.99em;
 }
 #speech-box{
-    overflow-y: auto;
-    /* max-height:100%; */
+    margin-top: 10px; 
+    overflow-y: scroll;
     top: 0;
     width:100%;
     position: relative;
     flex-grow: 1;
+    font-size:0.99em;
+    border: 2px solid #ccc; /* Adds a border around the toolbar */
+    /* border-radius: 10px; */
 }
 
 
@@ -293,17 +282,20 @@ html, body {
 
 #user-xr-snapshot {
     position: absolute;
-    /* bottom: 20px; Adjust the distance from the bottom as needed */
-    bottom:490px;
-    left: 1600px;
-    width: 300px;
-    height: 240px;
+    bottom:500px;
+    left: 1530px;
+    width: 372px;
+    height: 273px;
     background-color: #fff;
     border: 1px solid #ccc;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 5px;
-    /* overflow: hidden;  */
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    /* padding: 5px; */
     z-index: 101;
+    /* display: block; */
+}
+#user-xr-snapshot img {
+    width: 100px;
+    margin: auto;
     display: block;
 }
 
@@ -314,21 +306,30 @@ html, body {
 
 
 
+
 #unit-minutes:checked + label,
 #unit-seconds:checked + label {
     background-color: #CCCCCC; /* Highlight color for selected option */
     color: white; /* Text color for selected option */
-    font-size:1.2em;
+    font-size:1em;
 }
-
 .dropbtn {
     border-radius: 3px;
-    padding: 10px 10px;
-    font-size: 1.1em; 
-    border: 2px solid #999;
+    padding: 5px 5px;
+    font-size: 1em;
+    border: 1px solid #999;
 }
-
-
+#user-toolbar {
+    margin-top:5px;
+    position: absolute;
+    top: 0;
+    left: 5px;
+    z-index: 1000;
+    background-color: #f9f9f9;
+    padding: 10px;
+    display: block; /* Or flex, depending on your content */
+    border-radius: 5px;
+}
 
 .user-legend {
     display: flex;
@@ -362,7 +363,7 @@ html, body {
     border-radius: 3px; /* Adjust the value to make the edges rounder */
 }
 
-.highlight-1 { background-color: #92d050; }
-.highlight-2 { background-color: #ffc000 }
-.highlight-3 { background-color: #00b0f0 }
 
+.highlight-1 { background-color: #8dd3c7; }
+.highlight-2 { background-color: #fdcdac }
+.highlight-3 { background-color: #bebada }
