@@ -1,10 +1,14 @@
+
 html, body {
     height: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
-    font-family: 'Arial', sans-serif;
-    font-size:14px;
+    font-size: 18px; 
+    font-family: "Lato", sans-serif;
+    font-weight: 500;
+    font-style: normal;
+
     /* background-color: #eaeaea; */
 }
 
@@ -17,11 +21,10 @@ html, body {
     position: fixed;
     top: 0;
     height: 100%;
-    background-color: #f9f9f9;
+    /* background-color: #f9f9f9; */
     z-index: 100;
-    overflow-y: auto;
-    /* padding-bottom: 20px; */
-    border: 2px solid #ccc;
+    /* overflow-y: auto; */
+    /* border: 2px solid #ccc; */
 }
 
 #left-pane {
@@ -29,6 +32,8 @@ html, body {
     width: 20%;
     display:flex;
     flex-direction: column;
+    height:100%;
+    /* overflow-y: auto; */
 }
 
 .keyword-selected {
@@ -47,7 +52,7 @@ html, body {
 .plot-box {
     flex: 1;
     width: 100%;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     margin-bottom: 10px;
     border: 1px solid #ccc;
     margin:0;
@@ -57,30 +62,38 @@ html, body {
 #spatial-view, #temporal-view {
     width: 55%;
     position: relative;
-    overflow-y: auto;
+    /* overflow-y: auto;   */
     left: 20%;
     right: 25%;
     /* border: 4px solid #ccc; */
 
 }
+#temporal-view {
+    height: 35%;
+    overflow-x: auto;
+    display: block;
+}
+
 
 
 #spatial-view {
     height: 65%;
     position: relative;
+    /* overflow-y: auto; */
 }
 #text-overlay {
     position: absolute;
-    top: 200px;
-    left: 700px;
+    top: 150px;
+    left: 1400px;
     z-index: 1000;
     display: block;
+    /* opacity: 0.8; */
 
 }
 
 #range-display {
     position: relative;
-    color: #4892dc;
+    color: #4f4f4f;
     bottom: 0;
     left: 20%;
     padding: 5px;
@@ -90,15 +103,10 @@ html, body {
 }
 
 
-#temporal-view {
-    height: 35%;
-    overflow-x: auto;
-    display: block;
-}
 
 .toolbar, #obj-toolbar, #toolbar, #user-toolbar, #bin-selection-container {
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* background-color: #f9f9f9; */
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
     position: absolute;
     padding: 10px;
     z-index: 101;
@@ -108,11 +116,6 @@ html, body {
     display: none;
 }
 
-#obj-toolbar ul, #obj-toolbar li, #toolbar .toggle, #user-toolbar input[type="checkbox"] {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
 
 #slider-container {
     display: flex;
@@ -166,7 +169,7 @@ html, body {
     padding: 5px 10px;
     background-color: #fff;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    /* border-radius: 4px; */
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -197,17 +200,17 @@ html, body {
 }
 
 .user-interest-icon {
-    color: #f08030; /* Purple color for the star */
+    color: #80b1d3; /* Purple color for the star */
     margin-right: 8px; /* Spacing between star and input box */
     font-size: 2.2em; /* Size of the star */
 }
 
 #user-interest-topic {
-    border: 2px solid #f08030; /* Purple border */
-    background-color: #f08030; /* Purple background */
+    border: 2px solid #80b1d3; /* Purple border */
+    background-color: #80b1d3; /* Purple background */
     color: #ffc000; /* Yellow text */
     padding: 5px 10px; /* Padding inside the text box */
-    border-radius: 4px; /* Rounded corners */
+    border-radius: 4px;
     font-size: 1.3em;
 }
 
@@ -216,14 +219,16 @@ html, body {
     background-color: transparent; /* Make it transparent to show the container's color */
     border: none; /* No borders */
     padding: 5px 8px; /* Same padding for visual consistency */
-    font-size: 1.3em; /* Large, readable text */
+    font-size: 1.01em; /* Large, readable text */
     color: #333; /* A dark grey for text to make it readable */
     cursor: pointer; /* Indicate it's a dropdown */
 }
 
 #bin-selection-container::after {
+    /* content: '▼'; Add a downward arrow */
     color: #333; /* Same color as the dropdown text for consistency */
     padding-right: 10px; /* Space before the arrow */
+    font-size: 1.01em;
 }
 
 #shared-axis-container, #bin-selection-container label, #binsDropdown, #binsDropdown option {
@@ -237,30 +242,40 @@ html, body {
     outline: none;
     background-color: #bdbdbd;
 }
+
+
 #hier-toolbar {
     list-style: none;
     flex-shrink: 0;
     overflow-y: auto; /* Enables vertical scrolling within the toolbar */
     max-height: 30%; /* Takes up 30% of the left pane's height */
     width: 100%; /* Uses the full width of its container */
+    border: 2px solid #ccc; /* Adds a border around the toolbar */
+    margin-top: 5px;
+    font-size:1em;
+    /* border-radius: 10px; */
 }
 #hier-toolbar ul {
     list-style-type: none;
+    font-size:0.99em;
 }
 #hier-toolbar ul ul {
     padding-left: 5px; /* Adjust this value to your desired indentation */
+    font-size:0.99em;
 }
 
 
 
 #speech-box{
-    overflow-y: auto;
-    /* max-height:100%; */
+    margin-top: 10px;
+    /* overflow-y: auto; */
+    overflow-y: scroll;
     top: 0;
     width:100%;
     position: relative;
     flex-grow: 1;
-    border: 1px solid grey;
+    border: 2px solid #ccc; /* Adds a border around the toolbar */
+    /* border-radius: 10px; */
 }
 
 
@@ -271,8 +286,7 @@ html, body {
 
 
 #speech-plot-container {
-    position: relative; /* or 'absolute' depending on layout */
-    /* z-index: 100; Adjust as necessary */
+    position: relative;
   }
 
 
@@ -299,36 +313,41 @@ html, body {
 }
 #user-xr-snapshot {
     position: absolute;
-    bottom:490px;
-    left: 1600px;
-    width: 300px;
-    height: 240px;
+    bottom:500px;
+    left: 1530px;
+    width: 372px;
+    height: 273px;
     background-color: #fff;
     border: 1px solid #ccc;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 5px;
-    /* overflow: hidden;  */
     z-index: 101;
+    /* display: block; */
+    justify-items: center;
+}
+
+#user-xr-snapshot img {
+    width: 100px;
+    margin: auto;
     display: block;
 }
 
 #user-legend {
+    margin-top:5px;
     position: absolute;
     top: 0;
-    left: 0;
+    left: 10px;
     z-index: 1000;
     height: 120px;
     width:150px;
     background-color: #f9f9f9;
     padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* border-radius: 5px; */
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
     display: block; /* Or flex, depending on your content */
 }
 
 #unit-minutes,
 #unit-seconds {
-    display: none; 
+    display: none;
 }
 
 
@@ -336,13 +355,12 @@ html, body {
 #unit-seconds:checked + label {
     background-color: #CCCCCC; /* Highlight color for selected option */
     color: white; /* Text color for selected option */
-    font-size:1.2em;
+    font-size:1em;
 }
 
 .dropbtn {
     border-radius: 3px;
-    padding: 10px 10px;
-    font-size: 1.1em; 
-    border: 2px solid #999;
+    padding: 5px 5px;
+    font-size: 1em;
+    border: 1px solid #999;
 }
-

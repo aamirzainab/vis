@@ -55,9 +55,9 @@ let globalState = {
   controls:undefined,
   sprites: [],
 };
-const userInterestTopic = "Emergency Management";
-let buffer = 0 ;
-const margin = { top: 20, right: 30, bottom: 10, left: 140 };
+const userInterestTopic = "Emergency Management and Evacuation";
+let buffer = 210 ;
+const margin = { top: 20, right: 30, bottom: 10, left: 200 };
 
 const hsl = {
 	h: 0,
@@ -66,9 +66,17 @@ const hsl = {
 };
 const topicOfInterest = "";
 
-	const colorScale = d3.scaleOrdinal()
-    .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
-    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
+	// const colorScale = d3.scaleOrdinal()
+  //   .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
+  //   .range(["#b3e2cd", "#fdcdac", "#f4cae4", "#b3e2cd", "#fdcdac", "#f4cae4"]); // Added a third color "#00b0f0"
+
+
+    const colorScale = d3.scaleOrdinal()
+    .domain(["User_1", "User_2", "User_3", "0", "1", "2"])
+    .range(["#8dd3c7", "#fdcdac", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]);
+
+
+
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -121,20 +129,42 @@ async function loadAvatarModel(filename) {
 	avatar.name = filename;
   avatar.visible = true ;
 	globalState.scene.add(avatar);
-
 	avatar.position.y = -1 ;
 	avatarLoaded = true;
 	return avatar;
 }
 
+function colorAvatarModel(id){
+  const avatar = globalState.avatars[id];
+  avatar.traverse((child) => {
+    if (child.isMesh && child.material) {
+      if (Array.isArray(child.material)) {
+        // If the mesh has multiple materials, change each one
+        child.material.forEach((material) => {
+          material.color.setHex(colorScale(id)); // Example: changing to red
+        });
+      } else {
+        // The mesh has a single material
+        child.material.color.set(colorScale(id)); // Example: changing to red
+      }
+    }
+  });
+}
+
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
 	try {
-		const filename = 'RD_background_dense_color_fix.glb';
+		// const filename = 'RD_background_dense_color_fix.glb';
+    const filename = "pointCloud.glb";
 		const gltf = await loader.loadAsync(filename);
 		roomMesh = gltf.scene;
 		roomMesh.name = filename;
 		roomMesh.scale.set(1, 1, 1);
+    // roomMesh.traverse((object) => {
+    //   if (object.isLight) {
+    //     object.parent.remove(object);
+    //   }
+    // });
 		globalState.scene.add(roomMesh);
 	} catch (error) {
 		console.error('Error loading the room model:', error);
@@ -376,53 +406,54 @@ function createLegend() {
       .text(d => d);
 }
 
-function createTextSprite(message, fontSize = 30, fontFace = "Arial", textColor = "black", backgroundColor = "#bfbfbf") {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  context.font = `${fontSize}px ${fontFace}`;
-  const metrics = context.measureText(message);
-  const textWidth = metrics.width;
-  canvas.width = textWidth + 10; // Reduced padding
-  canvas.height = fontSize + 10; // Reduced padding
+// function createTextSprite(message, fontSize = 30, fontFace = "Arial", textColor = "black", backgroundColor = "#bfbfbf") {
+//   const canvas = document.createElement('canvas');
+//   const context = canvas.getContext('2d');
+//   context.font = `${fontSize}px ${fontFace}`;
+//   const metrics = context.measureText(message);
+//   const textWidth = metrics.width;
+//   canvas.width = textWidth + 10; // Reduced padding
+//   canvas.height = fontSize + 10; // Reduced padding
 
-  // Optional: Draw background
-  context.fillStyle = backgroundColor;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+//   // Optional: Draw background
+//   context.fillStyle = backgroundColor;
+//   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw text
-  context.fillStyle = textColor;
-  // Adjust text position based on reduced padding
-  context.fillText(message, 5, fontSize / 2 + 5);
+//   // Draw text
+//   context.fillStyle = textColor;
+//   // Adjust text position based on reduced padding
+//   context.fillText(message, 5, fontSize / 2 + 5);
 
-  // Create texture from canvas
-  const texture = new THREE.CanvasTexture(canvas);
-  // texture.minFilter = THREE.LinearFilter; // Consider using LinearFilter for smoother text
-  // texture.magFilter = THREE.LinearFilter;
+//   // Create texture from canvas
+//   const texture = new THREE.CanvasTexture(canvas);
+//   // texture.minFilter = THREE.LinearFilter; // Consider using LinearFilter for smoother text
+//   // texture.magFilter = THREE.LinearFilter;
 
-  // Use texture in a sprite
-  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-  const sprite = new THREE.Sprite(spriteMaterial);
+//   // Use texture in a sprite
+//   const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+//   const sprite = new THREE.Sprite(spriteMaterial);
 
-  // Calculate aspect ratio of canvas
-  const aspectRatio = canvas.width / canvas.height;
-  const maxSize = 5; // Adjust this value based on your scene requirements
+//   // Calculate aspect ratio of canvas
+//   const aspectRatio = canvas.width / canvas.height;
+//   const maxSize = 5; // Adjust this value based on your scene requirements
 
-  // Calculate scale to not exceed maxSize in either dimension
-  const spriteWidth = aspectRatio >= 1 ? maxSize : maxSize * aspectRatio;
-  const spriteHeight = aspectRatio < 1 ? maxSize : maxSize / aspectRatio;
+//   // Calculate scale to not exceed maxSize in either dimension
+//   const spriteWidth = aspectRatio >= 1 ? maxSize : maxSize * aspectRatio;
+//   const spriteHeight = aspectRatio < 1 ? maxSize : maxSize / aspectRatio;
 
-  // Apply the calculated scale to the sprite
-  sprite.scale.set(spriteWidth, spriteHeight, 1.0);
+//   // Apply the calculated scale to the sprite
+//   sprite.scale.set(spriteWidth, spriteHeight, 1.0);
 
-  return sprite;
-}
+//   return sprite;
+// }
 
 function addTextOverlay(text) {
   const container = document.getElementById('text-overlay');
   const textElement = document.createElement('div');
   textElement.style.padding = '8px';
   textElement.style.margin = '4px';
-  textElement.style.background = 'rgba(255, 255, 255, 0.8)';
+  // textElement.style.background = 'rgba(255, 255, 255, 0.8)';
+  // textElement.style.background ='rgba(255, 255, 255,255)';
   textElement.style.background = '#e0e0e0';
   textElement.style.color = 'black';
   textElement.style.maxWidth = '250px'; // Set a maximum width for text wrapping
@@ -552,9 +583,9 @@ async function initializeScene() {
   globalState.renderer.domElement.addEventListener('mouseleave', function() {
     globalState.controls.enableZoom = false;
   });
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   globalState.scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
   directionalLight.position.set(0, 1, 0);
   globalState.scene.add(directionalLight);
 
@@ -562,7 +593,7 @@ async function initializeScene() {
 
   const gridHelper = new THREE.GridHelper(10, 10);
   gridHelper.position.y = -1;
-  globalState.scene.add(gridHelper);
+  // globalState.scene.add(gridHelper);
 
 	await Promise.all([loadRoomModel()]); // new glb has to be created for the reality deck
 
@@ -579,6 +610,7 @@ jsonFiles.forEach((jsonData, index) => {
 
 	const avatarArray = await Promise.all([
     loadAvatarModel('3d_human_model/scene_1.gltf'),
+    // loadAvatarModel('test.glb'),
     loadAvatarModel('3d_human_model/scene_2.gltf'),
     loadAvatarModel('3d_human_model/scene_2.gltf'),
 
@@ -591,9 +623,23 @@ jsonFiles.forEach((jsonData, index) => {
   ]);
   globalState.finalData = finalData[0];
   // console.log(globalState.finalData.topics_dict["User Transformation"]);
+  // const
   globalState.movementData = globalState.finalData.topics_dict["User Transformation"];
   delete globalState.finalData.topics_dict["User Transformation"];
+  delete globalState.finalData.topics_dict["Emergency Preparedness and Response"];
+  delete globalState.finalData.topics_dict["Disaster Recovery and Resilience"];
+  delete globalState.finalData.topics_dict["Transportation Data Analysis"];
+  delete globalState.finalData.topics_dict["Infrastructure Data Analysis"];
+  delete globalState.finalData.topics_dict["Socioeconomics Data Analysis"];
+  delete globalState.finalData.topics_dict["Demographics Data Analysis"];
+  delete globalState.finalData.topics_dict["3D Visualization"];
+  // globalState.finalData.topics_dict["Infrastructure Resilience"] = globalState.finalData.topics_dict["Infrastructure Resilience and Planning"];
+  delete globalState.finalData.topics_dict["Infrastructure Resilience and Planning"];
+  
 	globalState.avatars = [avatarArray[0], avatarArray[1], avatarArray[2]];
+  colorAvatarModel(0);
+  colorAvatarModel(1);
+  colorAvatarModel(2);
 
 
 	setTimes(globalState.finalData);
@@ -876,7 +922,6 @@ function processMovementData() {
 
 
 function createPlotTemporal() {
-  // Assuming globalState.finalData is set and contains the topics_dict property
   const topicsData = Object.entries(globalState.finalData.topics_dict).flatMap(([topicName, topicDetails]) => {
     return topicDetails.actions.map(action => ({
       topic: topicName,
@@ -894,32 +939,38 @@ function createPlotTemporal() {
 	const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
 
   const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-  // const width = document.getElementById('spatial-view').clientWidth - 1000;
   const height = temporalViewHeight - margin.top - margin.bottom;
+
+
+  const maxHeight = window.innerHeight * 0.8;
+  let plotHeight = Math.min(height, maxHeight);
+  plotHeight = 360;
+
   const svgWidth = globalState.dynamicWidth + margin.left + margin.right ;
   const speechPlotSvg = d3.select("#speech-plot-container");
   speechPlotSvg.html("");
   const svg = speechPlotSvg.append('svg')
   .attr('id', 'plot-svg')
   .attr("width", svgWidth)
-  // .attr("width", width + margin.left + margin.right)
-  .attr("height", margin.top + margin.bottom + temporalViewHeight)
+  // .attr("height", margin.top + margin.bottom + temporalViewHeight)
+  .attr("height", margin.top + margin.bottom + plotHeight)
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
     svg.append("text")
-    .attr("y", -10)
+    .attr("y", -7)
     .attr("x", -30)
     .style("text-anchor", "middle")
     .style("font-weight", "bold")
     .text("Topics");
-  // Y scale for topics
+
   const sortedDomain = topicsData.map(d => d.topic).filter(t => t !== "Others");
   if (topicsData.some(d => d.topic === "Others")) {
     sortedDomain.push("Others"); // Ensure "Others" is at the end
   }
    yScale = d3.scaleBand()
-    .rangeRound([0, height])
+    // .rangeRound([0, height])
+    .rangeRound([0,plotHeight])
     .padding(0.1)
     .domain(sortedDomain);
 
@@ -934,7 +985,7 @@ function createPlotTemporal() {
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest
 	  })
     .style("cursor", "pointer")
     .on("click", function(event, d) {
@@ -954,11 +1005,12 @@ function createPlotTemporal() {
     // })
   //   .style("fill", function(d) {
   //     const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-  //     return isUserInterest ? "#f08030" : "#000";
+  //     return isUserInterest ? "#80b1d3" : "#000";
   //   });
 
     svg.select(".axis--y").selectAll(".tick text")
     .style("cursor", "pointer")
+    .style("font-size", "1.3em")
     .style("pointer-events", "all")
     .on("click", function(event, d) {
       showContextMenu(event, d);
@@ -985,7 +1037,7 @@ function createPlotTemporal() {
     return width;
   })
   .attr("height", yScale.bandwidth())
-  .attr("fill", d => d.hasUserInterestKeyword ? "#f08030" : "#d0d0d0");
+  .attr("fill", d => d.hasUserInterestKeyword ? "#80b1d3" : "#d0d0d0");
   // .attr("fill", "#d0d0d0");
 }
 
@@ -1088,16 +1140,41 @@ function createSplitBars(topicName) {
               .attr("y", yScale(`${topicName}-${user}`))
               .attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
               .attr("height", newYHeight)
-              .attr("fill", d => action.has_user_interest_keyword ? "#f08030" : "#d0d0d0");
+              .attr("fill", d => action.has_user_interest_keyword ? "#80b1d3" : "#d0d0d0");
       });
   });
 
 }
+function wrapText(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy") || 0),
+        tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+    
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop(); // remove the word that was just added
+        tspan.text(line.join(" "));
+        line = [word]; // start a new line with the removed word
+        tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
 
 
 function plotBarChart() {
   const plotBox1 = d3.select("#plot-box1").html("");
-  const margin = { top: 20, right: 20, bottom: 140, left: 40 };
+  const margin = { top: 20, right: 20, bottom: 100, left: 40 };
   const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
   const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
@@ -1111,12 +1188,18 @@ function plotBarChart() {
   let allUsers = new Set();
   const data = globalState.finalData.topics_dict ;
   delete data["Others"];
+  const threshold = 15;
 
   Object.entries(data).forEach(([topic, details]) => {
     const userCounts = details.actions.reduce((acc, action) => {
         if (action.action_type === "VerbalInteraction") {
-            acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
-            allUsers.add(action.actor_name);
+
+          let currentCount = acc[action.actor_name] || 0;
+          currentCount = Math.min(currentCount + 1, threshold); // Apply threshold here
+          acc[action.actor_name] = currentCount;
+          allUsers.add(action.actor_name);
+            // acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
+            // allUsers.add(action.actor_name);
         }
         return acc;
     }, {});
@@ -1136,6 +1219,7 @@ function plotBarChart() {
       topic,
       ...counts
   }));
+  console.log(processedData);
 
   // Setup scales
   const x0 = d3.scaleBand()
@@ -1182,8 +1266,10 @@ function plotBarChart() {
     .style("text-anchor", "end")
     .attr("dx", "-.8em")
     .attr("dy", ".15em")
+    .call(wrapText, x1.bandwidth()+50)
     .attr("transform", "rotate(-65)")
-    .style("font-size", "9px");
+    .style("font-size", "1.2em")
+    .style("font-family", "Lato");
     // .style("word-wrap", "break-word")
     // .style("white-space", "normal");
 
@@ -1198,7 +1284,7 @@ function plotBarChart() {
       .attr("dy", "1em")
       .style("text-anchor", "middle")
       .text("Count")
-      .style("font-size", "12px");
+      .style("font-size", "0.8em");
   // Legend
   // const legend = svg.selectAll(".legend")
   //     .data(users)
@@ -1223,7 +1309,7 @@ function plotBarChart() {
 
 function plotCombinedUsersSpiderChart() {
   const plotBox = d3.select("#plot-box2").html("");
-  const margin = { top: 50, right: 100, bottom: 50, left: 100 };
+  const margin = { top: 50, right: 140, bottom: 40, left: 140 };
   const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
   const svg = plotBox.append("svg")
@@ -1237,20 +1323,17 @@ function plotCombinedUsersSpiderChart() {
   delete withoutOther["Others"];
   const data = Object.values(withoutOther) ;
   let maxCount = 0;
-
+  const threshold = 5;
   let maxCountsPerUser = {};
 
   data.forEach(topic => {
     topic.actions.forEach(action => {
       if (action.action_type === "VerbalInteraction") {
-        // Initialize user count if this is the first action encountered for them
         if (!maxCountsPerUser[action.actor_name]) {
           maxCountsPerUser[action.actor_name] = {};
         }
-        // Increment count for this user in this topic
-        maxCountsPerUser[action.actor_name][topic.broad_topic_name] = (maxCountsPerUser[action.actor_name][topic.broad_topic_name] || 0) + 1;
-
-        // Update the global maxCount if this user's count in the current topic is the highest encountered so far
+        let currentCount = (maxCountsPerUser[action.actor_name][topic.broad_topic_name] || 0) + 1;
+        maxCountsPerUser[action.actor_name][topic.broad_topic_name] = Math.min(currentCount, threshold);
         maxCount = Math.max(maxCount, maxCountsPerUser[action.actor_name][topic.broad_topic_name]);
       }
     });
@@ -1306,9 +1389,9 @@ const rScale = d3.scaleLinear()
       .attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
       .text(topic)
       .style("text-anchor", "middle")
-      .style("font-size", "10px")
+      .style("font-size", "0.8em")
       .attr("alignment-baseline", "middle");
-      if (topic === "Social Services and Welfare") {
+      if (topic === "Healthcare and Public Services") {
         label.attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2)); // Adjust the multiplier (1.5) as needed
     }
 
@@ -1319,7 +1402,9 @@ const rScale = d3.scaleLinear()
   users.forEach((user, userIndex) => {
     let userData = topics.map(topicKey => {
       const topic = withoutOther[topicKey];
-      const count = topic.actions.filter(action => action.actor_name === user && action.action_type === "VerbalInteraction").length;
+      const actions = topic.actions.filter(action => action.actor_name === user && action.action_type === "VerbalInteraction");
+      let count = actions.length;
+      count = Math.min(count, threshold); // Apply threshold
       return {topic: topicKey, count};
       });
       // console.log(userData);
@@ -1345,86 +1430,178 @@ const rScale = d3.scaleLinear()
 
 
 
+
+// function plotTreeMap() {
+// 	const plotBox = d3.select("#plot-box3").html("");
+// 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+// 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+// 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+
+//     let keywordCounts = {};
+//     Object.values(globalState.finalData.topics_dict).flatMap(topic => topic.actions).forEach(action => {
+//         const actionStartTime = parseTimeToMillis(action.start_time);
+//         const actionEndTime = parseTimeToMillis(action.end_time);
+//         if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && action.action_type === "VerbalInteraction") {
+//             action.data.keywords.forEach(keyword => {
+//                 keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+//             });
+//         }
+//     });
+//     const hierarchicalData = {
+//         name: "root",
+//         children: Object.entries(keywordCounts).map(([keyword, count]) => ({
+//             name: keyword,
+//             value: count
+//         }))
+//     };
+
+
+//     // Select the body for SVG append, set dimensions, and create hierarchical data
+//     const svg = plotBox.append('svg')
+//         .attr('width', width)
+//         .attr('height', height)
+//         .style('font', '10px sans-serif');
+
+//     const root = d3.hierarchy(hierarchicalData)
+//         .sum(d => d.value) // Here we set the value for each leaf
+//         .sort((a, b) => b.value - a.value); // Sort the nodes
+
+//     d3.treemap()
+//         .size([width, height])
+//         .padding(1)
+//         (root);
+
+
+//         const maxValue = d3.max(root.leaves(), d => d.value);
+//         const minValue = 0; // Starting from 0 to ensure the full range of the color scale is used
+//         const interpolatePink = d3.interpolateRgb("lightpink", "deeppink");
+//         const color = d3.scaleSequential()
+//                         .domain([minValue, Math.max(maxValue, minValue )]) // Ensuring there's at least a range of 1
+//                         .interpolator(d3.interpolateBlues);
+
+
+//     // Drawing the rectangles for each node
+//     const leaf = svg.selectAll('g')
+//         .data(root.leaves())
+//         .enter().append('g')
+//         .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+//     leaf.append('rect')
+//         .attr('id', d => (d.leafUid = `leaf-${d.data.name}`))
+//         // .attr('fill', d => color(d.data.name))
+//         .attr('fill', d => color(d.value))
+//         .attr('width', d => d.x1 - d.x0)
+//         .attr('height', d => d.y1 - d.y0);
+
+//     // Adding text labels to each rectangle
+//     leaf.append('text')
+//         .selectAll('tspan')
+//         .data(d => d.data.name.split(/(?=[A-Z][a-z])|\s+/g)) // Split camelCase and by space
+//         .enter().append('tspan')
+//         .attr('x', 5) // Positioning text inside rectangle
+//         .attr('y', (d, i) => 15 + i * 10) // Positioning text inside rectangle
+//         .style('fill', '#fff')
+//         .style('font-size', '1.4em')
+//         .text(d => d);
+
+//     leaf.append('title')
+//         .text(d => `${d.data.name}\nCount: ${d.value}`)
+//         .style('font-size', '1.4em');
+// }
+
 function plotTreeMap() {
-	const plotBox = d3.select("#plot-box3").html("");
-	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
-	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+  const plotBox = d3.select("#plot-box3").html("");
+  const margin = { top: 20, right: 20, bottom: 60, left: 200 };
+  const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+  const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
-	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+  const svg = plotBox.append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
+  let allUsers = new Set();
+  const data = globalState.finalData.topics_dict;
+  delete data["Others"];
 
-    let keywordCounts = {};
-    Object.values(globalState.finalData.topics_dict).flatMap(topic => topic.actions).forEach(action => {
-        const actionStartTime = parseTimeToMillis(action.start_time);
-        const actionEndTime = parseTimeToMillis(action.end_time);
-        if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && action.action_type === "VerbalInteraction") {
-            action.data.keywords.forEach(keyword => {
-                keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
-            });
-        }
+  let userDataByTopic = {};
+
+  Object.entries(data).forEach(([topic, details]) => {
+    const userCounts = details.actions.reduce((acc, action) => {
+      const actionStartTime = parseTimeToMillis(action.start_time);
+      const actionEndTime = parseTimeToMillis(action.end_time);
+      if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && action.action_type === "VerbalInteraction") {
+        acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
+        allUsers.add(action.actor_name);
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(userCounts).length > 0) {
+      userDataByTopic[topic] = userCounts;
+    }
+  });
+
+  // Aggregate counts for top 5 topics
+  let topicCounts = Object.entries(userDataByTopic).map(([topic, counts]) => ({
+    topic,
+    total: Object.values(counts).reduce((sum, count) => sum + count, 0)
+  })).sort((a, b) => b.total - a.total).slice(0, 5);
+
+  let structuredData = [];
+  topicCounts.forEach(({topic}) => {
+    Object.entries(userDataByTopic[topic]).forEach(([user, count]) => {
+      if (allUsers.has(user)) {
+        structuredData.push({topic, user, count});
+      }
     });
-    // Convert keywordCounts to a hierarchical structure for D3 treemap
-    const hierarchicalData = {
-        name: "root",
-        children: Object.entries(keywordCounts).map(([keyword, count]) => ({
-            name: keyword,
-            value: count
-        }))
-    };
-    // console.log(hierarchicalData);
+  });
 
-    const color = d3.scaleOrdinal(d3.schemeTableau10);
-    // const customColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'];
-// // const color = d3.scaleOrdinal(customColors);
+  const selectedUsers = Array.from(allUsers).slice(0, 3); // Select specific users if needed
+  structuredData = structuredData.filter(d => selectedUsers.includes(d.user));
 
-    // Select the body for SVG append, set dimensions, and create hierarchical data
-    const svg = plotBox.append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .style('font', '10px sans-serif');
+  const y0 = d3.scaleBand()
+      .rangeRound([0, height])
+      .paddingInner(0.1)
+      .domain(topicCounts.map(d => d.topic));
 
-    const root = d3.hierarchy(hierarchicalData)
-        .sum(d => d.value) // Here we set the value for each leaf
-        .sort((a, b) => b.value - a.value); // Sort the nodes
+  const y1 = d3.scaleBand()
+      .padding(0.05)
+      .domain(selectedUsers)
+      .rangeRound([0, y0.bandwidth()]);
 
-    d3.treemap()
-        .size([width, height])
-        .padding(1)
-        (root);
+  const x = d3.scaleLinear()
+      .domain([0, d3.max(structuredData, d => d.count)])
+      .range([0, width]);
 
 
-// const maxValue = d3.max(root.leaves(), d => d.value);
+  structuredData.forEach(d => {
+    svg.append("rect")
+      .attr("x", 0)
+      .attr("y", y0(d.topic) + y1(d.user))
+      .attr("width", x(d.count))
+      .attr("height", y1.bandwidth())
+      .attr("fill", colorScale(d.user)); // Use the user's name to determine color
+  });
 
-// // Create a sequential color scale with shades of blue
-// const color = d3.scaleSequential([0, maxValue], d3.interpolateBlues);
+  svg.append("g")
+      .call(d3.axisLeft(y0))
+      .selectAll(".tick text") // Select all tick texts
+      .style("font-family", "Lato")
+      .style("font-size", "1.2em");
 
-    // Drawing the rectangles for each node
-    const leaf = svg.selectAll('g')
-        .data(root.leaves())
-        .enter().append('g')
-        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+  svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
 
-    leaf.append('rect')
-        .attr('id', d => (d.leafUid = `leaf-${d.data.name}`))
-        .attr('fill', d => color(d.data.name))
-        .attr('width', d => d.x1 - d.x0)
-        .attr('height', d => d.y1 - d.y0);
-
-    // Adding text labels to each rectangle
-    leaf.append('text')
-        .selectAll('tspan')
-        .data(d => d.data.name.split(/(?=[A-Z][a-z])|\s+/g)) // Split camelCase and by space
-        .enter().append('tspan')
-        .attr('x', 5) // Positioning text inside rectangle
-        .attr('y', (d, i) => 15 + i * 10) // Positioning text inside rectangle
-        .text(d => d);
-
-    // Optionally, add title for tooltip effect
-    leaf.append('title')
-        .text(d => `${d.data.name}\nCount: ${d.value}`);
+      svg.append("text")
+      .attr("transform", `translate(${width / 2}, ${height + margin.bottom - 20})`) // Center at the end of the x-axis
+      .style("text-anchor", "middle")
+      .text("Count")
+      .style("font-size", "0.8em");
 }
-
-
 
 
 
@@ -1537,17 +1714,15 @@ function findXAxisStartX() {
 
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
-	const height = parseInt(d3.select("#speech-plot-container").style("height")) ;
+	let height = parseInt(d3.select("#speech-plot-container").style("height")) ;
+  height = 430;
+  // console.log(height);
   const dynamicWidth = globalState.dynamicWidth;
 	const y1 = 55;
   const alignX = 10 ;
 
   let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
   let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
-  // console.log(`Creating lines at positions: ${xPosition1} and ${xPosition2}`);
-  // console.log(`For timestamps: ${new Date(timestamp1)} and ${new Date(timestamp2)}`);
-  // console.log(" CREATELINES Line 1 At this timestamp" + new Date(timestamp1) + " have this position " + xPosition1);
-  // console.log("CREATELINES Line 2 At this timestamp" + new Date(timestamp2) + " have this position " + xPosition2);
 
 	let circle1 = svg.select('#time-indicator-circle1');
   circle1.attr('class', 'interactive');
@@ -1657,7 +1832,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition1)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
     .attr('class', 'interactive')
@@ -1678,7 +1853,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition2)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
     .attr('class', 'interactive')
@@ -1727,7 +1902,6 @@ function initializeShadedAreaDrag() {
     line2.attr("x1", line2X).attr("x2", line2X);
     circle1.attr("cx", line1X);
     circle2.attr("cx", line2X);
-    let buffer = 150 ;
   const newLine1Timestamp = x.invert(line1X - buffer).getTime();
   const newLine2Timestamp = x.invert(line2X - buffer).getTime();
   globalState.lineTimeStamp1 = newLine1Timestamp;
@@ -1823,8 +1997,8 @@ function createTopicItem(topicName, topicDetails, toolbar) {
   topicItem.appendChild(topicCheckbox);
   topicItem.appendChild(label);
   if (globalState.finalData.topics_dict[topicName].is_user_interest) {
-    label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
-      label.style.color = '#f08030';}
+    label.innerHTML = `${topicName} <span style="color: #80b1d3;">★</span>`;
+      label.style.color = '#80b1d3';}
 
   // Filter actions within the time range first before extracting unique keywords
   const filteredActions = topicDetails.actions.filter(action => {
@@ -1905,7 +2079,7 @@ filteredActions.forEach(action => {
     keywordLabel.htmlFor = keywordCheckbox.id;
     keywordLabel.textContent = keyword;
     if (userInterestKeywords.has(keyword)) {
-      keywordLabel.style.color = '#f08030'; // Purple color for text
+      keywordLabel.style.color = '#80b1d3'; // Purple color for text
     }
 
 
@@ -2051,7 +2225,8 @@ function initializeOrUpdateSpeechBox() {
   const hierToolbar = document.getElementById('hier-toolbar');
   let offsetHeight = hierToolbar.offsetHeight;
   const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-  container.style.marginTop = `${offsetHeight}px`;
+  // container.style.marginTop = `${offsetHeight}px`;
+  container.style.top = `${offsetHeight}px`;
 
   let rangeDisplay = document.querySelector('.time-range-display-speechbox');
   if (!rangeDisplay) {
@@ -2059,7 +2234,8 @@ function initializeOrUpdateSpeechBox() {
       rangeDisplay.className = 'time-range-display-speechbox';
       container.appendChild(rangeDisplay);
   }
-  // rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
+  rangeDisplay.style.marginTop = "10px";
+  rangeDisplay.style.marginBottom = "10px";
   rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
   let speechBoxesContainer = document.getElementById("speech-boxes-container");
@@ -2104,9 +2280,11 @@ function getSpeechData(action, selectedKeywords) {
   const speechBox = document.createElement('div');
   speechBox.className = 'speech-box';
   speechBox.style.border = '1px solid grey'; // Grey border
-  speechBox.style.borderRadius = '8px'; // Rounded corners
+  // speechBox.style.borderRadius = '8px'; // Rounded corners
   speechBox.style.padding = '15px';
   speechBox.style.marginBottom = '8px';
+	speechBox.style.marginRight = '8px';
+	speechBox.style.marginLeft = '8px';
 
   const hasRelevantKeyword = selectedKeywords.some(keyword => action.data.keywords.includes(keyword));
   if (!hasRelevantKeyword) {
@@ -2138,7 +2316,7 @@ function getSpeechData(action, selectedKeywords) {
   let processedText = action.data.raw_text;
   if (action.data.highlighted_texts && action.data.highlighted_texts.length > 0) {
     action.data.highlighted_texts.forEach(text => {
-      const highlightedText = `<span style="background-color: #f08030; color: white;">${text}</span>`;
+      const highlightedText = `<span style="background-color: #80b1d3; color: white;">${text}</span>`;
       processedText = processedText.replace(text, highlightedText);
     });
   }
@@ -2202,14 +2380,14 @@ function updateInterestBox() {
   const topicInterestSpan = document.createElement("span");
   topicInterestSpan.textContent = "Topic of your interest: ";
   topicInterestSpan.style.color = "white";
-  topicInterestSpan.style.fontWeight = "bold"; 
+  topicInterestSpan.style.fontWeight = "bold";
 
   // Create "Next user interest topic" span
   const nextInterestSpan = document.createElement("span");
   nextInterestSpan.textContent = userInterestTopic;
   // nextInterestSpan.style.color = "#ffc000";
-  nextInterestSpan.style.color = "#333333"; 
-  nextInterestSpan.style.fontWeight = "bold"; 
+  nextInterestSpan.style.color = "#333333";
+  nextInterestSpan.style.fontWeight = "bold";
 
   // Append both spans to the container
   container.appendChild(topicInterestSpan);
@@ -2231,7 +2409,8 @@ const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
   container.innerHTML = '';
   const titleElement = document.createElement('div');
   titleElement.style.textAlign = 'center';
-  titleElement.style.marginBottom = '10px';
+  titleElement.style.marginBottom = '5px';
+  titleElement.style.marginTop = '5px';
   titleElement.id = 'imageTitle';
   container.appendChild(titleElement);
 
@@ -2245,16 +2424,15 @@ const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
     if (filteredActions.length >= 1) {
       const imageWrapper = document.createElement('div');
       imageWrapper.style.position = 'relative';
-      imageWrapper.style.maxWidth = '500px';
-      imageWrapper.style.margin = 'auto';
+
 
       filteredActions.forEach((action, index) => {
         const imagePath = action.actor_name + '\\' + action.specific_action_data;
         const img = document.createElement('img');
         img.src = imagePath;
         img.alt = "Raw Capture Image";
-        img.style.maxWidth = '100%';
-        img.style.objectFit = 'contain';
+        img.style.width = '360px';
+        img.style.height = '240px';
         img.style.display = index === 0 ? 'block' : 'none';
         imageWrapper.appendChild(img);
       });
@@ -2342,7 +2520,7 @@ function updateRangeDisplay(time1, time2) {
       .attr("y", yStart)
       .attr("width", shadingWidth)
       .attr("height", height)
-      .attr("fill", "#43afe2")
+      .attr("fill", "#9e9e9e")
 		// .attr('class', 'interactive')
       .attr("fill-opacity", 0.5);
 
@@ -2423,7 +2601,7 @@ function updateRangeDisplay(time1, time2) {
 function createSharedAxis() {
   const { globalStartTime, globalEndTime, bins, unit } = globalState;
   const temporalViewContainer = d3.select("#temporal-view");
-  const minWidth = document.getElementById('temporal-view').clientWidth;
+  const minWidth = document.getElementById('temporal-view').clientWidth - margin.left - margin.right;
   let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
   if (sharedAxisContainer.empty()) {
     sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
@@ -2441,7 +2619,7 @@ function createSharedAxis() {
 
   const totalDurationMillis = globalEndTime - globalStartTime;
   const numberOfIntervals = Math.ceil(totalDurationMillis / intervalSizeMillis);
-  const widthPerInterval = 100; // Fixed width for each interval
+  const widthPerInterval = 80; // Fixed width for each interval
 
   const intervalDuration = totalDuration * (bins / 100);
   globalState.dynamicWidth = numberOfIntervals * widthPerInterval;
@@ -2493,7 +2671,6 @@ function onWindowResize() {
 async function initialize() {
   await initializeScene();
   const binsDropdown = document.getElementById('binsDropdown');
-  console.log(binsDropdown);
   globalState.bins = binsDropdown.value;
   createLegend();
   createSharedAxis();
