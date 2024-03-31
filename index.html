@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VR Dashboard</title>
     <link rel="stylesheet" href="style.css"> 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -134,13 +137,13 @@
         </div>
         <div id="controls-container">
             <div id="bin-selection-container" class="dropdown">
-                <button class="dropbtn" onclick="myFunction()">Interval Size
+                <button class="dropbtn" onclick="myFunction()">Intervals
                 </button>
                 <select id="binsDropdown">
-                    <option value="0.5" selected>0.5</option>
+                    <option value="0.5">0.5</option>
                     <option value="1" >1</option>
                     <option value="2" >2</option>
-                    <option value="5">5</option>
+                    <option value="5" selected>5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>
                 </select>
@@ -269,9 +272,9 @@
         <svg id= "indicator-svg" style="position: absolute; top: 25; left: 0; z-index: 1; " width="100%" height="100%">
             <!-- pointer-events: none; -->
             <line id="time-indicator-line1" x1="95" y1="33" x2="95" y2="100%"></line>
-            <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#82caeb"></circle>
+            <circle id="time-indicator-circle1" cx="100" cy="28" r="5" fill="#9e9e9e"></circle>
             <line id="time-indicator-line2" x1="100" y1="28" x2="100" y2="100%"></line>
-            <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#82caeb"></circle>
+            <circle id="time-indicator-circle2" cx="112" cy="28" r="5" fill="#9e9e9e"></circle>
         </svg>
     </div>
     <script type="module" src="src/script.js"></script>

@@ -67,9 +67,10 @@ let globalState = {
 	leftControls : [],
 	lineDrawing: [],
 };
-const userInterestTopic = "INSERT HERE";
+const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
-const margin = { top: 20, right: 30, bottom: 10, left: 140 };
+let buffer = 140;
+const margin = { top: 20, right: 30, bottom: 10, left: 130 };
 
 const hsl = {
 	h: 0,
@@ -78,9 +79,8 @@ const hsl = {
 };
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
-    .domain(["User_1", "User_2", "User_3", "0", "1", "2"]) // Added "User_3" and "2" to the domain
-    .range(["#92d050", "#ffc000", "#00b0f0", "#92d050", "#ffc000", "#00b0f0"]); // Added a third color "#00b0f0"
-
+    .domain(["User_1", "User_2", "User_3", "0", "1", "2"])
+    .range(["#8dd3c7", "#fdcdac", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -162,7 +162,7 @@ async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
-	avatar.scale.set(1, 1, 1);
+	avatar.scale.set(0.25, 0.25, 0.25);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
 	avatarLoaded = true;
@@ -490,9 +490,13 @@ function createControllerSegment(id, rightOrLeft){
 		filteredData.forEach(entry => {
 			const spatialExtent = entry.spatial_extent;
 			const {x, y, z} = getCoordinates(spatialExtent);
+			// console.log(spatialExtent);
 			avatar.position.x = x;
 			avatar.position.y = y;
 			avatar.position.z = z;
+			const euler = new THREE.Euler(THREE.MathUtils.degToRad(entry.spatial_extent[1][0]), THREE.MathUtils.degToRad(entry.spatial_extent[1][1]), THREE.MathUtils.degToRad(entry.spatial_extent[1][2]), 'XYZ');
+			avatar.rotation.set(0, 0, 0);
+			avatar.setRotationFromEuler(euler);
 		});
 	}
 }
@@ -791,7 +795,7 @@ async function initializeScene() {
 
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
-	globalState.scene.add(gridHelper);
+	// globalState.scene.add(gridHelper);
 	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
@@ -809,6 +813,9 @@ async function initializeScene() {
 	]);
 
 	globalState.avatars = [avatarArray[0], avatarArray[1]];
+	// globalState.avatars[0].scale.set(0.5,0.5,0.5);
+	// globalState.avatars[1].scale.set(0.5,0.5,0.5);
+
 	globalState.leftControls = [avatarArray[4], avatarArray[5]];
 	globalState.rightControls = [avatarArray[2], avatarArray[3]];
 
@@ -1180,7 +1187,8 @@ const {"Raw Capture": omitted, ...newData} = data;
 	const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
 	  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
 	const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-	const height = temporalViewHeight - margin.top - margin.bottom;
+	let height = temporalViewHeight - margin.top - margin.bottom;
+	height = 350;
 	const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
@@ -1192,7 +1200,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  .attr('transform', `translate(${margin.left},${margin.top})`);
 
 	  svg.append("text")
-	  .attr("y", -10)
+	  .attr("y", -7)
 	  .attr("x", -40)
 	  .style("text-anchor", "middle")
 	  .style("font-weight", "bold")
@@ -1214,7 +1222,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  })
 	  .style("fill", d => {
 		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#f08030" : "#000"; // Purple for user interest
+		  return topic && topic.isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest
 	  })
 	  .style("cursor", "pointer")
     .on("click", function(event, d) {
@@ -1228,7 +1236,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	//   .selectAll(".tick text") // select all the text elements for the y-axis ticks
 	//   .style("fill", function(d) { // conditional coloring based on user interest
 	// 	const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-	// 	return isUserInterest ? "#f08030" : "#000"; // Purple for user interest topics, black for others
+	// 	return isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest topics, black for others
 	//   });
 	svg.select(".axis--y").selectAll(".tick text")
     .style("cursor", "pointer")
@@ -1265,7 +1273,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	  return width;
 	})
 	.attr("height", yScale.bandwidth())
-	.attr("fill", d => d.hasUserInterestAction ? "#f08030" : "#d0d0d0");
+	.attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0");
 	// .attr("fill", "#d0d0d0");
   }
 
@@ -1368,7 +1376,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 				.attr("y", yScale(`${topicName}-${user}`))
 				.attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
 				.attr("height", newYHeight)
-				.attr("fill", d => action.has_user_action_of_interest ? "#f08030" : "#d0d0d0");
+				.attr("fill", d => action.has_user_action_of_interest ? "#80b1d3" : "#d0d0d0");
 		});
 	});
 
@@ -1378,9 +1386,10 @@ const {"Raw Capture": omitted, ...newData} = data;
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 60, right: 20, bottom: 180, left: 40 };
+	const margin = { top: 30, right: 20, bottom: 90, left: 40 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-	const height = 500 - margin.top - margin.bottom;
+	// const height = 500 - margin.top - margin.bottom;
+	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
 	const svg = plotBox.append("svg")
 		.attr("width", width + margin.left + margin.right)
@@ -1452,10 +1461,23 @@ function plotUserSpecificBarChart() {
 		.style("text-anchor", "end")
 		.attr("dx", "-.8em")
 		.attr("dy", ".15em")
-		.attr("transform", "rotate(-65)");
+		.attr("transform", "rotate(-65)")
+		.style("font-size", "1.2em");
 
 	svg.append("g")
-		.call(d3.axisLeft(y));
+		.call(d3.axisLeft(y))
+		.selectAll(".tick text") // Select all tick texts
+		.style("font-family", "Lato")
+		.style("font-size", "1.2em");
+
+		svg.append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 0 - margin.left)
+		.attr("x", 0 - (height / 2))
+		.attr("dy", "1em")
+		.style("text-anchor", "middle")
+		.text("Count")
+		.style("font-size", "0.8em");
 
 	// const legend = svg.selectAll(".legend")
 	// 	.data(users)
@@ -1477,11 +1499,12 @@ function plotUserSpecificBarChart() {
 	// 	  .text(d => d);
   }
 
-  function plotAverageDurationBarChart() {
+function plotAverageDurationBarChart() {
     const plotBox = d3.select("#plot-box3").html("");
     const margin = { top: 60, right: 20, bottom: 180, left: 40 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+    // const height = 500 - margin.top - margin.bottom;
+	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
     const svg = plotBox.append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -1565,6 +1588,100 @@ function plotUserSpecificBarChart() {
         .call(d3.axisLeft(y));
 }
 
+function plotActionsOfInterestByTopicAndUserBarChart() {
+    const plotBox = d3.select("#plot-box3").html("");
+    const margin = { top: 30, right: 20, bottom: 140, left: 60 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+    const svg = plotBox.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    let userInterestCount = {};
+
+    // Directly process data from globalState.finalData.action_dict
+    Object.values(globalState.finalData.action_dict).flatMap(actionDetails => actionDetails.actions).forEach(action => {
+        if (action.has_user_action_of_interest) {
+            const actor_name = action.actor_name;
+            const topic = action.formatted_data.action_property_broad_action;
+
+            if (!userInterestCount[actor_name]) {
+                userInterestCount[actor_name] = {};
+            }
+            if (!userInterestCount[actor_name][topic]) {
+                userInterestCount[actor_name][topic] = 0;
+            }
+            userInterestCount[actor_name][topic]++;
+        }
+    });
+
+    let processedData = [];
+    Object.entries(userInterestCount).forEach(([user, topics]) => {
+        Object.entries(topics).forEach(([topic, count]) => {
+            processedData.push({ user, topic, count });
+        });
+    });
+
+    // Setup scales
+    const x0 = d3.scaleBand()
+        .rangeRound([0, width])
+        .paddingInner(0.1)
+        .domain(processedData.map(d => d.topic));
+
+    const users = [...new Set(processedData.map(d => d.user))];
+    const x1 = d3.scaleBand()
+        .padding(0.05)
+        .domain(users)
+        .rangeRound([0, x0.bandwidth()]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(processedData, d => d.count)])
+        .range([height, 0]);
+
+    // const color = d3.scaleOrdinal(d3.schemeCategory10).domain(users);
+
+    // Add axes
+    svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x0))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)")
+		.style("font-size", "1.2em");
+
+
+		svg.append("g")
+		.call(d3.axisLeft(y))
+		.selectAll(".tick text") // Select all tick texts
+      .style("font-family", "Lato")
+      .style("font-size", "1.2em");
+
+    // Draw bars
+    svg.selectAll(".topic")
+        .data(processedData)
+        .enter().append("rect")
+        .attr("width", x1.bandwidth())
+        .attr("x", d => x0(d.topic) + x1(d.user))
+        .attr("y", d => y(d.count))
+        .attr("height", d => height - y(d.count))
+        .attr("fill", d => colorScale(d.user));
+
+		svg.append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 10 - margin.left)
+		.attr("x", 0 - (height / 2))
+		.attr("dy", "1em")
+		.style("text-anchor", "middle")
+		.style("font-family", "Lato")
+		.text("Count of User Interest")
+		.style("font-size", "0.8em");
+}
 
 
 
@@ -1583,6 +1700,9 @@ function plotCombinedUsersSpiderChart() {
 	  .append("g")
 	  .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
 
+	  const threshold = 50;
+	  const minPositiveValue = 10 ;
+
 	// Process data to get topics and users
 	const data = Object.values(globalState.finalData.action_dict);
 	const topics = Object.keys(globalState.finalData.action_dict).filter(topic => topic !== "Others" && topic !== "User Transformation"
@@ -1594,7 +1714,9 @@ function plotCombinedUsersSpiderChart() {
 	  let topicCounts = new Map();
 	  topic.actions.forEach(action => {
 		if (action.action_type === "XRInteraction") {
-		  topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
+			let currentCount = (topicCounts.get(action.actor_name) || 0) + 1;
+			currentCount = Math.min(currentCount, threshold);
+			topicCounts.set(action.actor_name, currentCount);
 		}
 	  });
 	  let topicMax = Math.max(...topicCounts.values(), 0);
@@ -1636,7 +1758,7 @@ function plotCombinedUsersSpiderChart() {
 		.attr("x", rScale(maxCount * 1.1) * Math.cos(angle - Math.PI/2))
 		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
 		.text(topic)
-		.style("text-anchor", "middle")
+		.style("font-size", "0.8em")
 		.attr("alignment-baseline", "middle");
 	});
 
@@ -1645,11 +1767,14 @@ function plotCombinedUsersSpiderChart() {
 	// Plot radar chart area for each user
 	users.forEach((user, userIndex) => {
 	  let userData = topics.map(topicKey => {
-		//   console.log(topicKey);
 		const topic = globalState.finalData.action_dict[topicKey];
 		// console.log(topic);
-		// .find(d => d.broad_action_name === topicKey);
-		const count = topic.actions.filter(action => action.actor_name === user).length;
+		let count = topic.actions.filter(action => action.actor_name === user).length;
+		console.log(count);
+		// && action.action_type === "XRInteraction"
+		// count = count === 0 ? minPositiveValue : count;
+		// Apply the threshold here
+		count = Math.min(count, threshold);
 		return {topic: topicKey, count};
 	  });
 
@@ -1953,7 +2078,8 @@ export function getGlobalState() {
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
 	// const height = parseInt(svg.style("height")) - margin.top ;
-	const height = parseInt(d3.select("#speech-plot-container").style("height"));
+	let height = parseInt(d3.select("#speech-plot-container").style("height"));
+	height = 430;
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1974,7 +2100,7 @@ function createLines(timestamp1, timestamp2) {
 		circle1 = svg.append('circle')
 			.attr('id', 'time-indicator-circle1')
 			.attr('r', 5)
-			.style('fill', '#82caeb');
+			.style('fill', '#9e9e9e');
 	}
 
 	let circle2 = svg.select('#time-indicator-circle2');
@@ -1983,7 +2109,7 @@ function createLines(timestamp1, timestamp2) {
 		circle2 = svg.append('circle')
 			.attr('id', 'time-indicator-circle2')
 			.attr('r', 5)
-			.style('fill', '#82caeb');
+			.style('fill', '#9e9e9e');
 	}
 
 
@@ -2011,7 +2137,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition1)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
 		.attr('class', 'interactive')
@@ -2032,7 +2158,7 @@ function createLines(timestamp1, timestamp2) {
 		.attr('x2', xPosition2)
 		.attr('y1', y1)
 		.attr('y2', height)
-		.style('stroke', '#82caeb')
+		.style('stroke', '#9e9e9e')
 		.style('stroke-width', '3')
 		.style('opacity', 1)
 		.attr('class', 'interactive')
@@ -2195,10 +2321,10 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
     topicItem.appendChild(topicCheckbox);
     topicItem.appendChild(label);
-	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#f08030';}
+	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#80b1d3';}
 	if (globalState.finalData.action_dict[topicName].is_user_interest) {
-        label.innerHTML = `${topicName} <span style="color: #f08030;">★</span>`;
-		label.style.color = '#f08030';
+        label.innerHTML = `${topicName} <span style="color: #80b1d3;">★</span>`;
+		label.style.color = '#80b1d3';
     }
 
 
@@ -2231,7 +2357,7 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 			if (action.has_user_action_of_interest) {
 				// console.log(specificAction);
 				// console.log(action.)
-                keywordLabel.style.color = '#f08030';
+                keywordLabel.style.color = '#80b1d3';
             }
 
             keywordItem.appendChild(keywordCheckbox);
@@ -2405,7 +2531,8 @@ function initializeOrUpdateSpeechBox() {
 	const hierToolbar = document.getElementById('hier-toolbar');
 	let offsetHeight = hierToolbar.offsetHeight;
 	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-	container.style.marginTop = `${offsetHeight}px`;
+	// container.style.marginTop = `${offsetHeight}px`;
+	container.style.top = `${offsetHeight}px`;
 
 	let rangeDisplay = document.querySelector('.time-range-display-speechbox');
 	if (!rangeDisplay) {
@@ -2413,7 +2540,9 @@ function initializeOrUpdateSpeechBox() {
 		rangeDisplay.className = 'time-range-display-speechbox';
 		container.appendChild(rangeDisplay);
 	}
-	// rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
+	rangeDisplay.style.marginTop = "10px";
+	rangeDisplay.style.marginBottom = "10px";
+	range.style.marginRight = "6px";
 	rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
 	let speechBoxesContainer = document.getElementById("speech-boxes-container");
@@ -2462,7 +2591,8 @@ function getSpeechData(action, selectedKeywords) {
     speechBox.style.borderRadius = '8px';
     speechBox.style.padding = '15px';
 	speechBox.style.marginBottom = '8px';
-	// console.log(selectedKeywords);
+	speechBox.style.marginRight = '8px';
+	speechBox.style.marginLeft = '8px';
 
 
 	// const hasRelevantKeyword = action.formatted_data.action_property_specific_action && selectedKeywords.some(keyword =>
@@ -2470,6 +2600,7 @@ function getSpeechData(action, selectedKeywords) {
 
 	  const relevantKeyword = selectedKeywords.find(keyword =>
         action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
+		// action.has_user_action_of_interest zainab
 
 		if (!relevantKeyword) {
 			return null;
@@ -2486,16 +2617,6 @@ function getSpeechData(action, selectedKeywords) {
     // speakerNameSpan.style.color = "#ffffff"; // Change text color to white for better readability
     speakerEl.appendChild(speakerNameSpan); //
 
-    // const originalTextEl = document.createElement('div');
-    // originalTextEl.className = 'original-transcribed';
-    // const rawTextTitle = document.createElement('strong');
-    // rawTextTitle.textContent = 'Original Transcribed Text: ';
-
-    // const rawTextContent = document.createElement('span');
-    // rawTextContent.textContent = action.formatted_data.raw_log_text; // Use formatted_data.raw_log_text
-    // originalTextEl.appendChild(rawTextTitle);
-    // originalTextEl.appendChild(document.createElement('br'));
-    // originalTextEl.appendChild(rawTextContent);
 
 	const actionPropertyEl = document.createElement('div');
     actionPropertyEl.className = 'action-property';
@@ -2509,7 +2630,8 @@ function getSpeechData(action, selectedKeywords) {
     actionPropertyEl.appendChild(actionPropertyContent);
 
 	const relevantActionLine = document.createElement('div');
-	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #f08030;">"${relevantKeyword}"</span></span>`;
+	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #80b1d3;">"${relevantKeyword}"</span></span>`;
+	// cant make eveyrhting orange, make only relevantkeyword.user_interest orange
 
     actionPropertyEl.appendChild(relevantActionLine);
 
@@ -2544,15 +2666,15 @@ function updateInterestBox() {
 	const topicInterestSpan = document.createElement("span");
 	topicInterestSpan.textContent = "Action of your interest: ";
 	topicInterestSpan.style.color = "white";
-	topicInterestSpan.style.fontWeight = "bold"; 
+	topicInterestSpan.style.fontWeight = "bold";
 
 	// Create "Next user interest topic" span
 	const nextInterestSpan = document.createElement("span");
 	nextInterestSpan.textContent = userInterestTopic;
 	// nextInterestSpan.style.color = "#ffc000";
-	nextInterestSpan.style.color = "#333333"; 
-	nextInterestSpan.style.fontWeight = "bold"; 
-  
+	nextInterestSpan.style.color = "#333333";
+	nextInterestSpan.style.fontWeight = "bold";
+
 	// Append both spans to the container
 	container.appendChild(topicInterestSpan);
 	container.appendChild(nextInterestSpan);
@@ -2575,7 +2697,7 @@ function updateInterestBox() {
 	// Create a title element
 	const titleElement = document.createElement('div');
 	titleElement.style.textAlign = 'center';
-	titleElement.style.marginBottom = '10px';
+	titleElement.style.marginBottom = '8px';
 	titleElement.id = 'imageTitle';
 	container.appendChild(titleElement);
 
@@ -2685,7 +2807,7 @@ function updateInterestBox() {
 		.attr("y", yStart)
 		.attr("width", shadingWidth)
 		.attr("height", height)
-		.attr("fill", "#43afe2")
+		.attr("fill", "#9e9e9e")
 		.attr("fill-opacity", 0.5);
 	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
 	const rangeDisplay = document.getElementById("range-display");
@@ -2718,7 +2840,6 @@ function updateInterestBox() {
 		circle1.attr("cx", line1X);
 		circle2.attr("cx", line2X);
 
-		let buffer = 150 ;
 	  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
 	  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
 	  globalState.lineTimeStamp1 = newLine1Timestamp;
@@ -2781,8 +2902,8 @@ function createSharedAxis() {
 
 	// Container setup
 	const temporalViewContainer = d3.select("#temporal-view");
-	const minWidth = document.getElementById('temporal-view').clientWidth;
-	// const minWidth = temporalViewContainer.width
+	// const minWidth = document.getElementById('temporal-view').clientWidth;
+	const minWidth = document.getElementById('temporal-view').clientWidth - margin.right - margin.left;
 	let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
 	if (sharedAxisContainer.empty()) {
 	  sharedAxisContainer = temporalViewContainer.append("div").attr("id", "shared-axis-container");
@@ -2915,7 +3036,6 @@ function onWindowResize() {
 async function initialize() {
 	await initializeScene();
 	const binsDropdown = document.getElementById('binsDropdown');
-	console.log(binsDropdown);
 	globalState.bins = binsDropdown.value;
 
 	createSharedAxis();
@@ -2947,7 +3067,8 @@ async function initialize() {
 	createLineDrawing(1);
 	plotUserSpecificBarChart();
 	plotCombinedUsersSpiderChart();
-	plotAverageDurationBarChart();
+	// plotAverageDurationBarChart();
+	plotActionsOfInterestByTopicAndUserBarChart();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
