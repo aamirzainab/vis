@@ -1111,7 +1111,13 @@ function createSplitBars(topicName) {
   const newYHeight = yScale.bandwidth();
 
   // Redraw the y-axis
-  svg.select(".axis--y").call(d3.axisLeft(yScale));
+  // svg.select(".axis--y").call(d3.axisLeft(yScale));
+
+
+  svg.select(".axis--y").call(d3.axisLeft(yScale))
+  .selectAll("text")  // Select all text elements of the Y-axis
+  .style("font-size", "1.3em");
+
   const backgroundLines = svg.selectAll(".background-line").data(newDomain);
   backgroundLines.enter().append("rect")
   .attr("class", "background-line")
@@ -1219,6 +1225,7 @@ function plotBarChart() {
       topic,
       ...counts
   }));
+
   console.log(processedData);
 
   // Setup scales
@@ -1310,7 +1317,7 @@ function plotBarChart() {
 function plotCombinedUsersSpiderChart() {
   const plotBox = d3.select("#plot-box2").html("");
   const margin = { top: 50, right: 140, bottom: 40, left: 140 };
-  const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+  const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right - 20 ;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
   const svg = plotBox.append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -1323,7 +1330,7 @@ function plotCombinedUsersSpiderChart() {
   delete withoutOther["Others"];
   const data = Object.values(withoutOther) ;
   let maxCount = 0;
-  const threshold = 5;
+  const threshold = 10;
   let maxCountsPerUser = {};
 
   data.forEach(topic => {
@@ -1339,7 +1346,7 @@ function plotCombinedUsersSpiderChart() {
     });
   });
 
-  console.log(maxCount); // This now reflects the highest count for any user in any single topic
+  // console.log(maxCount); // This now reflects the highest count for any user in any single topic
 
   // Prepare topicsWithCounts array for visualization
   let topicsWithCounts = Object.entries(maxCountsPerUser).flatMap(([user, topics]) =>
@@ -1354,8 +1361,7 @@ function plotCombinedUsersSpiderChart() {
   const topics = [...new Set(topicsWithCounts.map(entry => entry.topic))];
   const users = Object.keys(maxCountsPerUser);
 
-
-
+console.log(topicsWithCounts);
 const rScale = d3.scaleLinear()
     .range([0, Math.min(width / 2, height / 2)])
     .domain([0, maxCount]);
@@ -1371,7 +1377,7 @@ const rScale = d3.scaleLinear()
       .style("stroke", "lightgrey")
       .style("stroke-dasharray", "2,2");
   }
-  // console.log(topics);
+
   const angleSlice = Math.PI * 2 / topics.length;
 
   // Draw radial lines and labels
@@ -1385,14 +1391,24 @@ const rScale = d3.scaleLinear()
       .style("stroke", "lightgrey");
 
     const label = svg.append("text")
-      .attr("x", rScale(maxCount * 1.35) * Math.cos(angle - Math.PI/2))
+      .attr("x", rScale(maxCount * 1.43) * Math.cos(angle - Math.PI/2))
       .attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
       .text(topic)
       .style("text-anchor", "middle")
-      .style("font-size", "0.8em")
+      .style("font-size", "0.75em")
+      // .call(wrapText, -200)
       .attr("alignment-baseline", "middle");
       if (topic === "Healthcare and Public Services") {
-        label.attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2)); // Adjust the multiplier (1.5) as needed
+        label.attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2)); 
+    }
+    if (topic === "Education and Youth Services") {
+      label.attr("x", -200);
+    }
+    if (topic === "Urban and Housing Development") {
+      label.attr("y", rScale(maxCount * 1.3) * Math.sin(angle - Math.PI/2)); 
+    }
+    if (topic === "Transportation and Commute") {
+      label.attr("x",180); 
     }
 
   });
@@ -1884,7 +1900,7 @@ function initializeShadedAreaDrag() {
 
   const dragstarted = (event) => {
     dragStartX = event.x;
-    console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
+    // console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
   };
 
   function dragged(event,d) {
