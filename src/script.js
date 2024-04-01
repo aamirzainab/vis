@@ -66,7 +66,7 @@ let globalState = {
 };
 const userInterestTopic = "Data visualization";
 
-const margin = { top: 20, right: 30, bottom: 10, left: 140 };
+const margin = { top: 20, right: 30, bottom: 10, left: 170 };
 
 const hsl = {
 	h: 0,
@@ -499,9 +499,14 @@ function createRayCastSegment(id) {
 					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
 					new THREE.Vector3(raycastPosition[0], raycastPosition[1], raycastPosition[2])
 				];
-				const lineMaterial = new THREE.LineBasicMaterial({ color: colorScale(id) });
+				// const lineMaterial = new THREE.LineBasicMaterial({ color: colorScale(id) });
+				const lineMaterial = new THREE.LineBasicMaterial({
+					color: colorScale(id),
+					linewidth: 50
+				  });
 				const geometry = new THREE.BufferGeometry().setFromPoints(points);
 				const line = new THREE.Line(geometry, lineMaterial);
+				console.log(line);
 
 
 				globalState.scene.add(line);
@@ -1137,6 +1142,7 @@ function createPlotTemporal() {
 	//   });
 	svg.select(".axis--y").selectAll(".tick text")
     .style("cursor", "pointer")
+	.style("font-size", "1.3em")
     .style("pointer-events", "all")
     .on("click", function(event, d) {
       showContextMenu(event, d);
@@ -1243,7 +1249,10 @@ function createPlotTemporal() {
 	const newYHeight = yScale.bandwidth();
 
 	// Redraw the y-axis
-	svg.select(".axis--y").call(d3.axisLeft(yScale));
+	// svg.select(".axis--y").call(d3.axisLeft(yScale));
+	svg.select(".axis--y").call(d3.axisLeft(yScale))
+	.selectAll("text")  // Select all text elements of the Y-axis
+	.style("font-size", "1.3em");
 	const backgroundLines = svg.selectAll(".background-line").data(newDomain);
 	backgroundLines.enter().append("rect")
 	.attr("class", "background-line")
@@ -1290,7 +1299,7 @@ function createPlotTemporal() {
 		  y = text.attr("y"),
 		  dy = parseFloat(text.attr("dy") || 0),
 		  tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-	  
+
 	  while (word = words.pop()) {
 		line.push(word);
 		tspan.text(line.join(" "));
@@ -1392,7 +1401,7 @@ function plotUserSpecificBarChart() {
       .style("font-family", "Lato")
       .style("font-size", "1.2em");
 
-		
+
 	svg.append("text")
 		.attr("transform", "rotate(-90)")
 		.attr("y", 0 - margin.left)
@@ -1431,7 +1440,7 @@ function plotCombinedUsersSpiderChart() {
 
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 	const threshold = 10;
-	const minPositiveValue = 30; 
+	const minPositiveValue = 30;
 	// const height = 600 - margin.top - margin.bottom;
 	const svg = plotBox.append("svg")
 	  .attr("width", width + margin.left + margin.right)
@@ -1454,7 +1463,7 @@ function plotCombinedUsersSpiderChart() {
 
 			// currentCount = Math.min(currentCount, threshold);
 			topicCounts.set(action.actor_name, currentCount);
-			
+
 
 		//   topicCounts.set(action.actor_name, (topicCounts.get(action.actor_name) || 0) + 1);
 		}
@@ -1494,13 +1503,16 @@ function plotCombinedUsersSpiderChart() {
 		.attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
 		.style("stroke", "lightgrey");
 
-	  svg.append("text")
-		.attr("x", rScale(maxCount * 1.3) * Math.cos(angle - Math.PI/2))
-		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
-		.text(topic)
-		.style("text-anchor", "middle")
-		.style("font-size", "0.8em")
-		.attr("alignment-baseline", "middle");
+	const label = svg.append("text")
+      .attr("x", rScale(maxCount * 1.3) * Math.cos(angle - Math.PI/2))
+      .attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
+      .text(topic)
+      .style("text-anchor", "middle")
+      .style("font-size", "0.8em")
+      .attr("alignment-baseline", "middle");
+		if (topic === "2D Data Visualization") {
+		label.attr("x", 220);
+		}
 	});
 
 	const color = colorScale;
@@ -1742,6 +1754,7 @@ function plotOrUpdateBubblePlot() {
     globalState.controls2.enableZoom = true;
     const loader = new THREE.TextureLoader();
     loader.load('bubble_map_background.png', function(texture) {
+		// loader.load('background.png', function(texture) {
         const backgroundGeometry = new THREE.PlaneGeometry(width, height);
         const backgroundMaterial = new THREE.MeshBasicMaterial({
             map: texture,
@@ -1749,7 +1762,10 @@ function plotOrUpdateBubblePlot() {
             transparent: true,
         });
         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-        backgroundMesh.position.set(0, 0, -1);
+        // backgroundMesh.position.set(0, 0, 5);
+		backgroundMesh.position.x = 30 ;
+		backgroundMesh.position.y = 45 ;
+		backgroundMesh.position.z = 0 ;
         globalState.scene2.add(backgroundMesh);
         addBubbles();
 
@@ -1770,9 +1786,6 @@ function plotOrUpdateBubblePlot() {
 				});
 			}
 		});
-		const gridMarginRatio = 0.1; // Example: Contract the grid by 10% on each side
-		const effectiveWidth = width * (1 - gridMarginRatio * 2); // Apply margin to both sides
-		const effectiveHeight = height * (1 - gridMarginRatio * 2);
 
 		const filteredData = raycastDataWithUserInfo.filter(item => globalState.show[item.id]);
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1801,13 +1814,14 @@ function plotOrUpdateBubblePlot() {
         });
 		const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).flatMap(users => Object.values(users)))])
 		.range([0.5, 40]);
+		const offset = 150;
 
 		Object.entries(userGrid).forEach(([key, users]) => {
 		const [gridX, gridY] = key.split(',').map(Number);
-		const centerX = minX + ((gridX ) / gridWidth) * (maxX - minX);
-		const centerY = minY + ((gridY) / gridHeight) * (maxY - minY);
-		const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
-		const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
+		const centerX = (minX + ((gridX ) / gridWidth) * (maxX - minX))*offset;
+		const centerY = (minY + ((gridY) / gridHeight) * (maxY - minY))*offset;
+		// const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
+		// const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
 
 		Object.entries(users).forEach(([user, count], index, arr) => {
 			const bubbleSize = bubbleSizeScale(count);
@@ -1818,7 +1832,7 @@ function plotOrUpdateBubblePlot() {
 				transparent: true,
 			});
 			const circle = new THREE.Mesh(geometry, material);
-			circle.position.set(scaledX , scaledY, 0); // Adjust position to avoid overlap
+			circle.position.set(centerX , centerY, 0); // Adjust position to avoid overlap
 			globalState.scene2.add(circle);
 		});
 	});
@@ -2392,7 +2406,7 @@ function initializeOrUpdateSpeechBox() {
 	}
 	// rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}`;
 	rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
-	rangeDisplay.style.marginTop = "10px"; 
+	rangeDisplay.style.marginTop = "10px";
 	rangeDisplay.style.marginBottom = "10px";
 	let speechBoxesContainer = document.getElementById("speech-boxes-container");
 	if (!speechBoxesContainer) {
@@ -2699,7 +2713,7 @@ function updateInterestBox() {
 		circle1.attr("cx", line1X);
 		circle2.attr("cx", line2X);
 		// console.log(margin.left);
-		let buffer = 150 ;
+		let buffer = margin.left + 10 ;
 
 	  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
 	  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
