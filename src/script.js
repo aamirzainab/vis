@@ -69,9 +69,9 @@ let globalState = {
 };
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
-let buffer = 140;
-const margin = { top: 20, right: 30, bottom: 10, left: 130 };
 
+const margin = { top: 20, right: 30, bottom: 10, left: 160 };
+let buffer = 167;
 const hsl = {
 	h: 0,
 	s: 0,
@@ -1240,6 +1240,7 @@ const {"Raw Capture": omitted, ...newData} = data;
 	//   });
 	svg.select(".axis--y").selectAll(".tick text")
     .style("cursor", "pointer")
+	.style("font-size", "1.3em")
     .style("pointer-events", "all")
     .on("click", function(event, d) {
       showContextMenu(event, d);
@@ -1346,7 +1347,10 @@ const {"Raw Capture": omitted, ...newData} = data;
 	const newYHeight = yScale.bandwidth();
 
 	// Redraw the y-axis
-	svg.select(".axis--y").call(d3.axisLeft(yScale));
+	// svg.select(".axis--y").call(d3.axisLeft(yScale));
+	svg.select(".axis--y").call(d3.axisLeft(yScale))
+	.selectAll("text")  // Select all text elements of the Y-axis
+	.style("font-size", "1.3em");
 	const backgroundLines = svg.selectAll(".background-line").data(newDomain);
 	backgroundLines.enter().append("rect")
 	.attr("class", "background-line")
@@ -1702,6 +1706,7 @@ function plotCombinedUsersSpiderChart() {
 
 	  const threshold = 50;
 	  const minPositiveValue = 10 ;
+	  const labelPushOutDistance = 0;
 
 	// Process data to get topics and users
 	const data = Object.values(globalState.finalData.action_dict);
@@ -1747,6 +1752,12 @@ function plotCombinedUsersSpiderChart() {
 	// Draw radial lines and labels
 	topics.forEach((topic, index) => {
 	  const angle = angleSlice * index;
+	  const baseRadius = rScale(maxCount*1.1) + labelPushOutDistance;
+  
+	  // Calculate the new position for the label with the additional distance
+	  const labelX = baseRadius * Math.cos(angle - Math.PI/2);
+	  const labelY = baseRadius * Math.sin(angle - Math.PI/2);
+
 	  svg.append("line")
 		.attr("x1", 0)
 		.attr("y1", 0)
@@ -1754,12 +1765,27 @@ function plotCombinedUsersSpiderChart() {
 		.attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
 		.style("stroke", "lightgrey");
 
-	  svg.append("text")
-		.attr("x", rScale(maxCount * 1.1) * Math.cos(angle - Math.PI/2))
-		.attr("y", rScale(maxCount * 1.1) * Math.sin(angle - Math.PI/2))
-		.text(topic)
-		.style("font-size", "0.8em")
-		.attr("alignment-baseline", "middle");
+	//   svg.append("text")
+	// 	// .attr("x", rScale(maxCount * 1) * Math.cos(angle - Math.PI/2) )
+	// 	// .attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2) )
+	// 	.attr("x", labelX)
+	// 	.attr("y", labelY)
+	// 	.text(topic)
+	// 	.style("font-size", "0.8em")
+	// 	.attr("alignment-baseline", "middle");
+	const label = svg.append("text")
+      .attr("x", labelX)
+	  .attr("y", labelY)
+	  .text(topic)
+	  .style("font-size", "0.8em")
+	  .attr("alignment-baseline", "middle");
+ 
+    if (topic === "Object Save") {
+      label.attr("x", -220);
+    }
+	if (topic === "Quiz Update") {
+		label.attr("x", -220);
+	  }
 	});
 
 	const color = colorScale;
@@ -1770,7 +1796,7 @@ function plotCombinedUsersSpiderChart() {
 		const topic = globalState.finalData.action_dict[topicKey];
 		// console.log(topic);
 		let count = topic.actions.filter(action => action.actor_name === user).length;
-		console.log(count);
+		// console.log(count);
 		// && action.action_type === "XRInteraction"
 		// count = count === 0 ? minPositiveValue : count;
 		// Apply the threshold here
@@ -1890,6 +1916,7 @@ function plotOrUpdateBubblePlot() {
     globalState.controls2.enableZoom = true;
     const loader = new THREE.TextureLoader();
     loader.load('bubble_map_background.png', function(texture) {
+	// loader.load('background.png', function(texture) {
         const backgroundGeometry = new THREE.PlaneGeometry(width, height);
         const backgroundMaterial = new THREE.MeshBasicMaterial({
             map: texture,
@@ -1898,6 +1925,7 @@ function plotOrUpdateBubblePlot() {
         });
         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
         backgroundMesh.position.set(0, 0, -1);
+		// console.log("adding it ");
         globalState.scene2.add(backgroundMesh);
         addBubbles();
 
