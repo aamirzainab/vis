@@ -550,9 +550,6 @@ if (filteredData.length !== 0) {
     // avatar.setRotationFromEuler(euler);
   });
   }
-  // avatar.visible = false ;
-  // globalState.scene.remove(avatar);
-  // console.log("setting to false ");
 }
 
 
@@ -1193,15 +1190,15 @@ function plotBarChart() {
   let userDataByTopic = {};
   let allUsers = new Set();
   const data = globalState.finalData.topics_dict ;
-  delete data["Others"];
-  const threshold = 15;
+  // delete data["Others"];
+  // const threshold = 15;
 
   Object.entries(data).forEach(([topic, details]) => {
     const userCounts = details.actions.reduce((acc, action) => {
         if (action.action_type === "VerbalInteraction") {
 
           let currentCount = acc[action.actor_name] || 0;
-          currentCount = Math.min(currentCount + 1, threshold); // Apply threshold here
+          // currentCount = Math.min(currentCount + 1, threshold); // Apply threshold here
           acc[action.actor_name] = currentCount;
           allUsers.add(action.actor_name);
             // acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
@@ -1292,25 +1289,6 @@ function plotBarChart() {
       .style("text-anchor", "middle")
       .text("Count")
       .style("font-size", "0.8em");
-  // Legend
-  // const legend = svg.selectAll(".legend")
-  //     .data(users)
-  //     .enter().append("g")
-  //     .attr("class", "legend")
-  //     .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
-
-  // legend.append("rect")
-  //     .attr("x", width - 18)
-  //     .attr("width", 18)
-  //     .attr("height", 18)
-  //     .style("fill", color);
-
-  // legend.append("text")
-  //     .attr("x", width - 24)
-  //     .attr("y", 9)
-  //     .attr("dy", ".35em")
-  //     .style("text-anchor", "end")
-  //     .text(d => d);
 }
 
 
@@ -1330,9 +1308,8 @@ function plotCombinedUsersSpiderChart() {
   delete withoutOther["Others"];
   const data = Object.values(withoutOther) ;
   let maxCount = 0;
-  const threshold = 10;
   let maxCountsPerUser = {};
-
+  
   data.forEach(topic => {
     topic.actions.forEach(action => {
       if (action.action_type === "VerbalInteraction") {
@@ -1340,15 +1317,13 @@ function plotCombinedUsersSpiderChart() {
           maxCountsPerUser[action.actor_name] = {};
         }
         let currentCount = (maxCountsPerUser[action.actor_name][topic.broad_topic_name] || 0) + 1;
-        maxCountsPerUser[action.actor_name][topic.broad_topic_name] = Math.min(currentCount, threshold);
-        maxCount = Math.max(maxCount, maxCountsPerUser[action.actor_name][topic.broad_topic_name]);
+        maxCountsPerUser[action.actor_name][topic.broad_topic_name] = currentCount;
+        maxCount = Math.max(maxCount, currentCount);
       }
     });
   });
 
-  // console.log(maxCount); // This now reflects the highest count for any user in any single topic
 
-  // Prepare topicsWithCounts array for visualization
   let topicsWithCounts = Object.entries(maxCountsPerUser).flatMap(([user, topics]) =>
     Object.entries(topics).map(([topic, count]) => ({
       user,
@@ -1357,16 +1332,13 @@ function plotCombinedUsersSpiderChart() {
     }))
   ).filter(entry => entry.count > 0);
 
-  // Filtering unique topics after considering user-specific counts
   const topics = [...new Set(topicsWithCounts.map(entry => entry.topic))];
   const users = Object.keys(maxCountsPerUser);
 
-console.log(topicsWithCounts);
 const rScale = d3.scaleLinear()
     .range([0, Math.min(width / 2, height / 2)])
     .domain([0, maxCount]);
 
-  // Draw circular grids
   const levels = 5 ;
   for (let i = 0; i <= levels; i++) {
     svg.append("circle")
@@ -1380,7 +1352,6 @@ const rScale = d3.scaleLinear()
 
   const angleSlice = Math.PI * 2 / topics.length;
 
-  // Draw radial lines and labels
   topics.forEach((topic, index) => {
     const angle = angleSlice * index;
     svg.append("line")
@@ -1396,20 +1367,7 @@ const rScale = d3.scaleLinear()
       .text(topic)
       .style("text-anchor", "middle")
       .style("font-size", "0.75em")
-      // .call(wrapText, -200)
       .attr("alignment-baseline", "middle");
-      if (topic === "Healthcare and Public Services") {
-        label.attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2)); 
-    }
-    if (topic === "Education and Youth Services") {
-      label.attr("x", -200);
-    }
-    if (topic === "Urban and Housing Development") {
-      label.attr("y", rScale(maxCount * 1.3) * Math.sin(angle - Math.PI/2)); 
-    }
-    if (topic === "Transportation and Commute") {
-      label.attr("x",180); 
-    }
 
   });
 
@@ -1420,18 +1378,14 @@ const rScale = d3.scaleLinear()
       const topic = withoutOther[topicKey];
       const actions = topic.actions.filter(action => action.actor_name === user && action.action_type === "VerbalInteraction");
       let count = actions.length;
-      count = Math.min(count, threshold); // Apply threshold
       return {topic: topicKey, count};
       });
-      // console.log(userData);
 
-    // Define the radar line generator
     const radarLine = d3.lineRadial()
       .curve(d3.curveLinearClosed)
       .radius(d => rScale(d.count))
       .angle((d, i) => i * angleSlice);
 
-    // Draw the radar chart area for the user
     svg.append("path")
       .datum(userData)
       .attr("d", radarLine)
@@ -1442,89 +1396,6 @@ const rScale = d3.scaleLinear()
   });
 }
 
-
-
-
-
-
-// function plotTreeMap() {
-// 	const plotBox = d3.select("#plot-box3").html("");
-// 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
-// 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-// 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-
-//     let keywordCounts = {};
-//     Object.values(globalState.finalData.topics_dict).flatMap(topic => topic.actions).forEach(action => {
-//         const actionStartTime = parseTimeToMillis(action.start_time);
-//         const actionEndTime = parseTimeToMillis(action.end_time);
-//         if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && action.action_type === "VerbalInteraction") {
-//             action.data.keywords.forEach(keyword => {
-//                 keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
-//             });
-//         }
-//     });
-//     const hierarchicalData = {
-//         name: "root",
-//         children: Object.entries(keywordCounts).map(([keyword, count]) => ({
-//             name: keyword,
-//             value: count
-//         }))
-//     };
-
-
-//     // Select the body for SVG append, set dimensions, and create hierarchical data
-//     const svg = plotBox.append('svg')
-//         .attr('width', width)
-//         .attr('height', height)
-//         .style('font', '10px sans-serif');
-
-//     const root = d3.hierarchy(hierarchicalData)
-//         .sum(d => d.value) // Here we set the value for each leaf
-//         .sort((a, b) => b.value - a.value); // Sort the nodes
-
-//     d3.treemap()
-//         .size([width, height])
-//         .padding(1)
-//         (root);
-
-
-//         const maxValue = d3.max(root.leaves(), d => d.value);
-//         const minValue = 0; // Starting from 0 to ensure the full range of the color scale is used
-//         const interpolatePink = d3.interpolateRgb("lightpink", "deeppink");
-//         const color = d3.scaleSequential()
-//                         .domain([minValue, Math.max(maxValue, minValue )]) // Ensuring there's at least a range of 1
-//                         .interpolator(d3.interpolateBlues);
-
-
-//     // Drawing the rectangles for each node
-//     const leaf = svg.selectAll('g')
-//         .data(root.leaves())
-//         .enter().append('g')
-//         .attr('transform', d => `translate(${d.x0},${d.y0})`);
-
-//     leaf.append('rect')
-//         .attr('id', d => (d.leafUid = `leaf-${d.data.name}`))
-//         // .attr('fill', d => color(d.data.name))
-//         .attr('fill', d => color(d.value))
-//         .attr('width', d => d.x1 - d.x0)
-//         .attr('height', d => d.y1 - d.y0);
-
-//     // Adding text labels to each rectangle
-//     leaf.append('text')
-//         .selectAll('tspan')
-//         .data(d => d.data.name.split(/(?=[A-Z][a-z])|\s+/g)) // Split camelCase and by space
-//         .enter().append('tspan')
-//         .attr('x', 5) // Positioning text inside rectangle
-//         .attr('y', (d, i) => 15 + i * 10) // Positioning text inside rectangle
-//         .style('fill', '#fff')
-//         .style('font-size', '1.4em')
-//         .text(d => d);
-
-//     leaf.append('title')
-//         .text(d => `${d.data.name}\nCount: ${d.value}`)
-//         .style('font-size', '1.4em');
-// }
 
 function plotTreeMap() {
   const plotBox = d3.select("#plot-box3").html("");
@@ -1575,7 +1446,7 @@ function plotTreeMap() {
     });
   });
 
-  const selectedUsers = Array.from(allUsers).slice(0, 3); // Select specific users if needed
+  const selectedUsers = Array.from(allUsers).slice(0, 3); 
   structuredData = structuredData.filter(d => selectedUsers.includes(d.user));
 
   const y0 = d3.scaleBand()
@@ -1688,11 +1559,8 @@ function plotSpatialExtent() {
 
 
 function setTimes(data) {
-  // console.log(data.earliest_action_time);
   const globalStartTime = parseTimeToMillis(data.earliest_action_time);
   const globalEndTime = parseTimeToMillis(data.latest_action_time);
-  // console.log("Global Start Time:", new Date(globalStartTime));
-  // console.log("Global End Time:", new Date(globalEndTime).toISOString());
   globalState.globalStartTime = globalStartTime;
   globalState.globalEndTime = globalEndTime;
   const totalTime = globalEndTime - globalStartTime;
@@ -1701,7 +1569,7 @@ function setTimes(data) {
     length: globalState.bins + 1
   }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
   globalState.lineTimeStamp1 = globalStartTime;
-  globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
+  globalState.lineTimeStamp2 = globalStartTime + 5000; 
 }
 
 
@@ -1801,7 +1669,6 @@ function createLines(timestamp1, timestamp2) {
     newXPosition = x(new Date(newTimestamp));
 
     d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
-    // d3.select(this).attr('x1', newXPosition).attr('x2', newXPosition);
     d3.select(circleId).attr('cx', newXPosition + margin.left);
     d3.select(circleId).attr('cx', newXPosition);
 
@@ -1939,14 +1806,6 @@ function initializeShadedAreaDrag() {
 }
 
 function dragended(event, d) {
-  // let finalXPosition = event.x - margin.left;
-  // let correctedTimestamp = x.invert(finalXPosition);
-  // let expectedXPosition = x(correctedTimestamp);
-  // buffer = Math.abs(finalXPosition - expectedXPosition)
-  // console.log(finalXPosition  + " , " + expectedXPosition + ", " + "ended drag");
-
-
-  // d3.select(this).classed("active", false);
 }
 
   const drag = d3.drag()
@@ -2026,32 +1885,17 @@ function createTopicItem(topicName, topicDetails, toolbar) {
 
   const userInterestKeywords = new Set();
   const uniqueKeywords = new Set();
-//   filteredActions.forEach(action => {
-//     action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
-//     if (action.has_user_interest_keyword) {
-//       action.data.keywords.forEach(userInterestKeywords.add, userInterestKeywords);
-//     }
-//     // else {
-//     //   console.log(action.data.keywords);
-//     // }
-// });
+
 filteredActions.forEach(action => {
-  // console.log(action);
-  if (action.action_type === "RawCapture") { return ; }
+  if (action.action_type === "RawCapture") { return ; } // Yoonsang are we keeping this?
   action.data.keywords.forEach((keyword, index) => {
     uniqueKeywords.add(keyword);
-    // Assuming the keywords_relevance_to_user_interest array is aligned with keywords
     if (action.data.keywords_relevance_to_user_interest[index]) {
       userInterestKeywords.add(keyword);
     }
   });
 });
 
-
-  // filteredActions.forEach(action => {
-  //   action.data.keywords.forEach(keyword => uniqueKeywords.add(keyword));
-  //   // console.log(action.has_user_interest_keyword);
-  // });
 
   const keywordsList = document.createElement('ul');
   uniqueKeywords.forEach(keyword => {
@@ -2193,20 +2037,17 @@ function getSelectedKeywords() {
   return selectedKeywords;
 }
 function getCoordinates(spatial_extent){
-	const x = spatial_extent[0][2]; // UNITY Z
+	const x = spatial_extent[0][2]; // Unity Z
   const y = spatial_extent[0][1];
-  const z = -spatial_extent[0][0]; // Flippinh UNITY X
-	// console.log(x,y,z);
+  const z = -spatial_extent[0][0]; // Flipping Unity X
 	return {x,y,z} ;
   }
 
 
 function parseTimeToMillis(customString) {
-  // console.log(" here with " + customString);
   let [dateStr, timeStr, milliStr] = customString.split('_');
 
-  // Further split into year, month, day, hours, minutes, seconds
-  let year = parseInt(dateStr.slice(0, 2), 10) + 2000; // Assuming '24' is 2024
+  let year = parseInt(dateStr.slice(0, 2), 10) + 2000; 
   let month = parseInt(dateStr.slice(2, 4), 10) - 1; // Month is 0-indexed in JS
   let day = parseInt(dateStr.slice(4, 6), 10);
 
@@ -2214,22 +2055,11 @@ function parseTimeToMillis(customString) {
   let minutes = parseInt(timeStr.slice(2, 4), 10);
   let seconds = parseInt(timeStr.slice(4, 6), 10);
 
-  // Milliseconds are straightforward, just need to parse
   let milliseconds = parseInt(milliStr, 10);
 
-  // Log the parsed components
-  // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds}`);
-
-  // Create the Date object
   let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-  // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds} and date ${date.toUTCString()}`);
 
-  // Log the Date object
-  // console.log(`Date object: ${date}`);
-
-  // Return the time in milliseconds since Unix epoch
   let timeInMillis = date.getTime();
-  // console.log(`Time in milliseconds since Unix epoch: ${timeInMillis}`);
   return timeInMillis;
 }
 
@@ -2241,7 +2071,7 @@ function initializeOrUpdateSpeechBox() {
   const hierToolbar = document.getElementById('hier-toolbar');
   let offsetHeight = hierToolbar.offsetHeight;
   const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-  // container.style.marginTop = `${offsetHeight}px`;
+ 
   container.style.top = `${offsetHeight}px`;
 
   let rangeDisplay = document.querySelector('.time-range-display-speechbox');
@@ -2263,13 +2093,10 @@ function initializeOrUpdateSpeechBox() {
       speechBoxesContainer.innerHTML = '';
   }
 
-  const selectedTopics = getSelectedTopics(); // Now returns an array of selected topics
-  const selectedKeywords = getSelectedKeywords(); // Assumes this function returns an array of selected keywords
-  // console.log("Selected Topics: ", selectedTopics);
-  // console.log("Selected Keywords: ", selectedKeywords);
+  const selectedTopics = getSelectedTopics(); 
+  const selectedKeywords = getSelectedKeywords(); 
 
   let actionsToDisplay = [];
-  // console.log(data);
   selectedTopics.forEach(topic => {
       if (data[topic]) {
           const topicActions = data[topic].actions.filter(action => {
@@ -2282,7 +2109,6 @@ function initializeOrUpdateSpeechBox() {
   });
 
   actionsToDisplay.forEach(action => {
-    // console.log(action);
     if (action.action_type === "RawCapture") { return ; }
       const speechBox = getSpeechData(action, selectedKeywords);
       if (speechBox)
@@ -2312,14 +2138,6 @@ function getSpeechData(action, selectedKeywords) {
   speakerEl.className = 'speaker';
   speakerEl.textContent = `[${action.actor_name}]`;
 
-  // // Audience Element
-  // // if (action.action_type === "Verbal Communication ") {
-  //   const audienceEl = document.createElement('div');
-  //   audienceEl.className = 'audience';
-  //   audienceEl.textContent = `[AUDIENCE: ${action.audience}]`;
-  // // }
-
-  // Original Transcribed Text
   const originalTextEl = document.createElement('div');
   originalTextEl.className = 'original-transcribed';
   const rawTextTitle = document.createElement('strong');
@@ -2340,9 +2158,6 @@ function getSpeechData(action, selectedKeywords) {
   originalTextEl.appendChild(document.createElement('br'));
   originalTextEl.appendChild(rawTextContent);
 
-
-
-  // Summary
   const summaryEl = document.createElement('div');
   summaryEl.className = 'summary';
   const summaryTitle = document.createElement('strong');
@@ -2356,7 +2171,7 @@ function getSpeechData(action, selectedKeywords) {
     summaryEl.appendChild(summaryContent);
   }
 
-  // Keywords
+
   const keywordsEl = document.createElement('div');
   keywordsEl.className = 'keywords';
   const keywordsTitle = document.createElement('strong');
@@ -2375,9 +2190,7 @@ function getSpeechData(action, selectedKeywords) {
   keywordsEl.appendChild(document.createElement('br'));
   keywordsEl.appendChild(keywordsContent);
 
-  // Append all elements to the speech box
   speechBox.appendChild(speakerEl);
-  // if (action.action_type === "VerbalInteraction") {  speechBox.appendChild(audienceEl);  }
   speechBox.appendChild(originalTextEl);
   if (action.data.summary) {
     speechBox.appendChild(summaryEl);
@@ -2389,32 +2202,31 @@ function getSpeechData(action, selectedKeywords) {
 function updateInterestBox() {
   const container = document.getElementById("user-interest-topic");
 
-  // Clear existing content
+
   container.innerHTML = '';
 
-  // Create "Topic of your interest" span
+
   const topicInterestSpan = document.createElement("span");
   topicInterestSpan.textContent = "Topic of your interest: ";
   topicInterestSpan.style.color = "white";
   topicInterestSpan.style.fontWeight = "bold";
 
-  // Create "Next user interest topic" span
+
   const nextInterestSpan = document.createElement("span");
   nextInterestSpan.textContent = userInterestTopic;
-  // nextInterestSpan.style.color = "#ffc000";
+
   nextInterestSpan.style.color = "#333333";
   nextInterestSpan.style.fontWeight = "bold";
 
-  // Append both spans to the container
+
   container.appendChild(topicInterestSpan);
   container.appendChild(nextInterestSpan);
 
-  // Style the container for text wrapping
   container.style.display = "inline-block";
   container.style.maxWidth = "100%";
   container.style.whiteSpace = "normal";
   container.style.overflowWrap = "break-word";
-  container.contentEditable = "true"; // Make it editable
+  container.contentEditable = "true"; 
 }
 
 
@@ -2457,7 +2269,6 @@ const rawCaptureData = globalState.finalData.topics_dict["Raw Capture"];
 
       container.appendChild(imageWrapper);
 
-      // Navigation arrows functionality
       addNavigationArrows(imageWrapper, filteredActions);
     } else {
       titleElement.innerHTML = 'No images available';
@@ -2503,7 +2314,7 @@ function changeImage(index, imageWrapper, filteredActions) {
   Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
     img.style.display = imgIndex === index ? 'block' : 'none';
   });
-  // Update the title with the actor name of the current image
+  
   updateTitle(filteredActions[index].actor_name);
 }
 
@@ -2537,7 +2348,6 @@ function updateRangeDisplay(time1, time2) {
       .attr("width", shadingWidth)
       .attr("height", height)
       .attr("fill", "#9e9e9e")
-		// .attr('class', 'interactive')
       .attr("fill-opacity", 0.5);
 
   const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
@@ -2546,71 +2356,6 @@ function updateRangeDisplay(time1, time2) {
     rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(time1))} - ${timeFormat(new Date(time2))}`;
   }
 }
-
-// function initializeShadedAreaDrag() {
-//   const indicatorSVG = d3.select("#indicator-svg");
-//   const shadedArea = indicatorSVG.select(".shading");
-
-//   let dragStartX = null;
-
-//   const dragstarted = (event) => {
-//     dragStartX = event.x;
-//     console.log("Pre-Drag - x scale domain:", x.domain(), "x scale range:", x.range());
-//   };
-
-//   const dragged = (event) => {
-//     const dx = event.x - dragStartX;
-//     // console.log("Dragging - Raw dx:", dx);
-//     const line1 = indicatorSVG.select("#time-indicator-line1");
-//     const line2 = indicatorSVG.select("#time-indicator-line2");
-//     const circle1 = indicatorSVG.select("#time-indicator-circle1");
-//     const circle2 = indicatorSVG.select("#time-indicator-circle2");
-//     let line1X = parseFloat(line1.attr("x1"));
-//     let line2X = parseFloat(line2.attr("x1"));
-//     // console.log("Dragging - New line positions:", line1X + dx, line2X + dx);
-
-//     // Update positions based on drag
-//     line1.attr("x1", line1X + dx).attr("x2", line1X + dx);
-//     line2.attr("x1", line2X + dx).attr("x2", line2X + dx);
-//     circle1.attr("cx", line1X + dx);
-//     circle2.attr("cx", line2X + dx);
-
-//   const newLine1Timestamp = x.invert(line1X + dx);
-//   const newLine2Timestamp = x.invert(line2X + dx);
-
-//   globalState.lineTimeStamp1 = newLine1Timestamp.getTime();
-//   globalState.lineTimeStamp2 = newLine2Timestamp.getTime();
-
-//     console.log("INITIALIZE Line 1 At this timestamp" + new Date(globalState.lineTimeStamp1) + " have this position " + line1X + dx);
-//     console.log("INITIALIZE Line 1 At this timestamp" + new Date(globalState.lineTimeStamp2) + " have this position " + line2X + dx);
-
-
-//   updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
-//   updateXRSnapshot();
-//   generateHierToolBar();
-//   plotTreeMap();
-//   createAvatarSegment(0);
-//   createAvatarSegment(1);
-//   createAvatarSegment(2);
-//   updateSceneBasedOnSelections();
-
-//   dragStartX = event.x;
-
-// };
-
-//   const dragended = () => {
-//     console.log("Drag ended - x scale domain:", x.domain(), "range:", x.range());
-//   };
-
-//   const drag = d3.drag()
-//     .on("start", dragstarted)
-//     .on("drag", dragged)
-//     .on("end", dragended);
-
-
-//   shadedArea.call(drag);
-
-// }
 
 
 
@@ -2692,17 +2437,13 @@ async function initialize() {
   createSharedAxis();
   createPlotTemporal();
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-  // initializeShadedAreaDrag();
-  // console.log("left shading function, enetring toolbar ");
 	generateHierToolBar();
-  // plotTreeMap();
   updateInterestBox();
   document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
   });
   initializeOrUpdateSpeechBox();
-  // plotSpatialExtent();
   d3.select("body").on("click", function() {
     const contextMenu = d3.select("#context-menu");
     if (!contextMenu.empty()) {
