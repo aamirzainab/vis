@@ -18,12 +18,6 @@ import {
 import {
 	Line2
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
-import {
-	loadAndPlotTemporal,
-	animateTemporalView,
-	getXScale
-} from "./temporal.js"
-
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
@@ -97,26 +91,6 @@ let avatarLoaded = false;
 let roomLoaded = false;
 let movementPointsMesh;
 
-function fitCameraToObject(camera, object) {
-	const boundingBox = new THREE.Box3().setFromObject(object);
-	const center = boundingBox.getCenter(new THREE.Vector3());
-	const size = boundingBox.getSize(new THREE.Vector3());
-	const maxDim = Math.max(size.x, size.y, size.z);
-	const fov = camera.fov * (Math.PI / 180);
-	let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov / 2));
-	cameraZ *= 0.5;
-
-	camera.position.set(center.x, center.y, center.z + cameraZ);
-	camera.position.z = center.z + cameraZ;
-	camera.position.y += 10;
-
-	const aspect = window.innerWidth / window.innerHeight;
-	camera.aspect = aspect;
-	camera.lookAt(center);
-	camera.near = cameraZ / 100;
-	camera.far = cameraZ * 100;
-	camera.updateProjectionMatrix();
-}
 
 
 export function updateIntervals() {
@@ -603,64 +577,64 @@ function createLineDrawing(id) {
 		});
 	}
 
-function createLineSegment(id){
-    const geometry = new LineGeometry();
-    const positions = [];
-    const colors = [];
+// function createLineSegment(id){
+//     const geometry = new LineGeometry();
+//     const positions = [];
+//     const colors = [];
 
-	const userID = "User_" + (id + 1 ) ;
-	// console.log(id);
-	// console.log(userID)
-    let colorShade = colorScale(String(id));
-	// console.log(colorShade);
-	// console.log(colorShade);
-    let baseColor = new THREE.Color(colorShade);
-    const linewidth = 7; // Adjust as necessary
-    baseColor.getHSL(hsl);
-	const data = globalState.finalData.action_dict["User Transformation"].actions;
-    // Filter actions for the specific transformation and within the time range
-    const filteredData = data.filter(action => {
-        const actionStartTime = parseTimeToMillis(action.start_time);
-        const actionEndTime = parseTimeToMillis(action.end_time);
-        return action.action_type === "Transformation" &&
-               action.formatted_data.action_property_specific_action === "PhysicalXRDisplay Transformation" &&
-			   action.actor_name == userID &&
-               actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-    });
+// 	const userID = "User_" + (id + 1 ) ;
+// 	// console.log(id);
+// 	// console.log(userID)
+//     let colorShade = colorScale(String(id));
+// 	// console.log(colorShade);
+// 	// console.log(colorShade);
+//     let baseColor = new THREE.Color(colorShade);
+//     const linewidth = 7; // Adjust as necessary
+//     baseColor.getHSL(hsl);
+// 	const data = globalState.finalData.action_dict["User Transformation"].actions;
+//     // Filter actions for the specific transformation and within the time range
+//     const filteredData = data.filter(action => {
+//         const actionStartTime = parseTimeToMillis(action.start_time);
+//         const actionEndTime = parseTimeToMillis(action.end_time);
+//         return action.action_type === "Transformation" &&
+//                action.formatted_data.action_property_specific_action === "PhysicalXRDisplay Transformation" &&
+// 			   action.actor_name == userID &&
+//                actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+//     });
 
-	if (globalState.currentLineSegments[id]) {
-        globalState.scene.remove(globalState.currentLineSegments[id]);
-        globalState.currentLineSegments[id] = null;
-    }
+// 	if (globalState.currentLineSegments[id]) {
+//         globalState.scene.remove(globalState.currentLineSegments[id]);
+//         globalState.currentLineSegments[id] = null;
+//     }
 
-    // Assuming a method to interpret or mock spatial data from raw_log_text
-	if (filteredData.length !== 0) {
-		filteredData.forEach(entry => {
-			const spatialExent = entry.spatial_extent;
-			const {x,y,z} = getCoordinates(spatialExent);
-			positions.push(x, y, z);
-			const color = new THREE.Color().setHSL(hsl.h, hsl.s, 1);
-			colors.push(color.r, color.g, color.b);
-		});
-		geometry.setPositions(positions.flat());
-		geometry.setColors(colors);
+//     // Assuming a method to interpret or mock spatial data from raw_log_text
+// 	if (filteredData.length !== 0) {
+// 		filteredData.forEach(entry => {
+// 			const spatialExent = entry.spatial_extent;
+// 			const {x,y,z} = getCoordinates(spatialExent);
+// 			positions.push(x, y, z);
+// 			const color = new THREE.Color().setHSL(hsl.h, hsl.s, 1);
+// 			colors.push(color.r, color.g, color.b);
+// 		});
+// 		geometry.setPositions(positions.flat());
+// 		geometry.setColors(colors);
 
-		let material = new LineMaterial({
-			linewidth: linewidth,
-			color: baseColor,
-			opacity: 1,
-			transparent: true,
-			linewidth: linewidth,
-			resolution: new THREE.Vector2(window.innerWidth, window.innerHeight) // Ensure the resolution is set for proper rendering
-		});
+// 		let material = new LineMaterial({
+// 			linewidth: linewidth,
+// 			color: baseColor,
+// 			opacity: 1,
+// 			transparent: true,
+// 			linewidth: linewidth,
+// 			resolution: new THREE.Vector2(window.innerWidth, window.innerHeight) // Ensure the resolution is set for proper rendering
+// 		});
 
-		const line = new Line2(geometry, material);
-			globalState.scene.add(line);
-		globalState.currentLineSegments[id] = line;
+// 		const line = new Line2(geometry, material);
+// 			globalState.scene.add(line);
+// 		globalState.currentLineSegments[id] = line;
 
-		return line;
-	}
-}
+// 		return line;
+// 	}
+// }
 function clearPreviousTriangles(id) {
 if (globalState.triangleMesh[id]) {
 	globalState.triangleMesh[id].forEach(mesh => {
@@ -675,82 +649,82 @@ function updateSceneBasedOnSelections() {
     const data = globalState.finalData.action_dict;
     const selectedTopics = getSelectedTopics();
     const selectedKeywords = getSelectedKeywords();
-    const movementData = globalState.finalData.action_dict["User Transformation"].actions;
+//     const movementData = globalState.finalData.action_dict["User Transformation"].actions;
 
-    // Clear previous triangles before redrawing
-    clearPreviousTriangles(0);
-    clearPreviousTriangles(1);
-	clearPreviousTriangles(2);
-	// console.log("in update func with the new time stamps  " + globalState.lineTimeStamp1 + "   " +  globalState.lineTimeStamp2);
-    selectedTopics.forEach(topic => {
-        if (data[topic]) {
-            data[topic].actions.forEach(action => {
-                const actionStartTime = parseTimeToMillis(action.start_time);
-                const actionEndTime = parseTimeToMillis(action.end_time);
-                const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-                const matchesSelectedKeywords = selectedKeywords.some(keyword =>
-                    action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
+//     // Clear previous triangles before redrawing
+//     clearPreviousTriangles(0);
+//     clearPreviousTriangles(1);
+// 	clearPreviousTriangles(2);
+// 	// console.log("in update func with the new time stamps  " + globalState.lineTimeStamp1 + "   " +  globalState.lineTimeStamp2);
+//     selectedTopics.forEach(topic => {
+//         if (data[topic]) {
+//             data[topic].actions.forEach(action => {
+//                 const actionStartTime = parseTimeToMillis(action.start_time);
+//                 const actionEndTime = parseTimeToMillis(action.end_time);
+//                 const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+//                 const matchesSelectedKeywords = selectedKeywords.some(keyword =>
+//                     action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
 
-                if (matchesSelectedKeywords && isInTimeRange) {
-                    const actorName = action.actor_name;
-                    // Finding the closest movement data
-                    let closestData = null;
-                    let minimumTimeDifference = Infinity;
-// movement data isn't checking the time range zainab
-                    movementData.forEach(data => {
-                        if (data.actor_name === actorName) {
-                            const movementStartTime = parseTimeToMillis(data.start_time);
-                            const timeDifference = Math.abs(actionStartTime - movementStartTime);
-                            if (timeDifference < minimumTimeDifference) {
-                                closestData = data;
-                                minimumTimeDifference = timeDifference;
-                            }
-                        }
-                    });
+//                 if (matchesSelectedKeywords && isInTimeRange) {
+//                     const actorName = action.actor_name;
+//                     // Finding the closest movement data
+//                     let closestData = null;
+//                     let minimumTimeDifference = Infinity;
+// // movement data isn't checking the time range zainab
+//                     movementData.forEach(data => {
+//                         if (data.actor_name === actorName) {
+//                             const movementStartTime = parseTimeToMillis(data.start_time);
+//                             const timeDifference = Math.abs(actionStartTime - movementStartTime);
+//                             if (timeDifference < minimumTimeDifference) {
+//                                 closestData = data;
+//                                 minimumTimeDifference = timeDifference;
+//                             }
+//                         }
+//                     });
 
-                    if (closestData) {
-                        const spatial_extent = closestData.spatial_extent;
-						const { x, y , z } = getCoordinates(spatial_extent);
+//                     if (closestData) {
+//                         const spatial_extent = closestData.spatial_extent;
+// 						const { x, y , z } = getCoordinates(spatial_extent);
 
-                        // Add triangle
-                        const geometry = new THREE.BufferGeometry();
-                        const vertices = new Float32Array([
-                            0, -0.025, 0,    // Top vertex (now bottom middle, smaller)
-                            0.025, 0.025, 0,   // Bottom right vertex (now top right, smaller)
-                            -0.025, 0.025, 0   // Bottom left vertex (now top left, smaller)
-                        ]);
-                        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+//                         // Add triangle
+//                         const geometry = new THREE.BufferGeometry();
+//                         const vertices = new Float32Array([
+//                             0, -0.025, 0,    // Top vertex (now bottom middle, smaller)
+//                             0.025, 0.025, 0,   // Bottom right vertex (now top right, smaller)
+//                             -0.025, 0.025, 0   // Bottom left vertex (now top left, smaller)
+//                         ]);
+//                         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-                        // let id = actorName === "User_1" ? 0 : 1; // Example conditional, adjust as needed
-						let match = actorName.match(/\d+/);
-						let id = match ? parseInt(match[0], 10) - 1 : null;
+//                         // let id = actorName === "User_1" ? 0 : 1; // Example conditional, adjust as needed
+// 						let match = actorName.match(/\d+/);
+// 						let id = match ? parseInt(match[0], 10) - 1 : null;
 
 
-                        // Choose a color based on the actor, or use a default color
-                        const color = colorScale(String(id));
-                        const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
+//                         // Choose a color based on the actor, or use a default color
+//                         const color = colorScale(String(id));
+//                         const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
 
-                        const triangleMesh = new THREE.Mesh(geometry, material);
-                        triangleMesh.position.set(x, y + 0.5 , z);
-						triangleMesh.userData = { type: 'clickableTriangle', actorName: action.actor_name, actionData: closestData };
-						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
-						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
-						const wireframe = new THREE.LineSegments(edges, lineMaterial); // Creates a wireframe (line segments) that represents the edges
-						triangleMesh.add(wireframe);
+//                         const triangleMesh = new THREE.Mesh(geometry, material);
+//                         triangleMesh.position.set(x, y + 0.5 , z);
+// 						triangleMesh.userData = { type: 'clickableTriangle', actorName: action.actor_name, actionData: closestData };
+// 						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
+// 						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
+// 						const wireframe = new THREE.LineSegments(edges, lineMaterial); // Creates a wireframe (line segments) that represents the edges
+// 						triangleMesh.add(wireframe);
 
-                        // Manage and add triangle mesh to the scene
-                        if (!globalState.triangleMesh[id]) {
-                            globalState.triangleMesh[id] = [];
-                        }
-                        globalState.triangleMesh[id].push(triangleMesh);
-							globalState.scene.add(triangleMesh);
+//                         // Manage and add triangle mesh to the scene
+//                         if (!globalState.triangleMesh[id]) {
+//                             globalState.triangleMesh[id] = [];
+//                         }
+//                         globalState.triangleMesh[id].push(triangleMesh);
+// 							globalState.scene.add(triangleMesh);
 
-						initializeInteraction();
-                    }
-                }
-            });
-        }
-    });
+// 						initializeInteraction();
+//                     }
+//                 }
+//             });
+//         }
+//     });
 }
 
 async function initializeScene() {
@@ -759,7 +733,6 @@ async function initializeScene() {
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
-
 	globalState.camera.updateProjectionMatrix();
 
 	globalState.renderer = new THREE.WebGLRenderer({
@@ -790,9 +763,22 @@ async function initializeScene() {
 		fetch('Processed_Log_240812_011824.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
-  console.log(globalState.finalData); 
-  
 
+  const avatarArray = await Promise.all([
+    loadAvatarModel('oculus_quest_2.glb'),
+    loadAvatarModel('oculus_quest_2.glb'),
+	loadAvatarModel('oculus_controller_right.glb'),
+	loadAvatarModel('oculus_controller_right.glb'),
+	loadAvatarModel('oculus_controller_left.glb'),
+	loadAvatarModel('oculus_controller_left.glb'),
+	]);
+
+	globalState.avatars = [avatarArray[0], avatarArray[1]];
+	// globalState.avatars[0].scale.set(0.5,0.5,0.5);
+	// globalState.avatars[1].scale.set(0.5,0.5,0.5);
+
+	globalState.leftControls = [avatarArray[4], avatarArray[5]];
+	globalState.rightControls = [avatarArray[2], avatarArray[3]];
 
 	setTimes(globalState.finalData);
 
@@ -815,6 +801,7 @@ async function initializeScene() {
 }
 
 
+// initializeScene(); // zainab
 
 function filterDataByType(data) {
 	const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
@@ -1013,279 +1000,81 @@ function updateLineThickness() {
 	});
 }
 
-function processMovementData() {
-	const jsonDatas = globalState.jsonDatas;
-	let users = [];
+function createPlotTemporal() {
 
-	for (let i = 0; i < 2; i++) {
-		users.push({
-			id: i,
-			path: []
-		});
-	}
-	jsonDatas.forEach((userDatas, userId) => {
-		if (userId < 2) {
-			userDatas.forEach(entry => {
-				if (entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation') {
-					const dof = parseData(entry.Data);
-					if (dof) {
-						const x = dof[0]
-						const y = dof[1]
-						const z = dof[2]
-						users[userId].path.push({
-							x: x,
-							y: y,
-							z: z
-						});
-					}
-				}
-			});
-		}
-	});
+// Assuming parseTimeToMillis and parseDurationToMillis functions are defined
 
-	let links = [{
-		source: 0, // Assuming user 0 is the source
-		target: 1, // Assuming user 1 is the target
-		type: 'relationship'
-	}];
+const topicsData = globalState.finalData.map(action => {
+    const startTimeMillis = parseTimeToMillis(action.Timestamp);
+    const endTimeMillis = startTimeMillis + parseDurationToMillis(action.Duration);
+    
+    const startTime = new Date(startTimeMillis);
+    const endTime = new Date(endTimeMillis);
 
-	return {
-		users,
-		links
-	};
+    // console.log(`Topic: ${action.UserAction}`);
+    // console.log(`Start Time: ${startTime.toISOString().replace('T', ' ').replace('Z', '')}`);
+    // console.log(`End Time: ${endTime.toISOString().replace('T', ' ').replace('Z', '')}`);
+    // console.log('----------------------------------');
+
+    return {
+        topic: action.UserAction,
+        startTime: startTimeMillis,
+        endTime: endTimeMillis,
+        isUserInterest: false, // Placeholder, adjust as needed
+        hasUserInterestAction: false // Placeholder, adjust as needed
+    };
+}).filter(action => action.startTime && action.endTime);
+
+
+    const temporalViewContainer = d3.select("#temporal-view");
+    const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
+    const height = document.getElementById('temporal-view').clientHeight - margin.top - margin.bottom;
+    const speechPlotSvg = d3.select("#speech-plot-container");
+	speechPlotSvg.html("");
+	const svg = speechPlotSvg.append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', margin.top + margin.bottom + height)
+        .append('g')
+        .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    // X scale for time
+    const x = d3.scaleTime()
+        .domain([d3.min(topicsData, d => d.startTime), d3.max(topicsData, d => d.endTime)])
+        .range([0, width]);
+
+    // Y scale for user actions
+    const yScale = d3.scaleBand()
+        .domain(topicsData.map(d => d.topic))
+        .rangeRound([0, height])
+        .padding(0.1);
+
+    // Append the Y-axis
+    svg.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(yScale));
+
+    // Drawing bars for each action
+    svg.selectAll(".bar")
+        .data(topicsData)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.startTime))
+        .attr("y", d => yScale(d.topic))
+        .attr("width", d => x(d.endTime) - x(d.startTime))
+        .attr("height", yScale.bandwidth())
+        .attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0"); // Conditional fill based on user interest
+
+    // Optional: Add mouse event handlers if needed for interactivity
+    svg.selectAll(".bar")
+        .on("click", function(event, d) {
+            showContextMenu(event, d.topic);
+        });
 }
 
 
-// function plotTwoNetworkChart(users, links) {
-// 	const plotBox1 = d3.select("#plot-box1").html("");
-// 	const margin = {
-// 		top: 20,
-// 		right: 50,
-// 		bottom: 20,
-// 		left: 100
-// 	};
-// 	const width = plotBox1.node().getBoundingClientRect().width - margin.left - margin.right;
-// 	const height = plotBox1.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-// 	const svg = plotBox1.append("svg")
-// 		.attr("width", width + margin.left + margin.right)
-// 		.attr("height", height + margin.top + margin.bottom)
-// 		.append("g")
-// 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-// 	const xScale = d3.scaleLinear()
-// 		.domain([d3.min(users.flatMap(u => u.path.map(p => p.x))), d3.max(users.flatMap(u => u.path.map(p => p.x)))])
-// 		.range([0, width]);
-// 	const yScale = d3.scaleLinear()
-// 		.domain([d3.min(users.flatMap(u => u.path.map(p => p.y))), d3.max(users.flatMap(u => u.path.map(p => p.y)))])
-// 		.range([height, 0]);
-
-// 	users.forEach(user => {
-// 		let pathData = "M" + user.path.map(p => `${xScale(p.x)},${yScale(p.y)}`).join("L");
-// 		svg.append("path")
-// 			.attr("d", pathData)
-// 			.attr("fill", "none")
-// 			.attr("stroke", user.id === 0 ? "#ff0000" : "#0000ff")
-// 			.attr("stroke-width", 2);
-// 	});
-
-// 	const link = svg.append("line")
-// 		.attr("class", "link")
-// 		.style("stroke-width", 2)
-// 		.style("stroke", "#999");
-
-// 	function updateLink() {
-// 		const lastPosUser0 = users[0].path[users[0].path.length - 1];
-// 		const lastPosUser1 = users[1].path[users[1].path.length - 1];
-
-// 		link
-// 			.attr("x1", xScale(lastPosUser0.x))
-// 			.attr("y1", yScale(lastPosUser0.y))
-// 			.attr("x2", xScale(lastPosUser1.x))
-// 			.attr("y2", yScale(lastPosUser1.y));
-// 	}
-
-// 	updateLink();
-// 	let i = 0;
-
-// 	function animateLink() {
-// 		if (i < users[0].path.length && i < users[1].path.length) {
-// 			const posUser0 = users[0].path[i];
-// 			const posUser1 = users[1].path[i];
-
-// 			link
-// 				.transition()
-// 				.duration(10) // Adjust duration for faster animation
-// 				.attr("x1", xScale(posUser0.x))
-// 				.attr("y1", yScale(posUser0.y))
-// 				.attr("x2", xScale(posUser1.x))
-// 				.attr("y2", yScale(posUser1.y))
-// 				.on("end", animateLink); // Loop the animation
-
-// 			i++;
-// 		}
-// 	}
-
-// 	animateLink();
-// }
-function createPlotTemporal() {
-	// Assuming globalState.finalData is set and contains the topics_dict property
-	const data = globalState.finalData.action_dict ;
-
-// Destructuring the data object to exclude "Raw Capture"
-const {"Raw Capture": omitted, ...newData} = data;
-	// delete data["Raw Capture"];
-	const topicsData = Object.entries(newData).flatMap(([topicName, topicDetails]) => {
-	  return topicDetails.actions.map(action => ({
-		topic: topicName,
-		startTime: parseTimeToMillis(action.start_time),
-		endTime: parseTimeToMillis(action.end_time),
-		rawStartTime : action.start_time,
-		rawEndTime: action.end_time,
-		isUserInterest: topicDetails.is_user_interest,
-		hasUserInterestAction: action.has_user_action_of_interest
-	  })).filter(action => action.startTime && action.endTime);
-	});
-
-	const temporalViewContainer = d3.select("#temporal-view");
-	const spatialViewWidth = document.getElementById('spatial-view').clientWidth;
-	  const temporalViewHeight = document.getElementById('temporal-view').clientHeight;
-	const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-	let height = temporalViewHeight - margin.top - margin.bottom;
-	height = 350;
-	const speechPlotSvg = d3.select("#speech-plot-container");
-	speechPlotSvg.html("");
-	const svg = speechPlotSvg.append('svg')
-	 .attr('id', 'plot-svg')
-	.attr("width", globalState.dynamicWidth + margin.left + margin.right)
-	// .attr("width", width + margin.left + margin.right)
-	.attr("height", margin.top + margin.bottom + temporalViewHeight)
-	  .append('g')
-	  .attr('transform', `translate(${margin.left},${margin.top})`);
-
-	  svg.append("text")
-	  .attr("y", -7)
-	  .attr("x", -40)
-	  .style("text-anchor", "middle")
-	  .style("font-weight", "bold")
-	  .text("Actions");
-	// Y scale for topics
-	 yScale = d3.scaleBand()
-	  .rangeRound([0, height])
-	  .padding(0.1)
-	  .domain(topicsData.map(d => d.topic));
-
-	  svg.append("g")
-	  .attr("class", "axis axis--y")
-	  .call(d3.axisLeft(yScale))
-	  .selectAll(".tick text")
-	  .text(d => {
-		  // Prepend a star symbol for topics of user interest
-		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? `★ ${d}` : d;
-	  })
-	  .style("fill", d => {
-		  const topic = topicsData.find(topic => topic.topic === d);
-		  return topic && topic.isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest
-	  })
-	  .style("cursor", "pointer")
-    .on("click", function(event, d) {
-      // console.log("helloooo?");
-      showContextMenu(event, d);
-    });
-
-	// svg.append("g")
-	//   .attr("class", "axis axis--y")
-	//   .call(d3.axisLeft(y))
-	//   .selectAll(".tick text") // select all the text elements for the y-axis ticks
-	//   .style("fill", function(d) { // conditional coloring based on user interest
-	// 	const isUserInterest = topicsData.find(topic => topic.topic === d && topic.isUserInterest);
-	// 	return isUserInterest ? "#80b1d3" : "#000"; // Purple for user interest topics, black for others
-	//   });
-	svg.select(".axis--y").selectAll(".tick text")
-    .style("cursor", "pointer")
-	.style("font-size", "1.3em")
-    .style("pointer-events", "all")
-    .on("click", function(event, d) {
-      showContextMenu(event, d);
-    });
-
-	  svg.selectAll(".background-line")
-	  .data(yScale.domain())
-	  .enter().append("rect")
-	  .attr("class", "background-line")
-	  .attr("x", 0)
-	  .attr("y", d => yScale(d))
-	  .attr("width", globalState.dynamicWidth)
-	  .attr("height", yScale.bandwidth())
-	  .attr("fill", "#e8e8e8"); // Light grey color
-
-	svg.selectAll(".bar")
-	.data(topicsData)
-	.enter().append("rect")
-	.attr("class", "bar")
-	.attr("x", d => Math.min(x(d.startTime), x(d.endTime)))
-	.attr("y", d => yScale(d.topic))
-	.attr("width", d => {
-	  let width = x(d.endTime) - x(d.startTime);
-	//   if (d.startTime > d.endTime) {
-	//   console.log("come hereeee");
-	//   console.log(`new Date(parsetime), Start Time: ${new Date(d.startTime)}, End Time: ${new Date(d.endTime)}, Width: ${width}`);
-	//   console.log(`After parsetime, Start Time: ${(d.startTime)}, End Time: ${(d.endTime)}`);
-	//   console.log(`Raw, Start Time: ${(d.rawStartTime)}, End Time: ${(d.rawEndTime)}`);
-
-	// }
-	  return width;
-	})
-	.attr("height", yScale.bandwidth())
-	.attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0");
-	// .attr("fill", "#d0d0d0");
-  }
-
-  function showContextMenu(event, topicName) {
-	let contextMenu = d3.select("#context-menu");
-	if (contextMenu.empty()) {
-	  contextMenu = d3.select("body").append("div")
-		.attr("id", "context-menu")
-		.style("position", "absolute")
-		.style("z-index", "10")
-		.style("visibility", "hidden")
-		.style("padding", "10px")
-		.style("background", "white")
-		.style("border", "1px solid #ccc")
-		.style("border-radius", "4px")
-		.style("box-shadow", "0 4px 8px rgba(0,0,0,0.1)");
-	}
-	contextMenu.html("");
-
-	// Add Normal View and Split View options
-	contextMenu.append("div").text("Normal View")
-	  .style("padding", "5px")
-	  .style("cursor", "pointer")
-	  .on("click", function() {
-		// Handle Normal View click
-		console.log("Normal View clicked for", topicName);
-		d3.select("#plot-svg").selectAll("*").remove();
-		createPlotTemporal();
-		contextMenu.style("visibility", "hidden");
-
-	  });
-
-	contextMenu.append("div").text("Split View")
-	  .style("padding", "5px")
-	  .style("cursor", "pointer")
-	  .on("click", function() {
-		console.log("Split View clicked for", topicName);
-		// d3.select("#plot-svg").selectAll("*").remove();
-		createSplitBars(topicName);
-		contextMenu.style("visibility", "hidden"); // Hide context menu
-	  });
-
-	// Position the menu at the mouse position
-	contextMenu.style("left", (event.pageX + 10) + "px")
-	  .style("top", (event.pageY + 10) + "px")
-	  .style("visibility", "visible");
-  }
+function showContextMenu(event, topic) {
+    console.log(`Context menu for ${topic}`);
+}
 
   function createSplitBars(topicName) {
 	// Assuming you have a way to get user-specific actions, possibly from globalState or directly
@@ -1352,635 +1141,12 @@ const {"Raw Capture": omitted, ...newData} = data;
 
 
 
-function plotUserSpecificBarChart() {
-	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 30, right: 20, bottom: 90, left: 40 };
-	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-	// const height = 500 - margin.top - margin.bottom;
-	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-	const svg = plotBox.append("svg")
-		.attr("width", width + margin.left + margin.right)
-		.attr("height", height + margin.top + margin.bottom)
-		.append("g")
-		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-	// Assuming globalState.finalData.action_dict exists and is structured appropriately
-	let allUsers = new Set();
-	let userDataByAction = {};
-
-	Object.entries(globalState.finalData.action_dict)
-	.filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
-	.forEach(([actionName, actionDetails]) => {
-		const userCounts = actionDetails.actions.reduce((acc, action) => {
-			acc[action.actor_name] = (acc[action.actor_name] || 0) + 1;
-			allUsers.add(action.actor_name);
-			return acc;
-		}, {});
-
-		userDataByAction[actionName] = userCounts;
-	});
-
-	const users = Array.from(allUsers);
-	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
-		actionName,
-		...counts
-	}));
-
-	// Setup scales
-	const x0 = d3.scaleBand()
-		.rangeRound([0, width])
-		.paddingInner(0.1)
-		.domain(processedData.map(d => d.actionName));
-
-	const x1 = d3.scaleBand()
-		.padding(0.05)
-		.domain(users)
-		.rangeRound([0, x0.bandwidth()]);
-
-	const y = d3.scaleLinear()
-		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
-		.range([height, 0]);
-
-	const color = colorScale;
-
-	// Create the grouped bars
-	const action = svg.selectAll(".action")
-		.data(processedData)
-		.enter().append("g")
-		.attr("class", "g")
-		.attr("transform", d => `translate(${x0(d.actionName)},0)`);
-
-	action.selectAll("rect")
-		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
-		.enter().append("rect")
-		.attr("width", x1.bandwidth())
-		.attr("x", d => x1(d.key))
-		.attr("y", d => y(d.value))
-		.attr("height", d => height - y(d.value))
-		.attr("fill", d => colorScale(d.key));
-
-	// Add the axes
-	svg.append("g")
-		.attr("class", "axis")
-		.attr("transform", `translate(0,${height})`)
-		.call(d3.axisBottom(x0))
-		.selectAll("text")
-		.style("text-anchor", "end")
-		.attr("dx", "-.8em")
-		.attr("dy", ".15em")
-		.attr("transform", "rotate(-65)")
-		.style("font-size", "1.2em");
-
-	svg.append("g")
-		.call(d3.axisLeft(y))
-		.selectAll(".tick text") // Select all tick texts
-		.style("font-family", "Lato")
-		.style("font-size", "1.2em");
-
-		svg.append("text")
-		.attr("transform", "rotate(-90)")
-		.attr("y", 0 - margin.left)
-		.attr("x", 0 - (height / 2))
-		.attr("dy", "1em")
-		.style("text-anchor", "middle")
-		.text("Count")
-		.style("font-size", "0.8em");
-
-	// const legend = svg.selectAll(".legend")
-	// 	.data(users)
-	// 	.enter().append("g")
-	// 	.attr("class", "legend")
-	// 	.attr("transform", (d, i) => "translate(0," + i * 20 + ")");
-
-	// legend.append("rect")
-	// 	.attr("x", width - 18)
-	// 	.attr("width", 18)
-	// 	.attr("height", 18)
-	// 	.style("fill", colo);
-
-	// legend.append("text")
-	// 	.attr("x", width - 24)
-	// 	.attr("y", 9)
-	// 	.attr("dy", ".35em")
-	// 	  .style("text-anchor", "end")
-	// 	  .text(d => d);
-  }
-
-function plotAverageDurationBarChart() {
-    const plotBox = d3.select("#plot-box3").html("");
-    const margin = { top: 60, right: 20, bottom: 180, left: 40 };
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    // const height = 500 - margin.top - margin.bottom;
-	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-    const svg = plotBox.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    let allUsers = new Set();
-    let actionDurations = {};
-
-    // Assuming globalState.finalData.action_dict exists and structured appropriately
-    Object.entries(globalState.finalData.action_dict)
-    .filter(([actionName, _]) => actionName !== "User Transformation" && actionName !== "Verbal Communication" && actionName !== "Raw Capture")
-    .forEach(([actionName, actionDetails]) => {
-        const userDurations = actionDetails.actions.reduce((acc, action) => {
-            if (!acc[action.actor_name]) {
-                acc[action.actor_name] = { totalDuration: 0, count: 0 };
-            }
-            acc[action.actor_name].totalDuration += action.duration; // Assuming duration is a number
-            acc[action.actor_name].count += 1;
-            allUsers.add(action.actor_name);
-            return acc;
-        }, {});
-
-        actionDurations[actionName] = Object.fromEntries(
-            Object.entries(userDurations).map(([user, { totalDuration, count }]) => [user, totalDuration / count])
-        );
-    });
-
-    const users = Array.from(allUsers);
-    const processedData = Object.entries(actionDurations).map(([actionName, durations]) => ({
-        actionName,
-        ...durations
-    }));
-
-    // Setup scales
-    const x0 = d3.scaleBand()
-        .rangeRound([0, width])
-        .paddingInner(0.1)
-        .domain(processedData.map(d => d.actionName));
-
-    const x1 = d3.scaleBand()
-        .padding(0.05)
-        .domain(users)
-        .rangeRound([0, x0.bandwidth()]);
-
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
-        .range([height, 0]);
-
-    // const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-    // Create the grouped bars
-    const action = svg.selectAll(".action")
-        .data(processedData)
-        .enter().append("g")
-        .attr("class", "g")
-        .attr("transform", d => `translate(${x0(d.actionName)},0)`);
-
-    action.selectAll("rect")
-        .data(d => users.map(key => ({ key, value: d[key] || 0 })))
-        .enter().append("rect")
-        .attr("width", x1.bandwidth())
-        .attr("x", d => x1(d.key))
-        .attr("y", d => y(d.value))
-        .attr("height", d => height - y(d.value))
-        .attr("fill", d => colorScale(d.key));
-
-    // Add the axes
-    svg.append("g")
-        .attr("class", "axis")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x0))
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)");
-
-    svg.append("g")
-        .call(d3.axisLeft(y));
-}
-
-function plotActionsOfInterestByTopicAndUserBarChart() {
-    const plotBox = d3.select("#plot-box3").html("");
-    const margin = { top: 30, right: 20, bottom: 140, left: 60 };
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-    const svg = plotBox.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    let userInterestCount = {};
-
-    // Directly process data from globalState.finalData.action_dict
-    Object.values(globalState.finalData.action_dict).flatMap(actionDetails => actionDetails.actions).forEach(action => {
-        if (action.has_user_action_of_interest) {
-            const actor_name = action.actor_name;
-            const topic = action.formatted_data.action_property_broad_action;
-
-            if (!userInterestCount[actor_name]) {
-                userInterestCount[actor_name] = {};
-            }
-            if (!userInterestCount[actor_name][topic]) {
-                userInterestCount[actor_name][topic] = 0;
-            }
-            userInterestCount[actor_name][topic]++;
-        }
-    });
-
-    let processedData = [];
-    Object.entries(userInterestCount).forEach(([user, topics]) => {
-        Object.entries(topics).forEach(([topic, count]) => {
-            processedData.push({ user, topic, count });
-        });
-    });
-
-    // Setup scales
-    const x0 = d3.scaleBand()
-        .rangeRound([0, width])
-        .paddingInner(0.1)
-        .domain(processedData.map(d => d.topic));
-
-    const users = [...new Set(processedData.map(d => d.user))];
-    const x1 = d3.scaleBand()
-        .padding(0.05)
-        .domain(users)
-        .rangeRound([0, x0.bandwidth()]);
-
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(processedData, d => d.count)])
-        .range([height, 0]);
-
-    // const color = d3.scaleOrdinal(d3.schemeCategory10).domain(users);
-
-    // Add axes
-    svg.append("g")
-        .attr("class", "axis")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x0))
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)")
-		.style("font-size", "1.2em");
-
-
-		svg.append("g")
-		.call(d3.axisLeft(y))
-		.selectAll(".tick text") // Select all tick texts
-      .style("font-family", "Lato")
-      .style("font-size", "1.2em");
-
-    // Draw bars
-    svg.selectAll(".topic")
-        .data(processedData)
-        .enter().append("rect")
-        .attr("width", x1.bandwidth())
-        .attr("x", d => x0(d.topic) + x1(d.user))
-        .attr("y", d => y(d.count))
-        .attr("height", d => height - y(d.count))
-        .attr("fill", d => colorScale(d.user));
-
-		svg.append("text")
-		.attr("transform", "rotate(-90)")
-		.attr("y", 10 - margin.left)
-		.attr("x", 0 - (height / 2))
-		.attr("dy", "1em")
-		.style("text-anchor", "middle")
-		.style("font-family", "Lato")
-		.text("Count of User Interest")
-		.style("font-size", "0.8em");
-}
-
-
-
-
-function plotCombinedUsersSpiderChart() {
-	// Setup SVG and dimensions
-	const plotBox = d3.select("#plot-box2").html("");
-	const margin = { top: 50, right: 100, bottom: 50, left: 100 };
-	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-
-	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-	// const height = 600 - margin.top - margin.bottom;
-	const svg = plotBox.append("svg")
-	  .attr("width", width + margin.left + margin.right)
-	  .attr("height", height + margin.top + margin.bottom)
-	  .append("g")
-	  .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
-
-	  const threshold = 50;
-	  const minPositiveValue = 10 ;
-	  const labelPushOutDistance = 0;
-
-	// Process data to get topics and users
-	const data = Object.values(globalState.finalData.action_dict);
-	const topics = Object.keys(globalState.finalData.action_dict).filter(topic => topic !== "Others" && topic !== "User Transformation"
-	&& topic !== "Verbal Communication" && topic !== "Raw Capture");
-	const users = [...new Set(data.flatMap(topic => topic.actions.map(action => action.actor_name)))];
-
-	let maxCount = 0;
-	data.forEach(topic => {
-	  let topicCounts = new Map();
-	  topic.actions.forEach(action => {
-		if (action.action_type === "XRInteraction") {
-			let currentCount = (topicCounts.get(action.actor_name) || 0) + 1;
-			currentCount = Math.min(currentCount, threshold);
-			topicCounts.set(action.actor_name, currentCount);
-		}
-	  });
-	  let topicMax = Math.max(...topicCounts.values(), 0);
-	//   console.log(topicMax);
-	  maxCount = Math.max(maxCount, topicMax); // Global max count
-	});
-	// console.log(maxCount);
-
-	const rScale = d3.scaleLinear()
-	  .range([0, Math.min(width / 2, height / 2)])
-	  .domain([0, maxCount]);
-
-	// Draw circular grids
-	const levels = 5; // Adjust based on your preference
-	for (let i = 0; i <= levels; i++) {
-	  svg.append("circle")
-		.attr("cx", 0)
-		.attr("cy", 0)
-		.attr("r", rScale(maxCount) / levels * i)
-		.style("fill", "none")
-		.style("stroke", "lightgrey")
-		.style("stroke-dasharray", "2,2");
-	}
-
-	// Calculate angle for radial lines
-	const angleSlice = Math.PI * 2 / topics.length;
-
-	// Draw radial lines and labels
-	topics.forEach((topic, index) => {
-	  const angle = angleSlice * index;
-	  const baseRadius = rScale(maxCount*1.1) + labelPushOutDistance;
-  
-	  // Calculate the new position for the label with the additional distance
-	  const labelX = baseRadius * Math.cos(angle - Math.PI/2);
-	  const labelY = baseRadius * Math.sin(angle - Math.PI/2);
-
-	  svg.append("line")
-		.attr("x1", 0)
-		.attr("y1", 0)
-		.attr("x2", rScale(maxCount) * Math.cos(angle - Math.PI/2))
-		.attr("y2", rScale(maxCount) * Math.sin(angle - Math.PI/2))
-		.style("stroke", "lightgrey");
-
-	//   svg.append("text")
-	// 	// .attr("x", rScale(maxCount * 1) * Math.cos(angle - Math.PI/2) )
-	// 	// .attr("y", rScale(maxCount * 1) * Math.sin(angle - Math.PI/2) )
-	// 	.attr("x", labelX)
-	// 	.attr("y", labelY)
-	// 	.text(topic)
-	// 	.style("font-size", "0.8em")
-	// 	.attr("alignment-baseline", "middle");
-	const label = svg.append("text")
-      .attr("x", labelX)
-	  .attr("y", labelY)
-	  .text(topic)
-	  .style("font-size", "0.8em")
-	  .attr("alignment-baseline", "middle");
- 
-    if (topic === "Object Save") {
-      label.attr("x", -220);
-    }
-	if (topic === "Quiz Update") {
-		label.attr("x", -220);
-	  }
-	});
-
-	const color = colorScale;
-
-	// Plot radar chart area for each user
-	users.forEach((user, userIndex) => {
-	  let userData = topics.map(topicKey => {
-		const topic = globalState.finalData.action_dict[topicKey];
-		// console.log(topic);
-		let count = topic.actions.filter(action => action.actor_name === user).length;
-		// console.log(count);
-		// && action.action_type === "XRInteraction"
-		// count = count === 0 ? minPositiveValue : count;
-		// Apply the threshold here
-		count = Math.min(count, threshold);
-		return {topic: topicKey, count};
-	  });
-
-	  const radarLine = d3.lineRadial()
-		.curve(d3.curveLinearClosed)
-		.radius(d => rScale(d.count))
-		.angle((d, i) => i * angleSlice);
-
-	  svg.append("path")
-		.datum(userData)
-		.attr("d", radarLine)
-		.style("fill", color(userIndex))
-		.style("fill-opacity", 0.1)
-		.style("stroke", color(userIndex))
-		.style("stroke-width", 2);
-	});
-  }
-
-
-function plotScatterPlot() {
-    const plotBox = d3.select("#plot-box2").html("");
-    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-
-    const raycastDataWithUserInfo = [];
-    Object.values(globalState.finalData.action_dict).forEach(topic => {
-        if (topic.actions) {
-            topic.actions.forEach(action => {
-                if (action.specific_action_data_type === "Raycast") {
-                    raycastDataWithUserInfo.push({
-                        user: action.actor_name,
-                        data: action.specific_action_data
-                    });
-                }
-            });
-        }
-    });
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(width, height);
-    plotBox.node().appendChild(renderer.domElement);
-    renderer.setClearColor(0xffffff, 1);
-    camera.position.set(0, 0, 100);
-	camera.up.set(0, -1, 0);
-	camera.lookAt(scene.position);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableRotate = false;
-    controls.enableZoom = true;
-
-    // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    raycastDataWithUserInfo.forEach(item => {
-        const [x, y] = item.data;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-    });
-    const dataCenterX = (minX + maxX) / 2;
-    const dataCenterY = (minY + maxY) / 2;
-
-    const scaleX = (width - margin.left - margin.right) / (maxX - minX);
-    const scaleY = (height - margin.top - margin.bottom) / (maxY - minY);
-
-    raycastDataWithUserInfo.forEach(item => {
-        const [x, y] = item.data;
-		const scaledX = -((x - dataCenterX) * scaleX);
-        const scaledY = -((y - dataCenterY) * scaleY);
-
-        const geometry = new THREE.CircleGeometry(5, 32);
-        const material = new THREE.MeshBasicMaterial({ color: colorScale(item.user) });
-        const circle = new THREE.Mesh(geometry, material);
-
-        circle.position.set(scaledX, scaledY, 0);
-        scene.add(circle);
-    });
-
-    const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper);
-
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-    animate();
-}
-
-
-function plotOrUpdateBubblePlot() {
-	const plotBox = d3.select("#plot-box3").html("");
-    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
-	// const margin = {}
-    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
-     globalState.renderer2 = new THREE.WebGLRenderer();
-    globalState.renderer2.setSize(width, height);
-    plotBox.node().appendChild(globalState.renderer2.domElement);
-    globalState.renderer2.setClearColor(0xffffff, 1);
-     globalState.scene2 = new THREE.Scene();
-     globalState.camera2 = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    globalState.camera2.position.set(0, 0, 100);
-    globalState.camera2.up.set(0, 1, 0);
-    globalState.camera2.lookAt(globalState.scene2.position);
-    globalState.controls2 = new OrbitControls(globalState.camera2, globalState.renderer2.domElement);
-    globalState.controls2.enableRotate = false;
-    globalState.controls2.enableZoom = true;
-    const loader = new THREE.TextureLoader();
-    loader.load('bubble_map_background.png', function(texture) {
-	// loader.load('background.png', function(texture) {
-        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
-        const backgroundMaterial = new THREE.MeshBasicMaterial({
-            map: texture,
-            opacity: 0.5,
-            transparent: true,
-        });
-        const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-        backgroundMesh.position.set(0, 0, -1);
-		// console.log("adding it ");
-        globalState.scene2.add(backgroundMesh);
-        addBubbles();
-
-    });
-
-    function addBubbles() {
-		const raycastDataWithUserInfo = [];
-		Object.values(globalState.finalData.action_dict).forEach(topic => {
-			if (topic.actions) {
-				topic.actions.forEach(action => {
-					if (action.specific_action_data_type === "Raycast") {
-						raycastDataWithUserInfo.push({
-							user: action.actor_name,
-							data: action.specific_action_data,
-							id:  parseInt(action.actor_name.replace("User_", "")) - 1,
-						});
-					}
-				});
-			}
-		});
-
-		const filteredData = raycastDataWithUserInfo.filter(item => globalState.show[item.id]);
-
-
-
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        filteredData.forEach(item => {
-            const [x, y] = item.data;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        });
-
-        const gridWidth = 50;
-        const gridHeight = 15;
-        const userGrid = {};
-
-        filteredData.forEach(item => {
-            const [x, y] = item.data;
-            const gridX = Math.floor(((x - minX) / (maxX - minX)) * gridWidth);
-            const gridY = Math.floor(((y - minY) / (maxY - minY)) * gridHeight);
-            const gridKey = `${gridX},${gridY}`;
-
-            if (!userGrid[gridKey]) {
-                userGrid[gridKey] = {};
-            }
-            userGrid[gridKey][item.user] = (userGrid[gridKey][item.user] || 0) + 1;
-        });
-		const bubbleSizeScale = d3.scaleSqrt().domain([0, Math.max(...Object.values(userGrid).flatMap(users => Object.values(users)))])
-		.range([0.5, 40]);
-
-		Object.entries(userGrid).forEach(([key, users]) => {
-		const [gridX, gridY] = key.split(',').map(Number);
-		const centerX = minX + ((gridX + 0.5) / gridWidth) * (maxX - minX);
-		const centerY = minY + ((gridY + 0.5) / gridHeight) * (maxY - minY);
-		const scaledX = (centerX - ((minX + maxX) / 2)) * (width / (maxX - minX));
-		const scaledY = (centerY - ((minY + maxY) / 2)) * (height / (maxY - minY));
-
-		Object.entries(users).forEach(([user, count], index, arr) => {
-			const bubbleSize = bubbleSizeScale(count);
-			const geometry = new THREE.CircleGeometry(bubbleSize, 32);
-			const material = new THREE.MeshBasicMaterial({
-				color: colorScale(user),
-				opacity: 0.65,
-				transparent: true,
-			});
-			const circle = new THREE.Mesh(geometry, material);
-			circle.position.set(scaledX , scaledY, 0); // Adjust position to avoid overlap
-			globalState.scene2.add(circle);
-		});
-	});
-
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        globalState.controls2.update();
-        globalState.renderer2.render(globalState.scene2, globalState.camera2);
-    }
-
-    animate();
-}
-
-
 
 
 function setTimes(data) {
   // console.log(data.earliest_action_time);
-  const globalStartTime = parseTimeToMillis(data.earliest_action_time);
-  const globalEndTime = parseTimeToMillis(data.latest_action_time);
+  const globalStartTime = parseTimeToMillis(data[0].Timestamp);
+  const globalEndTime = parseTimeToMillis(data[data.length -1].Timestamp);
   // console.log("Global Start Time:", new Date(globalStartTime));
   // console.log("Global End Time:", new Date(globalEndTime).toISOString());
   globalState.globalStartTime = globalStartTime;
@@ -2164,21 +1330,21 @@ function createLines(timestamp1, timestamp2) {
 	circle1.call(drag);
 	circle2.call(drag);
 	updateRangeDisplay(timestamp1,timestamp2);
-	updateXRSnapshot();
-	createLineSegment(0);
-	createLineSegment(1);
-	createDeviceSegment(0);
-	createDeviceSegment(1);
-	createControllerSegment(0, 'right');
-	createControllerSegment(0, 'left');
-	createControllerSegment(1, 'right');
-	createControllerSegment(1, 'left');
-	createRayCastSegment(0);
-	createRayCastSegment(1);
-	createLineDrawing(0);
-	createLineDrawing(1);
+	// updateXRSnapshot();
+	// createLineSegment(0);
+	// createLineSegment(1);
+	// createDeviceSegment(0);
+	// createDeviceSegment(1);
+	// createControllerSegment(0, 'right');
+	// createControllerSegment(0, 'left');
+	// createControllerSegment(1, 'right');
+	// createControllerSegment(1, 'left');
+	// createRayCastSegment(0);
+	// createRayCastSegment(1);
+	// createLineDrawing(0);
+	// createLineDrawing(1);
 	updateSceneBasedOnSelections();
-	// initializeShadedAreaDrag();
+	// // initializeShadedAreaDrag();
 
 
 }
@@ -2238,237 +1404,99 @@ export function dragged(event,d) {
     const timeStamp1 = new Date(globalState.lineTimeStamp1);
     const timeStamp2 = globalState.lineTimeStamp2;
     updateRangeDisplay(timeStamp1, timeStamp2);
-	updateXRSnapshot();
+	// updateXRSnapshot();
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
-    updateSceneBasedOnSelections();
-    createLineSegment(0);
-    createLineSegment(1);
-	createDeviceSegment(0);
-	createDeviceSegment(1);
-	createControllerSegment(0, 'right');
-	createControllerSegment(0, 'left');
-	createControllerSegment(1, 'right');
-	createControllerSegment(1, 'left');
+    // updateSceneBasedOnSelections();
+    // createLineSegment(0);
+    // createLineSegment(1);
+	// createDeviceSegment(0);
+	// createDeviceSegment(1);
+	// createControllerSegment(0, 'right');
+	// createControllerSegment(0, 'left');
+	// createControllerSegment(1, 'right');
+	// createControllerSegment(1, 'left');
 
-	createRayCastSegment(0);
-	createRayCastSegment(1);
-	createLineDrawing(0);
-	createLineDrawing(1);
+	// createRayCastSegment(0);
+	// createRayCastSegment(1);
+	// createLineDrawing(0);
+	// createLineDrawing(1);
     initializeShadedAreaDrag();
 
-    // console.log('Dragging Event Ended');
+    // // console.log('Dragging Event Ended');
 }
 
 
 
 function generateHierToolBar() {
-//   const data = globalState.finalData;
-//   const data = globalState.finalData.action_dict;
-  const data = globalState.finalData.action_dict ;
-  const {"Raw Capture": omitted, ...newData} = data;
-  const toolbar = document.getElementById('hier-toolbar');
-  toolbar.innerHTML = '';
+    const data = globalState.finalData; // Assuming this is an array of action records
+    const toolbar = document.getElementById('hier-toolbar');
+    toolbar.innerHTML = '';
 
-  let othersTopicDetails = null;
+    // Create a set to hold unique UserAction values
+    const uniqueActions = new Set(data.map(action => action.UserAction));
 
-  // Process each topic and save "Others" for last
-  Object.entries(data).forEach(([broadActionName, actionDetails]) => {
-	//   console.log(broadActionName);
-	//   if (broadActionName === "User Transformation") { return ; }
-	  if (broadActionName === "User Transformation" || broadActionName === "Raw Capture") { return ; }
-      const isInTimeRange = actionDetails.actions.some(action => {
-        // console.log("THIS IS TOPIC NAME " + topicName);
-          const actionStartTime = parseTimeToMillis(action.start_time);
-          const actionEndTime = parseTimeToMillis(action.end_time);
-          return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-      });
-
-      if (isInTimeRange) {
-        //   if (topicName !== "Others") {
-            createTopicItem(broadActionName, actionDetails, toolbar);
-        //   } else {
-            //   othersTopicDetails = topicDetails;
-        //   }
-      }
-  });
-
-//   if (othersTopicDetails !== null) {
-//       createOthersItem(othersTopicDetails, toolbar);
-//   }
+    // Create toolbar items for each unique UserAction
+    uniqueActions.forEach(actionName => {
+        createTopicItem(actionName, toolbar);
+    });
 }
 
-
-function createTopicItem(topicName, topicDetails, toolbar) {
+function createTopicItem(actionName, toolbar) {
     const topicItem = document.createElement('li');
     const topicCheckbox = document.createElement('input');
     topicCheckbox.type = 'checkbox';
-	topicCheckbox.id = `checkbox_broadtopic_${topicName.replace(/\s+/g, '_')}`;
-	topicCheckbox.className = 'topic-checkbox';
+    topicCheckbox.id = `checkbox_broadtopic_${actionName.replace(/\s+/g, '_')}`;
+    topicCheckbox.className = 'topic-checkbox';
 
     const label = document.createElement('label');
     label.htmlFor = topicCheckbox.id;
-    label.textContent = topicName;
+    label.textContent = actionName;
+    label.style.color = '#000'; // Default color, adjust as needed
 
     topicItem.appendChild(topicCheckbox);
     topicItem.appendChild(label);
-	// if (globalState.finalData.action_dict[topicName].is_user_interest) {   label.style.color = '#80b1d3';}
-	if (globalState.finalData.action_dict[topicName].is_user_interest) {
-        label.innerHTML = `${topicName} <span style="color: #80b1d3;">★</span>`;
-		label.style.color = '#80b1d3';
-    }
-
-
-
-    const keywordsList = document.createElement('ul');
-    const addedActions = new Set(); // Set to track added specific actions
-
-    topicDetails.actions.filter(action => {
-        const actionStartTime = parseTimeToMillis(action.start_time);
-        const actionEndTime = parseTimeToMillis(action.end_time);
-        return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-    }).forEach(action => {
-        const specificAction = action.formatted_data.action_property_specific_action;
-
-        // Check if this specific action has already been added
-        if (!addedActions.has(specificAction)) {
-            addedActions.add(specificAction);
-
-            const keywordItem = document.createElement('li');
-            const keywordCheckbox = document.createElement('input');
-            keywordCheckbox.type = 'checkbox';
-            keywordCheckbox.className = 'keyword-checkbox';
-
-            // Ensure unique ID by incorporating both the broad action and specific action
-            keywordCheckbox.id = `checkbox_keyword_${specificAction.replace(/\s+/g, '_')}_broadtopic_${topicName.replace(/\s+/g, '_')}`;
-
-            const keywordLabel = document.createElement('label');
-            keywordLabel.htmlFor = keywordCheckbox.id;
-            keywordLabel.textContent = specificAction;
-			if (action.has_user_action_of_interest) {
-				// console.log(specificAction);
-				// console.log(action.)
-                keywordLabel.style.color = '#80b1d3';
-            }
-
-            keywordItem.appendChild(keywordCheckbox);
-            keywordItem.appendChild(keywordLabel);
-            keywordsList.appendChild(keywordItem);
-
-
-            // Event listener for each specific action checkbox
-            keywordCheckbox.addEventListener('change', function() {
-				if (this.checked) {
-					// console.log("here>");
-					this.parentNode.classList.add('keyword-selected');
-				  }
-				  else {
-					this.parentNode.classList.remove('keyword-selected');
-				  }
-                if (this.checked) {
-                    // Optionally, check the broad action checkbox if any specific action is selected
-                    topicCheckbox.checked = true;
-                } else {
-                    // Check if all specific actions are deselected, then deselect the broad action checkbox
-                    const allUnchecked = Array.from(keywordsList.querySelectorAll('.keyword-checkbox')).every(cb => !cb.checked);
-                    if (allUnchecked) {
-                        topicCheckbox.checked = false;
-                    }
-                }
-                // Call to update other components based on the selection
-                initializeOrUpdateSpeechBox(); // Assuming this function exists and handles UI updates
-				updateSceneBasedOnSelections();
-            });
-        }
-    });
-
-    topicItem.appendChild(keywordsList);
     toolbar.appendChild(topicItem);
 
-    // Event listener for the broad action checkbox
+    // Event listener for the checkbox
     topicCheckbox.addEventListener('change', function() {
-        const isChecked = this.checked;
-        // Check/uncheck all specific action checkboxes based on the broad action checkbox state
-        Array.from(keywordsList.querySelectorAll('.keyword-checkbox')).forEach(cb => {
-            cb.checked = isChecked;
-            // Optionally, trigger change events for each checkbox to update other UI components
-            cb.dispatchEvent(new Event('change'));
-        });
+        if (this.checked) {
+            // Handle the checked state, e.g., filter actions, highlight elements, etc.
+            console.log(`${actionName} is selected`);
+        } else {
+            // Handle the unchecked state
+            console.log(`${actionName} is deselected`);
+        }
     });
+	initializeOrUpdateSpeechBox(); 
+	// updateSceneBasedOnSelections();
 }
-
-
-function createOthersItem(othersData, toolbar) {
-  const othersItem = document.createElement('li');
-  const othersCheckbox = document.createElement('input');
-  othersCheckbox.type = 'checkbox';
-  othersCheckbox.id = `checkbox_broadtopic_Others`;
-  // othersCheckbox.id = 'checkbox-Others';/
-  othersCheckbox.className = 'topic-checkbox';
-  const label = document.createElement('label');
-  label.htmlFor = othersCheckbox.id;
-  label.textContent = "Others";
-
-  othersItem.appendChild(othersCheckbox);
-  othersCheckbox.addEventListener('change', function() {
-    initializeOrUpdateSpeechBox();
-	updateSceneBasedOnSelections();
-
-  });
-  othersItem.appendChild(label);
-  toolbar.appendChild(othersItem);
-}
-
-// function getSelectedTopic() {
-// 	const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
-// 	let selectedTopic = '';
-
-// 	topicCheckboxes.forEach(checkbox => {
-// 		if (checkbox.checked) {
-// 			const idParts = checkbox.id.split('_');
-// 			const topicIndex = idParts.indexOf('broadtopic') + 1;
-// 			selectedTopic = idParts.slice(topicIndex).join(' ');
-// 		}
-// 	});
-
-// 	return selectedTopic;
-//   }
 
 
 function getSelectedTopics() {
-	const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
-	let selectedTopics = [];
+    const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
+    let selectedActions = [];
 
-	topicCheckboxes.forEach(checkbox => {
-		const idParts = checkbox.id.split('_');
-		const topicIndex = idParts.indexOf('broadtopic') + 1;
-		const topic = idParts.slice(topicIndex).join(' ');
-		selectedTopics.push(topic);
-	});
+    topicCheckboxes.forEach(checkbox => {
+        // Assuming the checkbox value directly contains the action name
+        selectedActions.push(checkbox.value);
+    });
 
-	return selectedTopics;
-  }
+    return selectedActions;
+}
+function getSelectedKeywords() {
+    const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked');
+    let selectedKeywords = [];
 
+    keywordCheckboxes.forEach(checkbox => {
+        // Assuming the checkbox value directly contains the keyword, possibly related to other descriptors
+        selectedKeywords.push(checkbox.value);
+    });
 
-  function getSelectedKeywords() {
-	const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked'); // Select only checked boxes
-	// console.log(keywordCheckboxes);
-	let selectedKeywords = [];
+    return selectedKeywords;
+}
 
-	keywordCheckboxes.forEach(checkbox => {
-		// console.log(checkbox.id);
-		// Extracts the keyword from the ID, considering 'keyword' and 'broadtopic' identifiers
-		const idParts = checkbox.id.split('_'); // Splits the ID into parts
-		const keywordIndexStart = idParts.indexOf('keyword') + 1; // Finds the start index of the keyword
-		const keywordIndexEnd = idParts.indexOf('broadtopic'); // Finds the end index of the keyword
-		const keyword = idParts.slice(keywordIndexStart, keywordIndexEnd).join(' '); // Extracts the keyword and replaces underscores with spaces
-		selectedKeywords.push(keyword);
-	});
-	// console.log("this is whats returning from selected key words " + selectedKeywords);
-
-	return selectedKeywords;
-  }
 
 function getCoordinates(spatial_extent){
 	const x = spatial_extent[0][2]; // UNITY Z
@@ -2512,68 +1540,89 @@ function parseTimeToMillis(customString) {
   // console.log(`Time in milliseconds since Unix epoch: ${timeInMillis}`);
   return timeInMillis;
 }
+function parseDurationToMillis(durationString) {
+    // Split the string by underscores
+    const parts = durationString.split('_');
+    
+    // Extract the hours, minutes, seconds, and microseconds from the string
+    const hours = parseInt(parts[1].slice(0, 2), 10);
+    const minutes = parseInt(parts[1].slice(2, 4), 10);
+    const seconds = parseInt(parts[1].slice(4, 6), 10);
+    const microseconds = parseInt(parts[2], 10);
 
+    // Convert the extracted time parts to milliseconds
+    const totalMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000) + (microseconds / 1000);
 
+    return totalMillis;
+}
 
 
 
 function initializeOrUpdateSpeechBox() {
-	const data = globalState.finalData.action_dict; // Assuming this is the correct data structure
-	const container = document.getElementById("speech-box");
-	const hierToolbar = document.getElementById('hier-toolbar');
-	let offsetHeight = hierToolbar.offsetHeight;
-	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-	// container.style.marginTop = `${offsetHeight}px`;
-	container.style.top = `${offsetHeight}px`;
+    // Use selected UserActions from the toolbar
+    const selectedActions = getSelectedTopics(); // Assumes this returns UserActions selected in the toolbar
+    const data = globalState.finalData; // Assuming this is an array with all action records
 
-	let rangeDisplay = document.querySelector('.time-range-display-speechbox');
-	if (!rangeDisplay) {
-		rangeDisplay = document.createElement('div');
-		rangeDisplay.className = 'time-range-display-speechbox';
-		container.appendChild(rangeDisplay);
-	}
-	rangeDisplay.style.marginTop = "10px";
-	rangeDisplay.style.marginBottom = "10px";
-	range.style.marginRight = "6px";
-	rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
+    const container = document.getElementById("speech-box");
+    const hierToolbar = document.getElementById('hier-toolbar');
+    let offsetHeight = hierToolbar.offsetHeight;
+    container.style.top = `${offsetHeight}px`;
 
-	let speechBoxesContainer = document.getElementById("speech-boxes-container");
-	if (!speechBoxesContainer) {
-		speechBoxesContainer = document.createElement('div');
-		speechBoxesContainer.id = "speech-boxes-container";
-		container.appendChild(speechBoxesContainer);
-	} else {
-		speechBoxesContainer.innerHTML = '';
-	}
+    let speechBoxesContainer = document.getElementById("speech-boxes-container");
+    if (!speechBoxesContainer) {
+        speechBoxesContainer = document.createElement('div');
+        speechBoxesContainer.id = "speech-boxes-container";
+        container.appendChild(speechBoxesContainer);
+    } else {
+        speechBoxesContainer.innerHTML = ''; // Clear previous entries
+    }
 
-	const selectedTopics = getSelectedTopics(); // Now returns an array of selected topics
-	const selectedKeywords = getSelectedKeywords(); // Assumes this function returns an array of selected keywords
-	// console.log("Selected Topics: ", selectedTopics);
-	// console.log("Selected Keywords: ", selectedKeywords);
+    const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
+    let rangeDisplay = document.querySelector('.time-range-display-speechbox');
+    if (!rangeDisplay) {
+        rangeDisplay = document.createElement('div');
+        rangeDisplay.className = 'time-range-display-speechbox';
+        container.appendChild(rangeDisplay);
+    }
+    rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
-	let actionsToDisplay = [];
-	// console.log(data);
-	selectedTopics.forEach(topic => {
-	//   console.log("this is the topic " + topic);
-	  // console.log("this is " + data[topic]);
-		if (data[topic]) {
-			const topicActions = data[topic].actions.filter(action => {
-				const actionStartTime = parseTimeToMillis(action.start_time);
-				const actionEndTime = parseTimeToMillis(action.end_time);
-				return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-			});
-			actionsToDisplay.push(...topicActions); // Combine actions from multiple topics
-		}
-	});
+    // Filter data based on selected actions and time range
+    let actionsToDisplay = data.filter(action => {
+        const actionStartTime = parseTimeToMillis(action.Timestamp);
+        const actionEndTime = actionStartTime + parseTimeToMillis(action.Duration);
+        return selectedActions.includes(action.UserAction) && actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+    });
+	// console.log(actionsToDisplay); 
 
-	actionsToDisplay.forEach(action => {
-		const speechBox = getSpeechData(action, selectedKeywords);
-		if (speechBox)
-       { speechBoxesContainer.appendChild(speechBox);
-       }
-		// speechBoxesContainer.appendChild(speechBox);
-	});
-  }
+    // Display each action in the speech box
+    actionsToDisplay.forEach(action => {
+        const speechBox = createSpeechBox(action);
+        if (speechBox) {
+            speechBoxesContainer.appendChild(speechBox);
+        }
+    });
+}
+
+function createSpeechBox(action) {
+    const speechBox = document.createElement('div');
+    speechBox.className = 'speech-box';
+    speechBox.style.border = '1px solid grey';
+    speechBox.style.borderRadius = '8px';
+    speechBox.style.padding = '15px';
+    speechBox.style.marginBottom = '8px';
+    speechBox.style.marginRight = '8px';
+    speechBox.style.marginLeft = '8px';
+
+    const actionDetail = document.createElement('div');
+    actionDetail.textContent = `Action: ${action.UserAction}, Intent: ${action.UserIntent}`;
+    speechBox.appendChild(actionDetail);
+
+    const actionTime = document.createElement('div');
+    actionTime.textContent = `Time: ${action.Timestamp}`;
+    speechBox.appendChild(actionTime);
+
+    return speechBox;
+}
 
 
 function getSpeechData(action, selectedKeywords) {
@@ -2648,89 +1697,89 @@ function getSpeechData(action, selectedKeywords) {
 }
 
 
-function updateInterestBox() {
-	const container = document.getElementById("user-interest-topic");
+// function updateInterestBox() {
+// 	const container = document.getElementById("user-interest-topic");
 
-	// Clear existing content
-	container.innerHTML = '';
+// 	// Clear existing content
+// 	container.innerHTML = '';
 
-	// Create "Topic of your interest" span
-	const topicInterestSpan = document.createElement("span");
-	topicInterestSpan.textContent = "Action of your interest: ";
-	topicInterestSpan.style.color = "white";
-	topicInterestSpan.style.fontWeight = "bold";
+// 	// Create "Topic of your interest" span
+// 	const topicInterestSpan = document.createElement("span");
+// 	topicInterestSpan.textContent = "Action of your interest: ";
+// 	topicInterestSpan.style.color = "white";
+// 	topicInterestSpan.style.fontWeight = "bold";
 
-	// Create "Next user interest topic" span
-	const nextInterestSpan = document.createElement("span");
-	nextInterestSpan.textContent = userInterestTopic;
-	// nextInterestSpan.style.color = "#ffc000";
-	nextInterestSpan.style.color = "#333333";
-	nextInterestSpan.style.fontWeight = "bold";
+// 	// Create "Next user interest topic" span
+// 	const nextInterestSpan = document.createElement("span");
+// 	nextInterestSpan.textContent = userInterestTopic;
+// 	// nextInterestSpan.style.color = "#ffc000";
+// 	nextInterestSpan.style.color = "#333333";
+// 	nextInterestSpan.style.fontWeight = "bold";
 
-	// Append both spans to the container
-	container.appendChild(topicInterestSpan);
-	container.appendChild(nextInterestSpan);
+// 	// Append both spans to the container
+// 	container.appendChild(topicInterestSpan);
+// 	container.appendChild(nextInterestSpan);
 
-	// Style the container for text wrapping
-	container.style.display = "inline-block";
-	container.style.maxWidth = "100%";
-	container.style.whiteSpace = "normal";
-	container.style.overflowWrap = "break-word";
-	container.contentEditable = "true"; // Make it editable
-  }
+// 	// Style the container for text wrapping
+// 	container.style.display = "inline-block";
+// 	container.style.maxWidth = "100%";
+// 	container.style.whiteSpace = "normal";
+// 	container.style.overflowWrap = "break-word";
+// 	container.contentEditable = "true"; // Make it editable
+//   }
 
-  function updateXRSnapshot() {
-	// Choose the correct data source based on your structure. Adjust as necessary.
-	const rawCaptureData =  globalState.finalData.action_dict["Raw Capture"];
+//   function updateXRSnapshot() {
+// 	// Choose the correct data source based on your structure. Adjust as necessary.
+// 	const rawCaptureData =  globalState.finalData.action_dict["Raw Capture"];
 
-	const container = document.getElementById('user-xr-snapshot');
-	container.innerHTML = ''; // Clear previous content
+// 	const container = document.getElementById('user-xr-snapshot');
+// 	container.innerHTML = ''; // Clear previous content
 
-	// Create a title element
-	const titleElement = document.createElement('div');
-	titleElement.style.textAlign = 'center';
-	titleElement.style.marginBottom = '8px';
-	titleElement.id = 'imageTitle';
-	container.appendChild(titleElement);
+// 	// Create a title element
+// 	const titleElement = document.createElement('div');
+// 	titleElement.style.textAlign = 'center';
+// 	titleElement.style.marginBottom = '8px';
+// 	titleElement.id = 'imageTitle';
+// 	container.appendChild(titleElement);
 
-	if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
-	  const filteredActions = rawCaptureData.actions.filter(action => {
-		const actionStartTime = parseTimeToMillis(action.start_time);
-		const actionEndTime = parseTimeToMillis(action.end_time);
-		return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-	  });
+// 	if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
+// 	  const filteredActions = rawCaptureData.actions.filter(action => {
+// 		const actionStartTime = parseTimeToMillis(action.start_time);
+// 		const actionEndTime = parseTimeToMillis(action.end_time);
+// 		return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+// 	  });
 
-	  if (filteredActions.length >= 1) {
-		const imageWrapper = document.createElement('div');
-		imageWrapper.style.position = 'relative';
-		imageWrapper.style.maxWidth = '500px';
-		imageWrapper.style.margin = 'auto';
+// 	  if (filteredActions.length >= 1) {
+// 		const imageWrapper = document.createElement('div');
+// 		imageWrapper.style.position = 'relative';
+// 		imageWrapper.style.maxWidth = '500px';
+// 		imageWrapper.style.margin = 'auto';
 
-		filteredActions.forEach((action, index) => {
-		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
-		  const img = document.createElement('img');
-		  img.src = imagePath;
-		  img.alt = "Raw Capture Image";
-		  img.style.maxWidth = '100%';
-		  img.style.objectFit = 'contain';
-		  img.style.display = index === 0 ? 'block' : 'none';
-		  imageWrapper.appendChild(img);
-		});
+// 		filteredActions.forEach((action, index) => {
+// 		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
+// 		  const img = document.createElement('img');
+// 		  img.src = imagePath;
+// 		  img.alt = "Raw Capture Image";
+// 		  img.style.maxWidth = '100%';
+// 		  img.style.objectFit = 'contain';
+// 		  img.style.display = index === 0 ? 'block' : 'none';
+// 		  imageWrapper.appendChild(img);
+// 		});
 
-		// Update the title with the actor name of the first image
-		updateTitle(filteredActions[0].actor_name);
+// 		// Update the title with the actor name of the first image
+// 		updateTitle(filteredActions[0].actor_name);
 
-		container.appendChild(imageWrapper);
+// 		container.appendChild(imageWrapper);
 
-		// Navigation arrows functionality
-		addNavigationArrows(imageWrapper, filteredActions);
-	  } else {
-		titleElement.innerHTML = 'No images available';
-	  }
-	} else {
-	  titleElement.innerHTML = 'No raw capture data available';
-	}
-  }
+// 		// Navigation arrows functionality
+// 		addNavigationArrows(imageWrapper, filteredActions);
+// 	  } else {
+// 		titleElement.innerHTML = 'No images available';
+// 	  }
+// 	} else {
+// 	  titleElement.innerHTML = 'No raw capture data available';
+// 	}
+//   }
 
   function addNavigationArrows(imageWrapper, filteredActions) {
 	const prevArrow = document.createElement('button');
@@ -2838,22 +1887,22 @@ function updateInterestBox() {
 	  globalState.lineTimeStamp2 = newLine2Timestamp;
 
 	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
-	  updateXRSnapshot();
-	  createLineSegment(0);
-	  createLineSegment(1);
+	//   updateXRSnapshot();
+	//   createLineSegment(0);
+	//   createLineSegment(1);
 
-	  createDeviceSegment(0);
-	  createDeviceSegment(1);
-	  createControllerSegment(0, 'right');
-	  createControllerSegment(0, 'left');
-	  createControllerSegment(1, 'right');
-	  createControllerSegment(1, 'left');
+	//   createDeviceSegment(0);
+	//   createDeviceSegment(1);
+	//   createControllerSegment(0, 'right');
+	//   createControllerSegment(0, 'left');
+	//   createControllerSegment(1, 'right');
+	//   createControllerSegment(1, 'left');
 
-	createRayCastSegment(0);
-	createRayCastSegment(1);
-	createLineDrawing(0);
-	createLineDrawing(1);
-	  updateSceneBasedOnSelections();
+	// createRayCastSegment(0);
+	// createRayCastSegment(1);
+	// createLineDrawing(0);
+	// createLineDrawing(1);
+	//   updateSceneBasedOnSelections();
 
 	  dragStartX = event.x;
 	};
@@ -3027,21 +2076,21 @@ function onWindowResize() {
 }
 async function initialize() {
 	await initializeScene();
-	// const binsDropdown = document.getElementById('binsDropdown');
-	// globalState.bins = binsDropdown.value;
+	const binsDropdown = document.getElementById('binsDropdown');
+	globalState.bins = binsDropdown.value;
 
-	// createSharedAxis();
-	// createPlotTemporal();
+	createSharedAxis();
+	createPlotTemporal();
 
-	// createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
-	//   generateHierToolBar();
-	// document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
-	//   checkbox.checked = true;
-	//   checkbox.dispatchEvent(new Event('change'));
-	// });
+	  generateHierToolBar();
+	document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
+	  checkbox.checked = true;
+	  checkbox.dispatchEvent(new Event('change'));
+	});
 	// updateInterestBox();
-	// initializeOrUpdateSpeechBox();
+	initializeOrUpdateSpeechBox();
 	// updateSceneBasedOnSelections();
 	// createLineSegment(0);
 	// createLineSegment(1);
