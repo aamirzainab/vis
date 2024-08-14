@@ -759,11 +759,7 @@ async function initializeScene() {
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
-	// globalState.camera = new THREE.PerspectiveCamera(25, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
-	// globalState.camera.position.set(0, 2, 10);
 
-
-// Vector3 {x: -0.036016289679411166, y: 1.0436690279916723, z: 6.527099877992734}
 	globalState.camera.updateProjectionMatrix();
 
 	globalState.renderer = new THREE.WebGLRenderer({
@@ -776,14 +772,6 @@ async function initializeScene() {
 
 	globalState.controls = new OrbitControls(globalState.camera, globalState.renderer.domElement);
 	globalState.controls.enableZoom = true;
-
-	// globalState.renderer.domElement.addEventListener('mouseenter', function() {
-	//   globalState.controls.enableZoom = true;
-	// });
-
-	// globalState.renderer.domElement.addEventListener('mouseleave', function() {
-	//   globalState.controls.enableZoom = false;
-	// });
 
 	const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 	globalState.scene.add(ambientLight);
@@ -799,32 +787,14 @@ async function initializeScene() {
 	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('vr_new_action_oriented_analysis_full_data.json').then(response => response.json()),
+		fetch('Processed_Log_240812_011824.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
-
-  const avatarArray = await Promise.all([
-    loadAvatarModel('oculus_quest_2.glb'),
-    loadAvatarModel('oculus_quest_2.glb'),
-	loadAvatarModel('oculus_controller_right.glb'),
-	loadAvatarModel('oculus_controller_right.glb'),
-	loadAvatarModel('oculus_controller_left.glb'),
-	loadAvatarModel('oculus_controller_left.glb'),
-	]);
-
-	globalState.avatars = [avatarArray[0], avatarArray[1]];
-	// globalState.avatars[0].scale.set(0.5,0.5,0.5);
-	// globalState.avatars[1].scale.set(0.5,0.5,0.5);
-
-	globalState.leftControls = [avatarArray[4], avatarArray[5]];
-	globalState.rightControls = [avatarArray[2], avatarArray[3]];
-
+  console.log(globalState.finalData); 
+  
 
 
 	setTimes(globalState.finalData);
-  // setTimes(globalState.jsonDatas);
-
-	// fitCameraToObject(globalState.camera, globalState.scene, 1.2, globalState.controls);
 
 	const playPauseButton = document.createElement('div');
 	playPauseButton.id = 'playPauseButton';
@@ -842,15 +812,9 @@ async function initializeScene() {
 		toggleAnimation();
 	});
 
-	// const {
-	// 	users,
-	// 	links
-	// } = processMovementData();
-	// plotTwoNetworkChart(users, links);
 }
 
 
-// initializeScene(); // zainab
 
 function filterDataByType(data) {
 	const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
@@ -3063,40 +3027,40 @@ function onWindowResize() {
 }
 async function initialize() {
 	await initializeScene();
-	const binsDropdown = document.getElementById('binsDropdown');
-	globalState.bins = binsDropdown.value;
+	// const binsDropdown = document.getElementById('binsDropdown');
+	// globalState.bins = binsDropdown.value;
 
-	createSharedAxis();
-	createPlotTemporal();
+	// createSharedAxis();
+	// createPlotTemporal();
 
-	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+	// createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
-	  generateHierToolBar();
-	document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
-	  checkbox.checked = true;
-	  checkbox.dispatchEvent(new Event('change'));
-	});
-	updateInterestBox();
-	initializeOrUpdateSpeechBox();
-	updateSceneBasedOnSelections();
-	createLineSegment(0);
-	createLineSegment(1);
+	//   generateHierToolBar();
+	// document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
+	//   checkbox.checked = true;
+	//   checkbox.dispatchEvent(new Event('change'));
+	// });
+	// updateInterestBox();
+	// initializeOrUpdateSpeechBox();
+	// updateSceneBasedOnSelections();
+	// createLineSegment(0);
+	// createLineSegment(1);
 
-	createDeviceSegment(0);
-	createDeviceSegment(1);
-	createControllerSegment(0, 'right');
-	createControllerSegment(0, 'left');
-	createControllerSegment(1, 'right');
-	createControllerSegment(1, 'left');
+	// createDeviceSegment(0);
+	// createDeviceSegment(1);
+	// createControllerSegment(0, 'right');
+	// createControllerSegment(0, 'left');
+	// createControllerSegment(1, 'right');
+	// createControllerSegment(1, 'left');
 
-	createRayCastSegment(0);
-	createRayCastSegment(1);
-	createLineDrawing(0);
-	createLineDrawing(1);
-	plotUserSpecificBarChart();
-	plotCombinedUsersSpiderChart();
-	// plotAverageDurationBarChart();
-	plotActionsOfInterestByTopicAndUserBarChart();
+	// createRayCastSegment(0);
+	// createRayCastSegment(1);
+	// createLineDrawing(0);
+	// createLineDrawing(1);
+	// plotUserSpecificBarChart();
+	// plotCombinedUsersSpiderChart();
+	// // plotAverageDurationBarChart();
+	// plotActionsOfInterestByTopicAndUserBarChart();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
