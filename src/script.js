@@ -648,7 +648,7 @@ if (globalState.triangleMesh[id]) {
 function updateSceneBasedOnSelections() {
     const data = globalState.finalData.action_dict;
     const selectedTopics = getSelectedTopics();
-    const selectedKeywords = getSelectedKeywords();
+    // const selectedKeywords = getSelectedKeywords();
 //     const movementData = globalState.finalData.action_dict["User Transformation"].actions;
 
 //     // Clear previous triangles before redrawing
@@ -823,75 +823,76 @@ function findClosestDataEntry(data, timestamp) {
 	});
 }
 
-function updateVisualization(currTimeStamp, userID) {
 
-	const {
-		startTimeStamp,
-		endTimeStamp
-	} = globalState;
-	const binIndex = Math.floor((currTimeStamp - globalState.globalStartTime) / globalState.intervalDuration);
-	const avatar = globalState.avatars[userID];
-	const data = globalState.jsonDatas[userID];
-	const mesh = globalState.meshes[userID];
-	const interactionMesh = globalState.interactionMeshes[userID];
-	const speechMesh = globalState.speechMeshes[userID];
-	if (!avatar) {
-		console.error('The avatar has not been loaded.');
-		return;
-	}
-	const intervalData = data.filter(entry => {
-		const entryTime = new Date(entry.Timestamp).getTime();
-		return entryTime <= endTimeStamp;
-	});
+// function updateVisualization(currTimeStamp, userID) {
 
-	if (intervalData.length === 0) {
-		return;
-	}
-	const {
-		validData,
-		validDataInteraction,
-		validDataSpeech
-	} = filterDataByType(intervalData);
-	const closestData = findClosestDataEntry(validData, currTimeStamp);
-	const closestDataInteraction = findClosestDataEntry(validDataInteraction, currTimeStamp);
-	const closestDataSpeech = findClosestDataEntry(validDataSpeech, currTimeStamp);
-	const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
-	const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
-	const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
+// 	const {
+// 		startTimeStamp,
+// 		endTimeStamp
+// 	} = globalState;
+// 	const binIndex = Math.floor((currTimeStamp - globalState.globalStartTime) / globalState.intervalDuration);
+// 	const avatar = globalState.avatars[userID];
+// 	const data = globalState.jsonDatas[userID];
+// 	const mesh = globalState.meshes[userID];
+// 	const interactionMesh = globalState.interactionMeshes[userID];
+// 	const speechMesh = globalState.speechMeshes[userID];
+// 	if (!avatar) {
+// 		console.error('The avatar has not been loaded.');
+// 		return;
+// 	}
+// 	const intervalData = data.filter(entry => {
+// 		const entryTime = new Date(entry.Timestamp).getTime();
+// 		return entryTime <= endTimeStamp;
+// 	});
 
-	clearPreviousObjects(userID);
-	const scaleFactor = 2;
-	const offsetX = 0;
-	const offsetY = 1;
-	const offsetZ = 1;
-	const newMesh = createFullLine(intervalData, userID, binIndex);
-	globalState.meshes[userID] = newMesh;
-	// const occulusMeshes = createFullLineOcculus(intervalData, 0);
-	// occulusMeshes.forEach(datasetLines => {
-	//     datasetLines.forEach(line => {
-	//         scene.add(line);
-	//     });
-	// });
-	const newInteractionMesh = createSpheresInteraction(currentDataInteraction, userID);
-	globalState.interactionMeshes[userID] = newInteractionMesh;
-	const newSpeechMesh = undefined;
-	globalState.speechMeshes[userID] = newSpeechMesh;
-	updateLineThickness();
-	if (globalState.show[userID]) {
-		showUserData(userID);
-	} else {
-		hideUserData(userID);
-	}
-	const dof = parseData(closestData.data);
-	const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
-	avatar.position.x = x * scaleFactor + offsetX;
-	avatar.position.y = y * scaleFactor + offsetY;
-	avatar.position.z = z * scaleFactor + offsetZ;
-	avatar.rotation.set(0, 0, 0); // Reset to avoid cumulative rotations
-	const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
-	avatar.rotation.set(0, 0, 0);
-	avatar.setRotationFromEuler(euler);
-}
+// 	if (intervalData.length === 0) {
+// 		return;
+// 	}
+// 	const {
+// 		validData,
+// 		validDataInteraction,
+// 		validDataSpeech
+// 	} = filterDataByType(intervalData);
+// 	const closestData = findClosestDataEntry(validData, currTimeStamp);
+// 	const closestDataInteraction = findClosestDataEntry(validDataInteraction, currTimeStamp);
+// 	const closestDataSpeech = findClosestDataEntry(validDataSpeech, currTimeStamp);
+// 	const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
+// 	const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
+// 	const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
+
+// 	clearPreviousObjects(userID);
+// 	const scaleFactor = 2;
+// 	const offsetX = 0;
+// 	const offsetY = 1;
+// 	const offsetZ = 1;
+// 	const newMesh = createFullLine(intervalData, userID, binIndex);
+// 	globalState.meshes[userID] = newMesh;
+// 	// const occulusMeshes = createFullLineOcculus(intervalData, 0);
+// 	// occulusMeshes.forEach(datasetLines => {
+// 	//     datasetLines.forEach(line => {
+// 	//         scene.add(line);
+// 	//     });
+// 	// });
+// 	const newInteractionMesh = createSpheresInteraction(currentDataInteraction, userID);
+// 	globalState.interactionMeshes[userID] = newInteractionMesh;
+// 	const newSpeechMesh = undefined;
+// 	globalState.speechMeshes[userID] = newSpeechMesh;
+// 	updateLineThickness();
+// 	if (globalState.show[userID]) {
+// 		showUserData(userID);
+// 	} else {
+// 		hideUserData(userID);
+// 	}
+// 	const dof = parseData(closestData.data);
+// 	const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
+// 	avatar.position.x = x * scaleFactor + offsetX;
+// 	avatar.position.y = y * scaleFactor + offsetY;
+// 	avatar.position.z = z * scaleFactor + offsetZ;
+// 	avatar.rotation.set(0, 0, 0); // Reset to avoid cumulative rotations
+// 	const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
+// 	avatar.rotation.set(0, 0, 0);
+// 	avatar.setRotationFromEuler(euler);
+// }
 
 function updateVisualizationOcculus(currTimeStamp) {
 	const validData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRDisplay' &&
@@ -1004,26 +1005,26 @@ function createPlotTemporal() {
 
 // Assuming parseTimeToMillis and parseDurationToMillis functions are defined
 
-const topicsData = globalState.finalData.map(action => {
-    const startTimeMillis = parseTimeToMillis(action.Timestamp);
-    const endTimeMillis = startTimeMillis + parseDurationToMillis(action.Duration);
-    
-    const startTime = new Date(startTimeMillis);
-    const endTime = new Date(endTimeMillis);
+	const topicsData = globalState.finalData.map(action => {
+		const startTimeMillis = parseTimeToMillis(action.Timestamp);
+		const endTimeMillis = startTimeMillis + parseDurationToMillis(action.Duration);
+		
+		const startTime = new Date(startTimeMillis);
+		const endTime = new Date(endTimeMillis);
 
-    // console.log(`Topic: ${action.UserAction}`);
-    // console.log(`Start Time: ${startTime.toISOString().replace('T', ' ').replace('Z', '')}`);
-    // console.log(`End Time: ${endTime.toISOString().replace('T', ' ').replace('Z', '')}`);
-    // console.log('----------------------------------');
+		// console.log(`Topic: ${action.UserAction}`);
+		// console.log(`Start Time: ${startTime.toISOString().replace('T', ' ').replace('Z', '')}`);
+		// console.log(`End Time: ${endTime.toISOString().replace('T', ' ').replace('Z', '')}`);
+		// console.log('----------------------------------');
 
-    return {
-        topic: action.UserAction,
-        startTime: startTimeMillis,
-        endTime: endTimeMillis,
-        isUserInterest: false, // Placeholder, adjust as needed
-        hasUserInterestAction: false // Placeholder, adjust as needed
-    };
-}).filter(action => action.startTime && action.endTime);
+		return {
+			topic: action.UserAction,
+			startTime: startTimeMillis,
+			endTime: endTimeMillis,
+			isUserInterest: false, // Placeholder, adjust as needed
+			hasUserInterestAction: false // Placeholder, adjust as needed
+		};
+	}).filter(action => action.startTime && action.endTime);
 
 
     const temporalViewContainer = d3.select("#temporal-view");
@@ -1032,7 +1033,7 @@ const topicsData = globalState.finalData.map(action => {
     const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
-        .attr('width', width + margin.left + margin.right)
+        .attr("width", globalState.dynamicWidth + margin.left + margin.right)
         .attr('height', margin.top + margin.bottom + height)
         .append('g')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -1434,21 +1435,28 @@ function generateHierToolBar() {
     const toolbar = document.getElementById('hier-toolbar');
     toolbar.innerHTML = '';
 
-    // Create a set to hold unique UserAction values
-    const uniqueActions = new Set(data.map(action => action.UserAction));
+    // Filter actions based on the time range
+    const filteredData = data.filter(action => {
+        const actionStartTime = parseTimeToMillis(action.Timestamp);
+        const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+        return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+    });
 
-    // Create toolbar items for each unique UserAction
+    // Create a set to hold unique UserAction values from the filtered data
+    const uniqueActions = new Set(filteredData.map(action => action.UserAction));
+
+    // Create toolbar items for each unique UserAction from the filtered data
     uniqueActions.forEach(actionName => {
         createTopicItem(actionName, toolbar);
     });
 }
-
 function createTopicItem(actionName, toolbar) {
     const topicItem = document.createElement('li');
     const topicCheckbox = document.createElement('input');
     topicCheckbox.type = 'checkbox';
     topicCheckbox.id = `checkbox_broadtopic_${actionName.replace(/\s+/g, '_')}`;
     topicCheckbox.className = 'topic-checkbox';
+	topicCheckbox.value = actionName; 
 
     const label = document.createElement('label');
     label.htmlFor = topicCheckbox.id;
@@ -1463,39 +1471,31 @@ function createTopicItem(actionName, toolbar) {
     topicCheckbox.addEventListener('change', function() {
         if (this.checked) {
             // Handle the checked state, e.g., filter actions, highlight elements, etc.
-            console.log(`${actionName} is selected`);
+            // console.log(`${actionName} is selected`);
         } else {
             // Handle the unchecked state
-            console.log(`${actionName} is deselected`);
+            // console.log(`${actionName} is deselected`);
         }
+		initializeOrUpdateSpeechBox();
     });
-	initializeOrUpdateSpeechBox(); 
+	// initializeOrUpdateSpeechBox(); 
 	// updateSceneBasedOnSelections();
 }
 
 
 function getSelectedTopics() {
     const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
+    console.log(`Found ${topicCheckboxes.length} checked checkboxes.`);  // Debug how many checkboxes are found
     let selectedActions = [];
 
     topicCheckboxes.forEach(checkbox => {
-        // Assuming the checkbox value directly contains the action name
+        console.log(`Adding action: ${checkbox.value}`);  // Debug what is being added
         selectedActions.push(checkbox.value);
     });
 
     return selectedActions;
 }
-function getSelectedKeywords() {
-    const keywordCheckboxes = document.querySelectorAll('.keyword-checkbox:checked');
-    let selectedKeywords = [];
 
-    keywordCheckboxes.forEach(checkbox => {
-        // Assuming the checkbox value directly contains the keyword, possibly related to other descriptors
-        selectedKeywords.push(checkbox.value);
-    });
-
-    return selectedKeywords;
-}
 
 
 function getCoordinates(spatial_extent){
@@ -1539,7 +1539,18 @@ function parseTimeToMillis(customString) {
   let timeInMillis = date.getTime();
   // console.log(`Time in milliseconds since Unix epoch: ${timeInMillis}`);
   return timeInMillis;
+
+//   let milliseconds = parseInt(milliStr.slice(0, 3), 10);
+
+//   // Create a new Date object in UTC using the parsed components
+//   let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds, milliseconds));
+
+//   // Return the time in milliseconds since the Unix epoch
+//   return date.getTime();
 }
+
+
+
 function parseDurationToMillis(durationString) {
     // Split the string by underscores
     const parts = durationString.split('_');
@@ -1562,6 +1573,8 @@ function initializeOrUpdateSpeechBox() {
     // Use selected UserActions from the toolbar
     const selectedActions = getSelectedTopics(); // Assumes this returns UserActions selected in the toolbar
     const data = globalState.finalData; // Assuming this is an array with all action records
+	console.log(selectedActions); 
+
 
     const container = document.getElementById("speech-box");
     const hierToolbar = document.getElementById('hier-toolbar');
@@ -1587,9 +1600,11 @@ function initializeOrUpdateSpeechBox() {
     rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
     // Filter data based on selected actions and time range
+	// console.log(data); 
     let actionsToDisplay = data.filter(action => {
         const actionStartTime = parseTimeToMillis(action.Timestamp);
         const actionEndTime = actionStartTime + parseTimeToMillis(action.Duration);
+		// return selectedActions.includes(action.UserAction); 
         return selectedActions.includes(action.UserAction) && actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
     });
 	// console.log(actionsToDisplay); 
@@ -1613,88 +1628,31 @@ function createSpeechBox(action) {
     speechBox.style.marginRight = '8px';
     speechBox.style.marginLeft = '8px';
 
-    const actionDetail = document.createElement('div');
-    actionDetail.textContent = `Action: ${action.UserAction}, Intent: ${action.UserIntent}`;
-    speechBox.appendChild(actionDetail);
+    // Adding a title for each action
+    const title = document.createElement('h4');
+    title.textContent = `Action: ${action.UserAction}`;
+    speechBox.appendChild(title);
 
-    const actionTime = document.createElement('div');
-    actionTime.textContent = `Time: ${action.Timestamp}`;
-    speechBox.appendChild(actionTime);
-
-    return speechBox;
-}
-
-
-function getSpeechData(action, selectedKeywords) {
-    const speechBox = document.createElement('div');
-    speechBox.className = 'speech-box';
-    speechBox.style.border = '1px solid grey';
-    speechBox.style.borderRadius = '8px';
-    speechBox.style.padding = '15px';
-	speechBox.style.marginBottom = '8px';
-	speechBox.style.marginRight = '8px';
-	speechBox.style.marginLeft = '8px';
-
-
-	// const hasRelevantKeyword = action.formatted_data.action_property_specific_action && selectedKeywords.some(keyword =>
-	// 	action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
-
-	  const relevantKeyword = selectedKeywords.find(keyword =>
-        action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
-		// action.has_user_action_of_interest zainab
-
-		if (!relevantKeyword) {
-			return null;
-		  }
-
-	const speakerEl = document.createElement('div');
-    speakerEl.className = 'speaker';
-
-    // Create a span for the speaker name to apply styles specifically to it
-    const speakerNameSpan = document.createElement('span');
-    speakerNameSpan.textContent = `[${action.actor_name.toUpperCase()}]`;
-    // Apply the background color to highlight the text
-    speakerNameSpan.style.backgroundColor = colorScale(action.actor_name.toLowerCase()); // This will highlight the text
-    // speakerNameSpan.style.color = "#ffffff"; // Change text color to white for better readability
-    speakerEl.appendChild(speakerNameSpan); //
-
-
-	const actionPropertyEl = document.createElement('div');
-    actionPropertyEl.className = 'action-property';
-    const actionPropertyTitle = document.createElement('strong');
-    actionPropertyTitle.textContent = 'Action Property: ';
-
-    const actionPropertyContent = document.createElement('span');
-    actionPropertyContent.textContent = action.formatted_data.action_property_specific_action;
-    actionPropertyEl.appendChild(actionPropertyTitle);
-    actionPropertyEl.appendChild(document.createElement('br'));
-    actionPropertyEl.appendChild(actionPropertyContent);
-
-	const relevantActionLine = document.createElement('div');
-	relevantActionLine.innerHTML = `<span style="background-color: #d0d0d0;">Relevant action to <span style="color: #80b1d3;">"${relevantKeyword}"</span></span>`;
-	// cant make eveyrhting orange, make only relevantkeyword.user_interest orange
-
-    actionPropertyEl.appendChild(relevantActionLine);
-
-    const rawPropertyEl = document.createElement('div');
-    rawPropertyEl.className = 'rawlog-property';
-    const rawPropertyTitle = document.createElement('strong');
-    rawPropertyTitle.textContent = 'Raw Log: ';
-
-	const rawPropertyContent = document.createElement('span');
-    rawPropertyContent.textContent = action.formatted_data.raw_log_text;
-    rawPropertyEl.appendChild(rawPropertyTitle);
-    rawPropertyEl.appendChild(document.createElement('br'));
-    rawPropertyEl.appendChild(rawPropertyContent);
-
-
-    speechBox.appendChild(speakerEl);
-    // speechBox.appendChild(originalTextEl);
-    speechBox.appendChild(actionPropertyEl); // Include action property in the speech box
-	speechBox.appendChild(rawPropertyEl)
+    // Adding more detailed information
+    const details = document.createElement('div');
+    details.innerHTML = `
+        <strong>User:</strong> ${action.User}<br>
+        <strong>Intent:</strong> ${action.UserIntent}<br>
+        <strong>Location:</strong> ${action.Location}<br>
+        <strong>Timestamp:</strong> ${Date(parseTimeToMillis(action.Timestamp))}<br>
+        <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)}<br>
+        <strong>Trigger Source:</strong> ${action.ActionTriggerSource || 'N/A'}<br>
+        <strong>Referent:</strong> ${action.ActionReferent || 'N/A'}<br>
+        <strong>Context:</strong> ${action.ActionContext || 'N/A'}<br>
+        <strong>Referent Name:</strong> ${action.ActionReferentName || 'N/A'}<br>
+        <strong>Referent Type:</strong> ${action.ActionReferentType || 'N/A'}<br>
+        <strong>Context Type:</strong> ${action.ActionContextType || 'N/A'}
+    `;
+    speechBox.appendChild(details);
 
     return speechBox;
 }
+
 
 
 // function updateInterestBox() {
@@ -2085,7 +2043,7 @@ async function initialize() {
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
 	  generateHierToolBar();
-	document.querySelectorAll('.topic-checkbox, .keyword-checkbox').forEach(checkbox => {
+	document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
 	  checkbox.checked = true;
 	  checkbox.dispatchEvent(new Event('change'));
 	});
