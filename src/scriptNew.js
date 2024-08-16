@@ -2299,26 +2299,40 @@ export function dragged(event,d) {
 
 
 
-Copy code
 function generateHierToolBar() {
-    const data = globalState.finalData; // Assuming this is an array of action records
-    const toolbar = document.getElementById('hier-toolbar');
-    toolbar.innerHTML = '';
+//   const data = globalState.finalData;
+//   const data = globalState.finalData.action_dict;
+  const data = globalState.finalData.action_dict ;
+  const {"Raw Capture": omitted, ...newData} = data;
+  const toolbar = document.getElementById('hier-toolbar');
+  toolbar.innerHTML = '';
 
-    // Filter actions based on the time range
-    const filteredData = data.filter(action => {
-        const actionStartTime = parseTimeToMillis(action.Timestamp);
-        const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-        return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-    });
+  let othersTopicDetails = null;
 
-    // Create a set to hold unique UserAction values from the filtered data
-    const uniqueActions = new Set(filteredData.map(action => action.UserAction));
+  // Process each topic and save "Others" for last
+  Object.entries(data).forEach(([broadActionName, actionDetails]) => {
+	//   console.log(broadActionName);
+	//   if (broadActionName === "User Transformation") { return ; }
+	  if (broadActionName === "User Transformation" || broadActionName === "Raw Capture") { return ; }
+      const isInTimeRange = actionDetails.actions.some(action => {
+        // console.log("THIS IS TOPIC NAME " + topicName);
+          const actionStartTime = parseTimeToMillis(action.start_time);
+          const actionEndTime = parseTimeToMillis(action.end_time);
+          return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+      });
 
-    // Create toolbar items for each unique UserAction from the filtered data
-    uniqueActions.forEach(actionName => {
-        createTopicItem(actionName, toolbar);
-    });
+      if (isInTimeRange) {
+        //   if (topicName !== "Others") {
+            createTopicItem(broadActionName, actionDetails, toolbar);
+        //   } else {
+            //   othersTopicDetails = topicDetails;
+        //   }
+      }
+  });
+
+//   if (othersTopicDetails !== null) {
+//       createOthersItem(othersTopicDetails, toolbar);
+//   }
 }
 
 

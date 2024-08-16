@@ -171,6 +171,23 @@ async function loadRoomModel() {
 	roomLoaded = true;
 }
 
+async function loadVirtualObject(filePath, location) {
+    const loader = new GLTFLoader();
+    try {
+        const gltf = await loader.loadAsync(filePath);
+		const obj = gltf.scene ; 
+		obj.scale.set(1,1,1); 
+		obj.name = filePath; 
+		// obj.position.x = location.x ;
+		// obj.position.y = location.y ; 
+		// obj.position.z = location.z ; 
+        // gltf.scene.position.set(location.x, location.y, location.z);
+        globalState.scene.add(obj);
+        console.log(`Model loaded and placed at: ${location.x}, ${location.y}, ${location.z}`);
+    } catch (error) {
+        console.error('Failed to load model:', error);
+    }
+}
 
 function parseData(dataString) {
 	return dataString ? dataString.split(',').map(Number) : [];
@@ -646,90 +663,40 @@ if (globalState.triangleMesh[id]) {
 
 
 function updateSceneBasedOnSelections() {
-    const data = globalState.finalData.action_dict;
-    const selectedTopics = getSelectedTopics();
-    // const selectedKeywords = getSelectedKeywords();
-//     const movementData = globalState.finalData.action_dict["User Transformation"].actions;
+    const data = globalState.finalData; // Assuming this holds the full data
+    const selectedActions = getSelectedTopics(); // Get the selected topics from the toolbar
 
-//     // Clear previous triangles before redrawing
-//     clearPreviousTriangles(0);
-//     clearPreviousTriangles(1);
-// 	clearPreviousTriangles(2);
-// 	// console.log("in update func with the new time stamps  " + globalState.lineTimeStamp1 + "   " +  globalState.lineTimeStamp2);
-//     selectedTopics.forEach(topic => {
-//         if (data[topic]) {
-//             data[topic].actions.forEach(action => {
-//                 const actionStartTime = parseTimeToMillis(action.start_time);
-//                 const actionEndTime = parseTimeToMillis(action.end_time);
-//                 const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-//                 const matchesSelectedKeywords = selectedKeywords.some(keyword =>
-//                     action.formatted_data.action_property_specific_action.toLowerCase().includes(keyword.toLowerCase()));
+    // Filter actions based on time range and selected actions
+    const filteredActions = data.filter(action => {
+        const actionStartTime = parseTimeToMillis(action.Timestamp);
+        const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+        return actionEndTime >= globalState.lineTimeStamp1 &&
+               actionStartTime <= globalState.lineTimeStamp2; 
+			//     &&
+            //    selectedActions.includes(action.UserAction);
+    });
 
-//                 if (matchesSelectedKeywords && isInTimeRange) {
-//                     const actorName = action.actor_name;
-//                     // Finding the closest movement data
-//                     let closestData = null;
-//                     let minimumTimeDifference = Infinity;
-// // movement data isn't checking the time range zainab
-//                     movementData.forEach(data => {
-//                         if (data.actor_name === actorName) {
-//                             const movementStartTime = parseTimeToMillis(data.start_time);
-//                             const timeDifference = Math.abs(actionStartTime - movementStartTime);
-//                             if (timeDifference < minimumTimeDifference) {
-//                                 closestData = data;
-//                                 minimumTimeDifference = timeDifference;
-//                             }
-//                         }
-//                     });
-
-//                     if (closestData) {
-//                         const spatial_extent = closestData.spatial_extent;
-// 						const { x, y , z } = getCoordinates(spatial_extent);
-
-//                         // Add triangle
-//                         const geometry = new THREE.BufferGeometry();
-//                         const vertices = new Float32Array([
-//                             0, -0.025, 0,    // Top vertex (now bottom middle, smaller)
-//                             0.025, 0.025, 0,   // Bottom right vertex (now top right, smaller)
-//                             -0.025, 0.025, 0   // Bottom left vertex (now top left, smaller)
-//                         ]);
-//                         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-
-//                         // let id = actorName === "User_1" ? 0 : 1; // Example conditional, adjust as needed
-// 						let match = actorName.match(/\d+/);
-// 						let id = match ? parseInt(match[0], 10) - 1 : null;
-
-
-//                         // Choose a color based on the actor, or use a default color
-//                         const color = colorScale(String(id));
-//                         const material = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
-
-//                         const triangleMesh = new THREE.Mesh(geometry, material);
-//                         triangleMesh.position.set(x, y + 0.5 , z);
-// 						triangleMesh.userData = { type: 'clickableTriangle', actorName: action.actor_name, actionData: closestData };
-// 						const edges = new THREE.EdgesGeometry(geometry); // Creates edges for the given geometry
-// 						const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }); // Defines the line color and width
-// 						const wireframe = new THREE.LineSegments(edges, lineMaterial); // Creates a wireframe (line segments) that represents the edges
-// 						triangleMesh.add(wireframe);
-
-//                         // Manage and add triangle mesh to the scene
-//                         if (!globalState.triangleMesh[id]) {
-//                             globalState.triangleMesh[id] = [];
-//                         }
-//                         globalState.triangleMesh[id].push(triangleMesh);
-// 							globalState.scene.add(triangleMesh);
-
-// 						initializeInteraction();
-//                     }
-//                 }
-//             });
-//         }
-//     });
+    // Load virtual objects based on the filtered actions
+    filteredActions.forEach(action => {
+        if (action.ActionReferentType === "Virtual") {
+            const filePath = `Context/${action.ActionReferent}`; // Path adjustment for context-related files
+            const location = parseLocation(action.Location); // Extract and format location for rendering
+			console.log(filePath); 
+            // Load and render the virtual object at the specified location
+            loadVirtualObject(filePath, location);
+        }
+    });
 }
+function parseLocation(locationString) {
+    const coords = locationString.split(',').map(Number);
+    return { x: coords[0], y: coords[1], z: coords[2] }; // Adjust as necessary based on your coordinate system
+}
+  
 
 async function initializeScene() {
 	globalState.scene = new THREE.Scene();
-	globalState.scene.background = new THREE.Color(0xffffff);
+	// globalState.scene.background = new THREE.Color(0xffffff);
+	globalState.scene.background = new THREE.Color(0x808080); 
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
@@ -756,7 +723,7 @@ async function initializeScene() {
 
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
-	// globalState.scene.add(gridHelper);
+	globalState.scene.add(gridHelper);
 	await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
@@ -764,21 +731,21 @@ async function initializeScene() {
   ]);
   globalState.finalData = finalData[0];
 
-  const avatarArray = await Promise.all([
-    loadAvatarModel('oculus_quest_2.glb'),
-    loadAvatarModel('oculus_quest_2.glb'),
-	loadAvatarModel('oculus_controller_right.glb'),
-	loadAvatarModel('oculus_controller_right.glb'),
-	loadAvatarModel('oculus_controller_left.glb'),
-	loadAvatarModel('oculus_controller_left.glb'),
-	]);
+//   const avatarArray = await Promise.all([
+//     loadAvatarModel('oculus_quest_2.glb'),
+//     loadAvatarModel('oculus_quest_2.glb'),
+// 	loadAvatarModel('oculus_controller_right.glb'),
+// 	loadAvatarModel('oculus_controller_right.glb'),
+// 	loadAvatarModel('oculus_controller_left.glb'),
+// 	loadAvatarModel('oculus_controller_left.glb'),
+// 	]);
 
-	globalState.avatars = [avatarArray[0], avatarArray[1]];
+// 	globalState.avatars = [avatarArray[0], avatarArray[1]];
 	// globalState.avatars[0].scale.set(0.5,0.5,0.5);
 	// globalState.avatars[1].scale.set(0.5,0.5,0.5);
 
-	globalState.leftControls = [avatarArray[4], avatarArray[5]];
-	globalState.rightControls = [avatarArray[2], avatarArray[3]];
+	// globalState.leftControls = [avatarArray[4], avatarArray[5]];
+	// globalState.rightControls = [avatarArray[2], avatarArray[3]];
 
 	setTimes(globalState.finalData);
 
@@ -1409,7 +1376,7 @@ export function dragged(event,d) {
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
-    // updateSceneBasedOnSelections();
+    updateSceneBasedOnSelections();
     // createLineSegment(0);
     // createLineSegment(1);
 	// createDeviceSegment(0);
@@ -1435,21 +1402,25 @@ function generateHierToolBar() {
     const toolbar = document.getElementById('hier-toolbar');
     toolbar.innerHTML = '';
 
-    // Filter actions based on the time range
-    const filteredData = data.filter(action => {
+    const uniqueActions = new Set();
+
+    // Use forEach to process each action directly
+    data.forEach(action => {
         const actionStartTime = parseTimeToMillis(action.Timestamp);
         const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-        return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+        if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
+            uniqueActions.add(action.UserAction);
+        }
     });
 
-    // Create a set to hold unique UserAction values from the filtered data
-    const uniqueActions = new Set(filteredData.map(action => action.UserAction));
+    console.log(Array.from(uniqueActions)); // To see what actions are included
 
-    // Create toolbar items for each unique UserAction from the filtered data
+    // Create toolbar items for each unique UserAction
     uniqueActions.forEach(actionName => {
         createTopicItem(actionName, toolbar);
     });
 }
+
 function createTopicItem(actionName, toolbar) {
     const topicItem = document.createElement('li');
     const topicCheckbox = document.createElement('input');
@@ -1479,7 +1450,7 @@ function createTopicItem(actionName, toolbar) {
 		initializeOrUpdateSpeechBox();
     });
 	// initializeOrUpdateSpeechBox(); 
-	// updateSceneBasedOnSelections();
+	updateSceneBasedOnSelections();
 }
 
 
@@ -1655,136 +1626,6 @@ function createSpeechBox(action) {
 
 
 
-// function updateInterestBox() {
-// 	const container = document.getElementById("user-interest-topic");
-
-// 	// Clear existing content
-// 	container.innerHTML = '';
-
-// 	// Create "Topic of your interest" span
-// 	const topicInterestSpan = document.createElement("span");
-// 	topicInterestSpan.textContent = "Action of your interest: ";
-// 	topicInterestSpan.style.color = "white";
-// 	topicInterestSpan.style.fontWeight = "bold";
-
-// 	// Create "Next user interest topic" span
-// 	const nextInterestSpan = document.createElement("span");
-// 	nextInterestSpan.textContent = userInterestTopic;
-// 	// nextInterestSpan.style.color = "#ffc000";
-// 	nextInterestSpan.style.color = "#333333";
-// 	nextInterestSpan.style.fontWeight = "bold";
-
-// 	// Append both spans to the container
-// 	container.appendChild(topicInterestSpan);
-// 	container.appendChild(nextInterestSpan);
-
-// 	// Style the container for text wrapping
-// 	container.style.display = "inline-block";
-// 	container.style.maxWidth = "100%";
-// 	container.style.whiteSpace = "normal";
-// 	container.style.overflowWrap = "break-word";
-// 	container.contentEditable = "true"; // Make it editable
-//   }
-
-//   function updateXRSnapshot() {
-// 	// Choose the correct data source based on your structure. Adjust as necessary.
-// 	const rawCaptureData =  globalState.finalData.action_dict["Raw Capture"];
-
-// 	const container = document.getElementById('user-xr-snapshot');
-// 	container.innerHTML = ''; // Clear previous content
-
-// 	// Create a title element
-// 	const titleElement = document.createElement('div');
-// 	titleElement.style.textAlign = 'center';
-// 	titleElement.style.marginBottom = '8px';
-// 	titleElement.id = 'imageTitle';
-// 	container.appendChild(titleElement);
-
-// 	if (rawCaptureData && rawCaptureData.actions && rawCaptureData.actions.length > 0) {
-// 	  const filteredActions = rawCaptureData.actions.filter(action => {
-// 		const actionStartTime = parseTimeToMillis(action.start_time);
-// 		const actionEndTime = parseTimeToMillis(action.end_time);
-// 		return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-// 	  });
-
-// 	  if (filteredActions.length >= 1) {
-// 		const imageWrapper = document.createElement('div');
-// 		imageWrapper.style.position = 'relative';
-// 		imageWrapper.style.maxWidth = '500px';
-// 		imageWrapper.style.margin = 'auto';
-
-// 		filteredActions.forEach((action, index) => {
-// 		  const imagePath = action.actor_name + '\\' + action.specific_action_data;
-// 		  const img = document.createElement('img');
-// 		  img.src = imagePath;
-// 		  img.alt = "Raw Capture Image";
-// 		  img.style.maxWidth = '100%';
-// 		  img.style.objectFit = 'contain';
-// 		  img.style.display = index === 0 ? 'block' : 'none';
-// 		  imageWrapper.appendChild(img);
-// 		});
-
-// 		// Update the title with the actor name of the first image
-// 		updateTitle(filteredActions[0].actor_name);
-
-// 		container.appendChild(imageWrapper);
-
-// 		// Navigation arrows functionality
-// 		addNavigationArrows(imageWrapper, filteredActions);
-// 	  } else {
-// 		titleElement.innerHTML = 'No images available';
-// 	  }
-// 	} else {
-// 	  titleElement.innerHTML = 'No raw capture data available';
-// 	}
-//   }
-
-  function addNavigationArrows(imageWrapper, filteredActions) {
-	const prevArrow = document.createElement('button');
-	prevArrow.innerHTML = '&#10094;';
-	prevArrow.style.position = 'absolute';
-	prevArrow.style.top = '50%';
-	prevArrow.style.left = '10px';
-	prevArrow.style.zIndex = '10';
-	prevArrow.style.cursor = 'pointer';
-
-	const nextArrow = document.createElement('button');
-	nextArrow.innerHTML = '&#10095;';
-	nextArrow.style.position = 'absolute';
-	nextArrow.style.top = '50%';
-	nextArrow.style.right = '10px';
-	nextArrow.style.zIndex = '10';
-	nextArrow.style.cursor = 'pointer';
-
-	let currentIndex = 0;
-	prevArrow.onclick = () => {
-	  currentIndex = (currentIndex - 1 + filteredActions.length) % filteredActions.length;
-	  changeImage(currentIndex, imageWrapper, filteredActions);
-	};
-
-	nextArrow.onclick = () => {
-	  currentIndex = (currentIndex + 1) % filteredActions.length;
-	  changeImage(currentIndex, imageWrapper, filteredActions);
-	};
-
-	imageWrapper.appendChild(prevArrow);
-	imageWrapper.appendChild(nextArrow);
-  }
-
-  function changeImage(index, imageWrapper, filteredActions) {
-	Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
-	  img.style.display = imgIndex === index ? 'block' : 'none';
-	});
-	// Update the title with the actor name of the current image
-	updateTitle(filteredActions[index].actor_name);
-  }
-
-  function updateTitle(actorName) {
-	const titleElement = document.getElementById('imageTitle');
-	if (titleElement) {
-		titleElement.innerHTML = `${actorName} XR Snapshot`;
-	}
-  }
 
   function updateRangeDisplay(time1, time2) {
 	const indicatorSVG = d3.select("#indicator-svg");
@@ -1860,7 +1701,7 @@ function createSpeechBox(action) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	//   updateSceneBasedOnSelections();
+	  updateSceneBasedOnSelections();
 
 	  dragStartX = event.x;
 	};
@@ -2039,10 +1880,11 @@ async function initialize() {
 
 	createSharedAxis();
 	createPlotTemporal();
+	generateHierToolBar();
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
-	  generateHierToolBar();
+	  
 	document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
 	  checkbox.checked = true;
 	  checkbox.dispatchEvent(new Event('change'));
