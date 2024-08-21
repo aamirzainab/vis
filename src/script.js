@@ -60,6 +60,8 @@ let globalState = {
 	rightControls: [],
 	leftControls : [],
 	lineDrawing: [],
+	loadedClouds : {},
+	loadedObjects : {},
 };
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
@@ -687,10 +689,112 @@ function updateSceneBasedOnSelections() {
         }
     });
 }
-function parseLocation(locationString) {
-    const coords = locationString.split(',').map(Number);
-    return { x: coords[0], y: coords[1], z: coords[2] }; // Adjust as necessary based on your coordinate system
+
+
+function updatePointCloudBasedOnSelections() {
+    const data = globalState.finalData;
+    const selectedActions = getSelectedTopics();
+
+    const newFilteredActions = new Set();
+    const filteredActions = data.filter(action => {
+        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
+                newFilteredActions.add(`${action.User}/${subAction.ActionContext}`);
+                return true;
+            }
+            return false;
+        });
+    });
+
+    // Remove objects that are no longer relevant
+    Object.keys(globalState.loadedClouds).forEach(key => {
+        if (!newFilteredActions.has(key)) {
+            const obj = globalState.loadedClouds[key];
+            globalState.scene.remove(obj);
+            delete globalState.loadedClouds[key];
+            console.log(`Removed object: ${key}`);
+        }
+    });
+
+    // Load new and keep existing relevant objects
+    for (const action of filteredActions) {
+        for (const subAction of action.Data) {
+            if (action.ContextType === "Virtual" && subAction.ActionContext) {
+                const key = `${action.User}/${subAction.ActionContext}`;
+                if (!globalState.loadedClouds[key]) {  // Only load if not already loaded
+                    const userNumber = action.User.match(/\d+/)[0];
+                    const filePath = `user${userNumber}/Context/${subAction.ActionContext}`;
+                    const location = parseLocation(subAction.ActionReferentLocation);
+                    const obj = loadVirtualObject(filePath, location);
+                    globalState.loadedClouds[key] = obj; // Track the loaded object
+                    console.log(`Loaded new object: ${key}`);
+                }
+            }
+        }
+    }
 }
+
+
+function updateObjectsBasedOnSelections() {
+    const data = globalState.finalData;
+    const selectedActions = getSelectedTopics();
+
+    const newFilteredActions = new Set();
+    const filteredActions = data.filter(action => {
+        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
+                newFilteredActions.add(`${action.User}/${subAction.ActionContext}`);
+                return true;
+            }
+            return false;
+        });
+    });
+
+    // Remove objects that are no longer relevant
+    Object.keys(globalState.loadedObjects).forEach(key => {
+        if (!newFilteredActions.has(key)) {
+            const obj = globalState.loadedObjects[key];
+            globalState.scene.remove(obj);
+            delete globalState.loadedObjects[key];
+            console.log(`Removed object: ${key}`);
+        }
+    });
+
+    // Load new and keep existing relevant objects
+    for (const action of filteredActions) {
+        for (const subAction of action.Data) {
+            if (action.ReferentType === "Virtual" && subAction.ActionReferentBody) {
+                const key = `${action.User}/${subAction.ActionReferentBody}`;
+                if (!globalState.loadedObjects[key]) {  // Only load if not already loaded
+                    const userNumber = action.User.match(/\d+/)[0];
+                    const filePath = `user${userNumber}/Object/${subAction.ActionContext}`;
+                    const location = parseLocation(subAction.ActionReferentLocation);
+                    const obj = loadVirtualObject(filePath, location);
+                    globalState.loadedObjects[key] = obj; // Track the loaded object
+                    console.log(`Loaded new object: ${key}`);
+                }
+            }
+        }
+    }
+}
+
+
+function parseLocation(locationString) {
+    const parts = locationString.split(',');
+    return {
+        x: parseFloat(parts[0]),
+        y: parseFloat(parts[1]),
+        z: parseFloat(parts[2]),
+        pitch: parseFloat(parts[3]),
+        yaw: parseFloat(parts[4]),
+        roll: parseFloat(parts[5])
+    };
+}
+
   
 
 async function initializeScene() {
@@ -700,20 +804,26 @@ async function initializeScene() {
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
-	globalState.camera.updateProjectionMatrix();
+	// globalState.camera.updateProjectionMatrix();
 
 	globalState.renderer = new THREE.WebGLRenderer({
 	  antialias: true
 	});
+	
+	console.log("here zainab");
 
 	globalState.renderer.setSize(spatialView.width, spatialView.height);
+	globalState.renderer.toneMapping = THREE.LinearToneMapping;
+	// globalState.renderer.toneMapping = THREE.NoToneMapping;
+	globalState.renderer.toneMappingExposure = 1;
+	
 	document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
 
 
 	globalState.controls = new OrbitControls(globalState.camera, globalState.renderer.domElement);
 	globalState.controls.enableZoom = true;
 
-	const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+	const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
 	globalState.scene.add(ambientLight);
 	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 	directionalLight.position.set(0, 1, 0);
@@ -724,10 +834,10 @@ async function initializeScene() {
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
 	globalState.scene.add(gridHelper);
-	await Promise.all([loadRoomModel()]);
+	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_240812_011824.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_VR_Game.json').then(response => response.json()),
   ]);
   globalState.finalData = finalData[0];
 
@@ -791,130 +901,8 @@ function findClosestDataEntry(data, timestamp) {
 }
 
 
-// function updateVisualization(currTimeStamp, userID) {
-
-// 	const {
-// 		startTimeStamp,
-// 		endTimeStamp
-// 	} = globalState;
-// 	const binIndex = Math.floor((currTimeStamp - globalState.globalStartTime) / globalState.intervalDuration);
-// 	const avatar = globalState.avatars[userID];
-// 	const data = globalState.jsonDatas[userID];
-// 	const mesh = globalState.meshes[userID];
-// 	const interactionMesh = globalState.interactionMeshes[userID];
-// 	const speechMesh = globalState.speechMeshes[userID];
-// 	if (!avatar) {
-// 		console.error('The avatar has not been loaded.');
-// 		return;
-// 	}
-// 	const intervalData = data.filter(entry => {
-// 		const entryTime = new Date(entry.Timestamp).getTime();
-// 		return entryTime <= endTimeStamp;
-// 	});
-
-// 	if (intervalData.length === 0) {
-// 		return;
-// 	}
-// 	const {
-// 		validData,
-// 		validDataInteraction,
-// 		validDataSpeech
-// 	} = filterDataByType(intervalData);
-// 	const closestData = findClosestDataEntry(validData, currTimeStamp);
-// 	const closestDataInteraction = findClosestDataEntry(validDataInteraction, currTimeStamp);
-// 	const closestDataSpeech = findClosestDataEntry(validDataSpeech, currTimeStamp);
-// 	const currentData = validData.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestData.Timestamp).getTime());
-// 	const currentDataInteraction = validDataInteraction.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataInteraction.Timestamp).getTime());
-// 	const currentDataSpeech = validDataSpeech.filter(entry => new Date(entry.Timestamp).getTime() <= new Date(closestDataSpeech.Timestamp).getTime());
-
-// 	clearPreviousObjects(userID);
-// 	const scaleFactor = 2;
-// 	const offsetX = 0;
-// 	const offsetY = 1;
-// 	const offsetZ = 1;
-// 	const newMesh = createFullLine(intervalData, userID, binIndex);
-// 	globalState.meshes[userID] = newMesh;
-// 	// const occulusMeshes = createFullLineOcculus(intervalData, 0);
-// 	// occulusMeshes.forEach(datasetLines => {
-// 	//     datasetLines.forEach(line => {
-// 	//         scene.add(line);
-// 	//     });
-// 	// });
-// 	const newInteractionMesh = createSpheresInteraction(currentDataInteraction, userID);
-// 	globalState.interactionMeshes[userID] = newInteractionMesh;
-// 	const newSpeechMesh = undefined;
-// 	globalState.speechMeshes[userID] = newSpeechMesh;
-// 	updateLineThickness();
-// 	if (globalState.show[userID]) {
-// 		showUserData(userID);
-// 	} else {
-// 		hideUserData(userID);
-// 	}
-// 	const dof = parseData(closestData.data);
-// 	const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
-// 	avatar.position.x = x * scaleFactor + offsetX;
-// 	avatar.position.y = y * scaleFactor + offsetY;
-// 	avatar.position.z = z * scaleFactor + offsetZ;
-// 	avatar.rotation.set(0, 0, 0); // Reset to avoid cumulative rotations
-// 	const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
-// 	avatar.rotation.set(0, 0, 0);
-// 	avatar.setRotationFromEuler(euler);
-// }
-
-function updateVisualizationOcculus(currTimeStamp) {
-	const validData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRDisplay' &&
-		entry.DataType === 'Transformation');
-	// console.log(validData);
-	const closestData = findClosestDataEntry(validData, currTimeStamp);
-	if (closestData !== null) {
-		const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
-		const scaleFactor = 2;
-		const offsetX = 0;
-		const offsetY = 1;
-		const offsetZ = 1;
-		occulusData.occulusAvatar.position.x = x * scaleFactor + offsetX;
-		occulusData.occulusAvatar.position.y = y * scaleFactor + offsetY;
-		occulusData.occulusAvatar.position.z = z * scaleFactor + offsetZ;
-		occulusData.occulusAvatar.rotation.set(0, 0, 0);
-		const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
-		occulusData.occulusAvatar.setRotationFromEuler(euler);
-	}
-	const validRightControllerData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRController_R' &&
-		entry.DataType === 'Transformation' && typeof entry.Data === 'string');
-	const validLeftControllerData = occulusData.occulusFile.filter(entry => entry.TrackingType === 'PhysicalXRController_L' &&
-		entry.DataType === 'Transformation' && typeof entry.Data === 'string');
-	// console.log(validRightControllerData);
-	updateControllerVisualization(validRightControllerData, currTimeStamp, 'right');
-	updateControllerVisualization(validLeftControllerData, currTimeStamp, 'left');
-
-}
 
 
-function updateControllerVisualization(controllerData, currTimeStamp, side) {
-	const closestData = findClosestDataEntry(controllerData, currTimeStamp);
-	if (closestData !== null) {
-		const [x, y, z, pitch, yaw, roll] = parseData(closestData.Data);
-		const scaleFactor = 2;
-		const offsetX = 0;
-		const offsetY = 1;
-		const offsetZ = 1;
-		if (side === 'left') {
-			occulusData.occulusLeftController.position.x = x * scaleFactor + offsetX;
-			occulusData.occulusLeftController.position.y = y * scaleFactor + offsetY;
-			occulusData.occulusLeftController.position.z = z * scaleFactor + offsetZ;
-			occulusData.occulusLeftController.rotation.set(0, 0, 0);
-			const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
-			occulusData.occulusLeftController.setRotationFromEuler(euler);
-		} else if (side === 'right') {
-			occulusData.occulusRightController.position.x = x * scaleFactor + offsetX;
-			occulusData.occulusRightController.position.y = y * scaleFactor + offsetY;
-			occulusData.occulusRightController.position.z = z * scaleFactor + offsetZ;
-			occulusData.occulusRightController.rotation.set(0, 0, 0);
-			const euler = new THREE.Euler(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(yaw), THREE.MathUtils.degToRad(roll), 'XYZ');
-			occulusData.occulusRightController.setRotationFromEuler(euler);
-		}
-	}
-}
 
 function clearPreviousObjects(userID) {
 	if (Array.isArray(globalState.meshes[userID])) {
@@ -970,28 +958,20 @@ function updateLineThickness() {
 
 function createPlotTemporal() {
 
-// Assuming parseTimeToMillis and parseDurationToMillis functions are defined
-
 	const topicsData = globalState.finalData.map(action => {
-		const startTimeMillis = parseTimeToMillis(action.Timestamp);
-		const endTimeMillis = startTimeMillis + parseDurationToMillis(action.Duration);
-		
-		const startTime = new Date(startTimeMillis);
-		const endTime = new Date(endTimeMillis);
-
-		// console.log(`Topic: ${action.UserAction}`);
-		// console.log(`Start Time: ${startTime.toISOString().replace('T', ' ').replace('Z', '')}`);
-		// console.log(`End Time: ${endTime.toISOString().replace('T', ' ').replace('Z', '')}`);
-		// console.log('----------------------------------');
-
-		return {
-			topic: action.UserAction,
-			startTime: startTimeMillis,
-			endTime: endTimeMillis,
-			isUserInterest: false, // Placeholder, adjust as needed
-			hasUserInterestAction: false // Placeholder, adjust as needed
-		};
-	}).filter(action => action.startTime && action.endTime);
+        if (action.Data.length > 0) {
+            const firstEvent = action.Data[0]; // Always using the first event
+            const startTimeMillis = parseTimeToMillis(firstEvent.ActionInvokeTimestamp);
+            const endTimeMillis = startTimeMillis + parseDurationToMillis(action.Duration);
+            return {
+                topic: action.Name, // Using 'Name' to identify the type of action
+                startTime: startTimeMillis,
+                endTime: endTimeMillis,
+                isUserInterest: false, // Placeholder for now
+                hasUserInterestAction: false // Placeholder for now
+            };
+        }
+    }).filter(action => action !== undefined && action.startTime && action.endTime);
 
 
     const temporalViewContainer = d3.select("#temporal-view");
@@ -1040,93 +1020,47 @@ function createPlotTemporal() {
 }
 
 
+
+
 function showContextMenu(event, topic) {
     console.log(`Context menu for ${topic}`);
 }
-
-  function createSplitBars(topicName) {
-	// Assuming you have a way to get user-specific actions, possibly from globalState or directly
-	const topicDetails = globalState.finalData.action_dict[topicName];
-	const userActions = topicDetails.actions;
-	const users = [...new Set(userActions.map(a => a.actor_name))];
-	const svg = d3.select("#plot-svg > g");
-
-	// We need to adjust the original y scale to insert new bars. Let's calculate new domain.
-	const allTopics = Object.keys(globalState.finalData.action_dict);
-	let newDomain = [];
-	allTopics.forEach(topic => {
-		if (topic === topicName) {
-			newDomain.push(topic); // Add the original topic
-			users.forEach(user => newDomain.push(`${topic}-${user}`)); // Add a new entry for each user
-		} else {
-			newDomain.push(topic);
-		}
-	});
-
-	// Recalculate the y positions based on the new domain
-	yScale.domain(newDomain).padding(0.1);
-	const newYHeight = yScale.bandwidth();
-
-	// Redraw the y-axis
-	// svg.select(".axis--y").call(d3.axisLeft(yScale));
-	svg.select(".axis--y").call(d3.axisLeft(yScale))
-	.selectAll("text")  // Select all text elements of the Y-axis
-	.style("font-size", "1.3em");
-	const backgroundLines = svg.selectAll(".background-line").data(newDomain);
-	backgroundLines.enter().append("rect")
-	.attr("class", "background-line")
-	.attr("x", 0)
-	.attr("y", d => yScale(d))
-	.attr("width", globalState.dynamicWidth)
-	.attr("height", yScale.bandwidth())
-	.attr("fill", "#e8e8e8");
-
-	backgroundLines.exit().remove();
-
-	svg.selectAll(".bar").transition().duration(500)
-		.attr("y", d => yScale(d.topic))
-		.attr("height", newYHeight);
-
-		svg.selectAll(".background-line").transition().duration(500)
-		.attr("y", (d) => yScale(d))
-		.attr("height", newYHeight);
-
-	// Add new bars for each user action under the selected topic
-	users.forEach((user, index) => {
-		userActions.filter(a => a.actor_name === user).forEach(action => {
-			console.log("came here with" + action.actor_name + " and action" + action.has_user_action_of_interest);
-			svg.append("rect")
-				.attr("class", "detail-bar")
-				.attr("x", x(parseTimeToMillis(action.start_time)))
-				.attr("y", yScale(`${topicName}-${user}`))
-				.attr("width", d => x(parseTimeToMillis(action.end_time)) - x(parseTimeToMillis(action.start_time)))
-				.attr("height", newYHeight)
-				.attr("fill", d => action.has_user_action_of_interest ? "#80b1d3" : "#d0d0d0");
-		});
-	});
-
-  }
-
 
 
 
 
 function setTimes(data) {
-  // console.log(data.earliest_action_time);
-  const globalStartTime = parseTimeToMillis(data[0].Timestamp);
-  const globalEndTime = parseTimeToMillis(data[data.length -1].Timestamp);
-  // console.log("Global Start Time:", new Date(globalStartTime));
-  // console.log("Global End Time:", new Date(globalEndTime).toISOString());
-  globalState.globalStartTime = globalStartTime;
-  globalState.globalEndTime = globalEndTime;
-  const totalTime = globalEndTime - globalStartTime;
-  globalState.intervalDuration = totalTime / globalState.bins;
-  globalState.intervals = Array.from({
-    length: globalState.bins + 1
-  }, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-  globalState.lineTimeStamp1 = globalStartTime;
-  globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
-}
+	// Assuming data is an array of action records
+	let timestamps = [];
+  
+	data.forEach(action => {
+	  if (action.Data && Array.isArray(action.Data)) {
+		action.Data.forEach(subAction => {
+		  if (subAction.ActionInvokeTimestamp) {
+			timestamps.push(parseTimeToMillis(subAction.ActionInvokeTimestamp));
+		  }
+		});
+	  }
+	});
+	timestamps.sort((a, b) => a - b);
+  
+	const globalStartTime = timestamps[0];
+	const globalEndTime = timestamps[timestamps.length - 1];
+  
+	console.log("Global Start Time:", new Date(globalStartTime));
+	console.log("Global End Time:", new Date(globalEndTime));
+
+	globalState.globalStartTime = globalStartTime;
+	globalState.globalEndTime = globalEndTime;
+	const totalTime = globalEndTime - globalStartTime;
+	globalState.intervalDuration = totalTime / globalState.bins;
+	globalState.intervals = Array.from({
+	  length: globalState.bins + 1
+	}, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
+	globalState.lineTimeStamp1 = globalStartTime;
+	globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
+  }
+  
 
 
 function createTimeSlider(data) {
@@ -1311,7 +1245,8 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	updateSceneBasedOnSelections();
+	updatePointCloudBasedOnSelections();
+	// updateSceneBasedOnSelections();
 	// // initializeShadedAreaDrag();
 
 
@@ -1376,7 +1311,8 @@ export function dragged(event,d) {
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
-    updateSceneBasedOnSelections();
+	updatePointCloudBasedOnSelections();
+    // updateSceneBasedOnSelections();
     // createLineSegment(0);
     // createLineSegment(1);
 	// createDeviceSegment(0);
@@ -1404,23 +1340,24 @@ function generateHierToolBar() {
 
     const uniqueActions = new Set();
 
-    // Use forEach to process each action directly
+    // Process each action directly, considering nested timestamps
     data.forEach(action => {
-        const actionStartTime = parseTimeToMillis(action.Timestamp);
-        const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-        if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
-            uniqueActions.add(action.UserAction);
-        }
+        action.Data.forEach(subAction => {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
+                uniqueActions.add(action.Name); // Use 'Name' to identify the type of action
+            }
+        });
     });
 
-    console.log(Array.from(uniqueActions)); // To see what actions are included
+    // console.log(Array.from(uniqueActions)); // To see what actions are included
 
-    // Create toolbar items for each unique UserAction
+    // Create toolbar items for each unique action name
     uniqueActions.forEach(actionName => {
         createTopicItem(actionName, toolbar);
     });
 }
-
 function createTopicItem(actionName, toolbar) {
     const topicItem = document.createElement('li');
     const topicCheckbox = document.createElement('input');
@@ -1449,18 +1386,18 @@ function createTopicItem(actionName, toolbar) {
         }
 		initializeOrUpdateSpeechBox();
     });
-	// initializeOrUpdateSpeechBox(); 
-	updateSceneBasedOnSelections();
+	updatePointCloudBasedOnSelections();
+	// updateSceneBasedOnSelections();
 }
 
 
 function getSelectedTopics() {
     const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
-    console.log(`Found ${topicCheckboxes.length} checked checkboxes.`);  // Debug how many checkboxes are found
+    // console.log(`Found ${topicCheckboxes.length} checked checkboxes.`);  // Debug how many checkboxes are found
     let selectedActions = [];
 
     topicCheckboxes.forEach(checkbox => {
-        console.log(`Adding action: ${checkbox.value}`);  // Debug what is being added
+        // console.log(`Adding action: ${checkbox.value}`);  // Debug what is being added
         selectedActions.push(checkbox.value);
     });
 
@@ -1541,11 +1478,9 @@ function parseDurationToMillis(durationString) {
 
 
 function initializeOrUpdateSpeechBox() {
-    // Use selected UserActions from the toolbar
-    const selectedActions = getSelectedTopics(); // Assumes this returns UserActions selected in the toolbar
+    // Use selected action names from the toolbar
+    const selectedActions = getSelectedTopics(); // Assumes this returns action names selected in the toolbar
     const data = globalState.finalData; // Assuming this is an array with all action records
-	console.log(selectedActions); 
-
 
     const container = document.getElementById("speech-box");
     const hierToolbar = document.getElementById('hier-toolbar');
@@ -1571,25 +1506,26 @@ function initializeOrUpdateSpeechBox() {
     rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
     // Filter data based on selected actions and time range
-	// console.log(data); 
     let actionsToDisplay = data.filter(action => {
-        const actionStartTime = parseTimeToMillis(action.Timestamp);
-        const actionEndTime = actionStartTime + parseTimeToMillis(action.Duration);
-		// return selectedActions.includes(action.UserAction); 
-        return selectedActions.includes(action.UserAction) && actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+            return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+        });
     });
-	// console.log(actionsToDisplay); 
 
     // Display each action in the speech box
     actionsToDisplay.forEach(action => {
-        const speechBox = createSpeechBox(action);
-        if (speechBox) {
-            speechBoxesContainer.appendChild(speechBox);
-        }
+        action.Data.forEach(subAction => {
+            const speechBox = createSpeechBox(action, subAction);
+            if (speechBox) {
+                speechBoxesContainer.appendChild(speechBox);
+            }
+        });
     });
 }
 
-function createSpeechBox(action) {
+function createSpeechBox(action, subAction) {
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
     speechBox.style.border = '1px solid grey';
@@ -1601,28 +1537,29 @@ function createSpeechBox(action) {
 
     // Adding a title for each action
     const title = document.createElement('h4');
-    title.textContent = `Action: ${action.UserAction}`;
+    title.textContent = `Action: ${action.Name} - Type: ${action.Type}`;
     speechBox.appendChild(title);
 
     // Adding more detailed information
     const details = document.createElement('div');
     details.innerHTML = `
         <strong>User:</strong> ${action.User}<br>
-        <strong>Intent:</strong> ${action.UserIntent}<br>
-        <strong>Location:</strong> ${action.Location}<br>
-        <strong>Timestamp:</strong> ${Date(parseTimeToMillis(action.Timestamp))}<br>
+        <strong>Intent:</strong> ${action.Intent}<br>
+        <strong>Location:</strong> ${subAction.ActionInvokeLocation}<br>
+        <strong>Timestamp:</strong> ${Date(parseTimeToMillis(subAction.ActionInvokeTimestamp))}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)}<br>
-        <strong>Trigger Source:</strong> ${action.ActionTriggerSource || 'N/A'}<br>
-        <strong>Referent:</strong> ${action.ActionReferent || 'N/A'}<br>
-        <strong>Context:</strong> ${action.ActionContext || 'N/A'}<br>
-        <strong>Referent Name:</strong> ${action.ActionReferentName || 'N/A'}<br>
-        <strong>Referent Type:</strong> ${action.ActionReferentType || 'N/A'}<br>
-        <strong>Context Type:</strong> ${action.ActionContextType || 'N/A'}
+        <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
+        <strong>Referent Type:</strong> ${action.ReferentType}<br>
+        <strong>Context Type:</strong> ${action.ContextType}<br>
+        <strong>Context Description:</strong> ${action.ActionContextDescription || 'N/A'}<br>
+        <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
+        <strong>Referent Body:</strong> ${subAction.ActionReferentBody || 'N/A'}
     `;
     speechBox.appendChild(details);
 
     return speechBox;
 }
+
 
 
 
@@ -1701,7 +1638,9 @@ function createSpeechBox(action) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	  updateSceneBasedOnSelections();
+	updatePointCloudBasedOnSelections();
+	//   updateSceneBasedOnSelections();
+	
 
 	  dragStartX = event.x;
 	};
@@ -1891,25 +1830,8 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
+	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
-	// createLineSegment(0);
-	// createLineSegment(1);
-
-	// createDeviceSegment(0);
-	// createDeviceSegment(1);
-	// createControllerSegment(0, 'right');
-	// createControllerSegment(0, 'left');
-	// createControllerSegment(1, 'right');
-	// createControllerSegment(1, 'left');
-
-	// createRayCastSegment(0);
-	// createRayCastSegment(1);
-	// createLineDrawing(0);
-	// createLineDrawing(1);
-	// plotUserSpecificBarChart();
-	// plotCombinedUsersSpiderChart();
-	// // plotAverageDurationBarChart();
-	// plotActionsOfInterestByTopicAndUserBarChart();
   }
 initialize();
 globalState.camera.updateProjectionMatrix();
