@@ -1331,16 +1331,55 @@ export function dragged(event,d) {
     // // console.log('Dragging Event Ended');
 }
 
+//added: Mits
+function initHierToolBar(){
+	const data = globalState.finalData;
+	const uniqueActions = new Set();
 
+	const toolbar = document.getElementById('hier-toolbar');
+    toolbar.innerHTML = '';
+
+    // Process each action directly, considering nested timestamps
+    data.forEach(action => {
+        action.Data.forEach(subAction => {
+            uniqueActions.add(action.Name); // Use 'Name' to identify the type of action
+        });
+    });
+
+    // console.log(Array.from(uniqueActions)); // To see what actions are included
+
+    // Create toolbar items for each unique action name
+    uniqueActions.forEach(actionName => {
+        createTopicItem(actionName, toolbar);
+    });
+	
+}
+
+//Keep only in the actionNames enabled and rest desabled and by default enabled ones will be checked
+function enableCheckboxes(actionNames, shouldCheck = true) {
+    // Get all checkboxes with the class 'topic-checkbox'
+    const allCheckboxes = document.querySelectorAll('.topic-checkbox');
+
+    allCheckboxes.forEach(checkbox => {
+        const actionName = checkbox.value;
+        if (actionNames.includes(actionName)) {
+            checkbox.disabled = false; // Enable the checkbox
+            checkbox.checked = shouldCheck; // Check or uncheck based on the parameter
+			console.log("$$$ enabled: ", actionName);
+        } else {
+            checkbox.disabled = true; // Disable checkboxes not in the list
+            checkbox.checked = false; // Optionally uncheck them as well
+			console.log("$$$ disabled : ", actionName);
+        }
+    });
+}
 
 function generateHierToolBar() {
     const data = globalState.finalData; // Assuming this is an array of action records
-    const toolbar = document.getElementById('hier-toolbar');
-    toolbar.innerHTML = '';
 
     const uniqueActions = new Set();
 
-    // Process each action directly, considering nested timestamps
+    // Process each action directly, considering nested timestamps	
     data.forEach(action => {
         action.Data.forEach(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
@@ -1351,20 +1390,20 @@ function generateHierToolBar() {
         });
     });
 
-    // console.log(Array.from(uniqueActions)); // To see what actions are included
-
-    // Create toolbar items for each unique action name
-    uniqueActions.forEach(actionName => {
-        createTopicItem(actionName, toolbar);
-    });
+	enableCheckboxes([...uniqueActions], true); // enable and checked in the uniqueActions
 }
-function createTopicItem(actionName, toolbar) {
+
+// create the actual checkbox HTML elemets
+function createTopicItem(actionName, toolbar,  isEnabled = false) {
     const topicItem = document.createElement('li');
     const topicCheckbox = document.createElement('input');
     topicCheckbox.type = 'checkbox';
     topicCheckbox.id = `checkbox_broadtopic_${actionName.replace(/\s+/g, '_')}`;
     topicCheckbox.className = 'topic-checkbox';
 	topicCheckbox.value = actionName; 
+
+	// Set the checkbox enabled or disabled based on the `isEnabled` parameter
+    topicCheckbox.disabled = !isEnabled;
 
     const label = document.createElement('label');
     label.htmlFor = topicCheckbox.id;
@@ -1819,6 +1858,7 @@ async function initialize() {
 
 	createSharedAxis();
 	createPlotTemporal();
+	initHierToolBar();////mits
 	generateHierToolBar();
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
