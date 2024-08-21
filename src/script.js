@@ -228,8 +228,8 @@ function toggleInstanceRange(selectedOption){
 	}
   }
 window.onload = function() {
-	document.getElementById('toggle-user0').addEventListener('change', function() {
-		const userID = 0 ;
+	document.getElementById('toggle-user1').addEventListener('change', function() {
+		const userID = 1 ;
 		globalState.show[userID] = this.checked;
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
@@ -304,11 +304,14 @@ window.onload = function() {
 				});
 			}
 		}
+
+		//mits: update
+		initializeOrUpdateSpeechBox();
 	});
 
-	document.getElementById('toggle-user1').addEventListener('change', function() {
+	document.getElementById('toggle-user2').addEventListener('change', function() {
 
-		const userID = 1 ;
+		const userID = 2 ;
 		globalState.show[userID] = this.checked;
 		if (globalState.show[userID]) {
 			// console.log("hellooo?")
@@ -382,6 +385,9 @@ window.onload = function() {
 				});
 			}
 		}
+
+		//mits: update
+		initializeOrUpdateSpeechBox();
 	});
 
 
@@ -838,7 +844,7 @@ async function initializeScene() {
 
   	const finalData = await Promise.all([
 		fetch('Processed_Log_EXR_VR_Game.json').then(response => response.json()),
-  ]);
+		  ]);
   globalState.finalData = finalData[0];
 
 //   const avatarArray = await Promise.all([
@@ -1521,6 +1527,9 @@ function initializeOrUpdateSpeechBox() {
     const selectedActions = getSelectedTopics(); // Assumes this returns action names selected in the toolbar
     const data = globalState.finalData; // Assuming this is an array with all action records
 
+	//mits
+	const visibleUserIDs = Object.keys(globalState.show).filter(userID => globalState.show[userID]); //asuming 1->user 1 and 2-> user 2
+
     const container = document.getElementById("speech-box");
     const hierToolbar = document.getElementById('hier-toolbar');
     let offsetHeight = hierToolbar.offsetHeight;
@@ -1544,14 +1553,19 @@ function initializeOrUpdateSpeechBox() {
     }
     rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
-    // Filter data based on selected actions and time range
-    let actionsToDisplay = data.filter(action => {
-        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
-            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-            return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-        });
-    });
+	// Filter data based on selected actions, time range, and visible user IDs
+
+	//mits: added filtering on users
+	let actionsToDisplay = data.filter(action => {
+		// Check if the action name includes any of the visible user IDs
+		const hasVisibleUserID = visibleUserIDs.some(userID => action.User.includes(userID));
+
+		return hasVisibleUserID && selectedActions.includes(action.Name) && action.Data.some(subAction => {
+			const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+			const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+			return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+		});
+	});
 
     // Display each action in the speech box
     actionsToDisplay.forEach(action => {
