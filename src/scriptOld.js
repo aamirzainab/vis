@@ -1753,7 +1753,7 @@ function plotCombinedUsersSpiderChart() {
 	topics.forEach((topic, index) => {
 	  const angle = angleSlice * index;
 	  const baseRadius = rScale(maxCount*1.1) + labelPushOutDistance;
-  
+
 	  // Calculate the new position for the label with the additional distance
 	  const labelX = baseRadius * Math.cos(angle - Math.PI/2);
 	  const labelY = baseRadius * Math.sin(angle - Math.PI/2);
@@ -1779,7 +1779,7 @@ function plotCombinedUsersSpiderChart() {
 	  .text(topic)
 	  .style("font-size", "0.8em")
 	  .attr("alignment-baseline", "middle");
- 
+
     if (topic === "Object Save") {
       label.attr("x", -220);
     }

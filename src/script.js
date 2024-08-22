@@ -642,7 +642,7 @@ if (globalState.triangleMesh[id]) {
 }
 }
 function updateUserDevice(userId) {
-    console.log("Update process initiated for user", userId);
+    // console.log("Update process initiated for user", userId);
 
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
@@ -652,7 +652,7 @@ function updateUserDevice(userId) {
         action.TriggerSource === 'XRHMD' &&
         action.User === userField
     );
-    console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
+    // console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
 
 
     const allSubActions = [];
@@ -672,7 +672,7 @@ function updateUserDevice(userId) {
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-    console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    // console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.avatars[userId]) {
@@ -689,12 +689,11 @@ function updateUserDevice(userId) {
     });
 
     if (allSubActions.length === 0) {
-        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
     }
 }
 
 function updateLeftControl(userId) {
-    console.log("Update LEFT process initiated for user", userId);
 
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
@@ -704,7 +703,6 @@ function updateLeftControl(userId) {
         action.TriggerSource === 'XRHand_L' &&
         action.User === userField
     );
-    console.log(`Filtered ${navigateActions.length} navigate left  actions for user ${userField}.`);
 
     // Filter subActions that fall within the specified time range
     const allSubActions = [];
@@ -723,12 +721,11 @@ function updateLeftControl(userId) {
 
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
+	
 
-    console.log(`Processing left ${allSubActions.length} sub-actions within range for user ${userField}.`);
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.leftControls[userId]) {
-			console.log("leftttt "); 
             // globalState.leftControls[userId].position.set(location.x, location.y, location.z);
 			globalState.leftControls[userId].position.x = location.x ; 
 			globalState.leftControls[userId].position.y = location.y ; 
@@ -742,17 +739,17 @@ function updateLeftControl(userId) {
                 'XYZ'
             );
             globalState.leftControls[userId].setRotationFromEuler(euler);
-            console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
+            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
         }
     });
 
     if (allSubActions.length === 0) {
-        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
     }
 }
 
 function updateRightControl(userId) {
-    console.log("Update right process initiated for user", userId);
+    // console.log("Update right process initiated for user", userId);
 
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
@@ -762,7 +759,7 @@ function updateRightControl(userId) {
         action.TriggerSource === 'XRHand_R' &&
         action.User === userField
     );
-    console.log(`Filtered ${navigateActions.length} navigate right actions for user ${userField}.`);
+    // console.log(`Filtered ${navigateActions.length} navigate right actions for user ${userField}.`);
 
     // Filter subActions that fall within the specified time range
     const allSubActions = [];
@@ -782,7 +779,7 @@ function updateRightControl(userId) {
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-    console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    // console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.rightControls[userId]) {
@@ -799,7 +796,7 @@ function updateRightControl(userId) {
     });
 
     if (allSubActions.length === 0) {
-        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
     }
 }
 
@@ -832,17 +829,21 @@ function updateSceneBasedOnSelections() {
 }
 
 
+
+
+
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
-    const selectedActions = getSelectedTopics();
+    // const selectedActions = getSelectedTopics();
 
     const newFilteredActions = new Set();
     const filteredActions = data.filter(action => {
-        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
+        // selectedActions.includes(action.Name) &&
+        return action.Data.some(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
-                newFilteredActions.add(`${action.User}/${subAction.ActionContext}`);
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && subAction.ActionContext) {
+                newFilteredActions.add(`${subAction.ActionContext}`);
                 return true;
             }
             return false;
@@ -851,8 +852,8 @@ function updatePointCloudBasedOnSelections() {
 
     // Remove objects that are no longer relevant
     Object.keys(globalState.loadedClouds).forEach(key => {
-        if (!newFilteredActions.has(key)) {
-            const obj = globalState.loadedClouds[key];
+        const obj = globalState.scene.getObjectByName(key);
+        if (obj && !newFilteredActions.has(key)) {
             globalState.scene.remove(obj);
             delete globalState.loadedClouds[key];
             console.log(`Removed object: ${key}`);
@@ -862,16 +863,11 @@ function updatePointCloudBasedOnSelections() {
     // Load new and keep existing relevant objects
     for (const action of filteredActions) {
         for (const subAction of action.Data) {
-            if (action.ContextType === "Virtual" && subAction.ActionContext) {
-                const key = `${action.User}/${subAction.ActionContext}`;
-                if (!globalState.loadedClouds[key]) {  // Only load if not already loaded
-                    const userNumber = action.User.match(/\d+/)[0];
-                    const filePath = `user${userNumber}/Context/${subAction.ActionContext}`;
-                    const location = parseLocation(subAction.ActionReferentLocation);
-                    const obj = loadVirtualObject(filePath, location);
-                    globalState.loadedClouds[key] = obj; // Track the loaded object
-                    console.log(`Loaded new object: ${key}`);
-                }
+            if (subAction.ActionContext !== null && !globalState.loadedClouds[subAction.ActionContext]) {
+                const obj = loadAvatarModel(subAction.ActionContext);
+                obj.name = subAction.ActionContext; // Ensure each object has a unique name
+                globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
+                console.log(`Loaded new object: ${subAction.ActionContext}`);
             }
         }
     }
@@ -955,8 +951,8 @@ async function initializeScene() {
 
 
 	globalState.renderer.setSize(spatialView.width, spatialView.height);
-	// globalState.renderer.toneMapping = THREE.LinearToneMapping;
-	// globalState.renderer.toneMappingExposure = 1;
+	globalState.renderer.toneMapping = THREE.LinearToneMapping;
+	// globalState.renderer.toneMappingExposure = 0.01;
 
 	document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
 
@@ -966,9 +962,9 @@ async function initializeScene() {
 
 	const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
 	globalState.scene.add(ambientLight);
-	// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-	// directionalLight.position.set(0, 1, 0);
-	// globalState.scene.add(directionalLight);
+	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+	directionalLight.position.set(0, 1, 0);
+	globalState.scene.add(directionalLight);
 
 	globalState.controls.update();
 
@@ -978,7 +974,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
 //   loadHand("RightHand.fbx");
@@ -1306,7 +1302,7 @@ function createLines(timestamp1, timestamp2) {
 	updateRangeDisplay(timestamp1,timestamp2);
 	// updateXRSnapshot();
 	for (let i = 0; i < numUsers; i++) {
-        console.log(`Updating devices for user ${i + 1}.`);
+        // console.log(`Updating devices for user ${i + 1}.`);
         updateUserDevice(i);
         updateLeftControl(i);
         updateRightControl(i);
@@ -1320,7 +1316,7 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	// updatePointCloudBasedOnSelections();
+	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
 	// // initializeShadedAreaDrag();
 
@@ -1386,7 +1382,7 @@ export function dragged(event,d) {
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
-	// updatePointCloudBasedOnSelections();
+	updatePointCloudBasedOnSelections();
     // updateSceneBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
         console.log(`Updating devices for user ${i + 1}.`);
@@ -1441,11 +1437,11 @@ function enableCheckboxes(actionNames, shouldCheck = true) {
         if (actionNames.includes(actionName)) {
             checkbox.disabled = false; // Enable the checkbox
             checkbox.checked = shouldCheck; // Check or uncheck based on the parameter
-			console.log("$$$ enabled: ", actionName);
+			// console.log("$$$ enabled: ", actionName);
         } else {
             checkbox.disabled = true; // Disable checkboxes not in the list
             checkbox.checked = false; // Optionally uncheck them as well
-			console.log("$$$ disabled : ", actionName);
+			// console.log("$$$ disabled : ", actionName);
         }
     });
 }
@@ -1501,7 +1497,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
         }
 		initializeOrUpdateSpeechBox();
     });
-	// updatePointCloudBasedOnSelections();
+	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
 }
 
@@ -1771,7 +1767,7 @@ function createSpeechBox(action, subAction) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	// updatePointCloudBasedOnSelections();
+	updatePointCloudBasedOnSelections();
 	//   updateSceneBasedOnSelections();
 
 
@@ -1964,7 +1960,7 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-	// updatePointCloudBasedOnSelections();
+	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
   }
 initialize();
