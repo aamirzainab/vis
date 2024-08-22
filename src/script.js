@@ -1,5 +1,6 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as THREE from "https://cdn.skypack.dev/three@0.132.2";
+import { FBXLoader } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/FBXLoader.js";
 import {
 	GLTFLoader
 } from "https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/GLTFLoader.js";
@@ -21,7 +22,7 @@ import {
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
-let numUsers = 3;
+let numUsers = 1;
 let x ;
 let yScale ;
 let intervals;
@@ -53,10 +54,6 @@ let globalState = {
 	currentLineSegments : [],
 	triangleMesh: [],
 	raycastLines : [],
-	scene2: undefined,
-	camera2:undefined,
-	renderer2:undefined,
-	controls2:undefined,
 	rightControls: [],
 	leftControls : [],
 	lineDrawing: [],
@@ -80,7 +77,7 @@ const colorScale = d3.scaleOrdinal()
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
-let isAnimating = false;
+let isAnimating = true;
 const animationStep = 100;
 let roomMesh;
 let meshes = [];
@@ -138,6 +135,16 @@ async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
+	avatar.scale.set(1, 1, 1);
+	avatar.name = filename;
+	globalState.scene.add(avatar);
+	avatarLoaded = true;
+	return avatar;
+}
+
+async function loadHand(filename) {
+	const loader = new FBXLoader(); // Use FBXLoader instead of GLTFLoader
+	const avatar = await loader.loadAsync(filename);
 	avatar.scale.set(0.25, 0.25, 0.25);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
@@ -145,18 +152,6 @@ async function loadAvatarModel(filename) {
 	return avatar;
 }
 
-async function loadLine(filename,id) {
-	const loader = new GLTFLoader();
-	const gltf = await loader.loadAsync(filename);
-	const avatar = gltf.scene;
-	avatar.scale.set(1, 1, 1);
-	avatar.name = filename;
-	globalState.scene.add(avatar);
-	avatarLoaded = true;
-	globalState.lineDrawing[id].push(avatar.name);
-	// console.log(globalState)
-	return avatar;
-}
 
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
@@ -177,17 +172,30 @@ async function loadVirtualObject(filePath, location) {
     const loader = new GLTFLoader();
     try {
         const gltf = await loader.loadAsync(filePath);
-		const obj = gltf.scene ; 
-		obj.scale.set(1,1,1); 
-		obj.name = filePath; 
+		const obj = gltf.scene ;
+		obj.scale.set(1,1,1);
+		obj.name = filePath;
 		// obj.position.x = location.x ;
-		// obj.position.y = location.y ; 
-		// obj.position.z = location.z ; 
+		// obj.position.y = location.y ;
+		// obj.position.z = location.z ;
         // gltf.scene.position.set(location.x, location.y, location.z);
         globalState.scene.add(obj);
         console.log(`Model loaded and placed at: ${location.x}, ${location.y}, ${location.z}`);
     } catch (error) {
         console.error('Failed to load model:', error);
+    }
+}
+
+async function loadOBJModel(filename) {
+    const loader = new OBJLoader();  // Using OBJLoader for OBJ files
+    try {
+        const obj = await loader.loadAsync(filename); 
+        obj.name = filename;  
+        globalState.scene.add(obj);  // Add the model to the scene
+        console.log(`Model ${filename} loaded successfully.`);
+        return obj;  // Return the loaded model
+    } catch (error) {
+        console.error(`Failed to load model ${filename}:`, error);  // Log any errors
     }
 }
 
@@ -402,42 +410,7 @@ window.onload = function() {
 
 
 
-function animateVisualization() {
-	const jsonDatas = globalState.jsonDatas;
-	if (!isAnimating || jsonDatas.length === 0) return;
 
-	const globalStartTime = globalState.globalStartTime;
-	const globalEndTime = globalState.globalEndTime;
-	const totalTime = globalEndTime - globalStartTime;
-
-	const nextTimestamp = globalStartTime + globalState.currentTimestamp;
-	if (globalState.currentTimestamp < totalTime) {
-		const elapsedTime = globalState.currentTimestamp;
-		const binIndex = Math.floor(elapsedTime / globalState.intervalDuration);
-		globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
-		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-		jsonDatas.forEach((data, index) => {
-			// updateVisualization(nextTimestamp, index);
-			// updateVisualizationOcculus(nextTimestamp);
-		});
-
-		updateTimeDisplay(nextTimestamp, globalStartTime);
-		// animateTemporalView(nextTimestamp);
-		createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-
-		const slider = document.querySelector('#slider-container input[type=range]');
-		if (slider) {
-			slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
-		}
-
-		globalState.currentTimestamp += animationStep;
-		requestAnimationFrame(animateVisualization);
-	} else {
-		isAnimating = false;
-		globalState.currentTimestamp = 0; // Reset for restart
-		toggleAnimation();
-	}
-}
 
 function createDeviceSegment(id){
 	const userID = "User_" + (id + 1 ) ;
@@ -668,6 +641,168 @@ if (globalState.triangleMesh[id]) {
 	globalState.triangleMesh[id] = []; // Reset the array for this user
 }
 }
+function updateUserDevice(userId) {
+    console.log("Update process initiated for user", userId);
+
+    // User field mapping: Assuming User field in JSON like "User1", "User2"
+    const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === 'Navigate' &&
+        action.TriggerSource === 'XRHMD' &&
+        action.User === userField
+    );
+    console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
+
+
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime // Converted to milliseconds
+                });
+            }
+        });
+    });
+
+    // Sort subActions by Timestamp to process them in chronological order
+    allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
+
+    console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.avatars[userId]) {
+            globalState.avatars[userId].position.set(location.x, location.y, location.z);
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'XYZ'
+            );
+            globalState.avatars[userId].setRotationFromEuler(euler);
+            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
+        }
+    });
+
+    if (allSubActions.length === 0) {
+        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+    }
+}
+
+function updateLeftControl(userId) {
+    console.log("Update LEFT process initiated for user", userId);
+
+    // User field mapping: Assuming User field in JSON like "User1", "User2"
+    const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === 'Move Hand' &&
+        action.TriggerSource === 'XRHand_L' &&
+        action.User === userField
+    );
+    console.log(`Filtered ${navigateActions.length} navigate left  actions for user ${userField}.`);
+
+    // Filter subActions that fall within the specified time range
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime // Converted to milliseconds
+                });
+            }
+        });
+    });
+
+    // Sort subActions by Timestamp to process them in chronological order
+    allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
+
+    console.log(`Processing left ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.leftControls[userId]) {
+			console.log("leftttt "); 
+            // globalState.leftControls[userId].position.set(location.x, location.y, location.z);
+			globalState.leftControls[userId].position.x = location.x ; 
+			globalState.leftControls[userId].position.y = location.y ; 
+			globalState.leftControls[userId].position.z = location.z ; 
+
+
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'XYZ'
+            );
+            globalState.leftControls[userId].setRotationFromEuler(euler);
+            console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
+        }
+    });
+
+    if (allSubActions.length === 0) {
+        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+    }
+}
+
+function updateRightControl(userId) {
+    console.log("Update right process initiated for user", userId);
+
+    // User field mapping: Assuming User field in JSON like "User1", "User2"
+    const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === 'Move Hand' &&
+        action.TriggerSource === 'XRHand_R' &&
+        action.User === userField
+    );
+    console.log(`Filtered ${navigateActions.length} navigate right actions for user ${userField}.`);
+
+    // Filter subActions that fall within the specified time range
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime // Converted to milliseconds
+                });
+            }
+        });
+    });
+
+    // Sort subActions by Timestamp to process them in chronological order
+    allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
+
+    console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.rightControls[userId]) {
+            globalState.rightControls[userId].position.set(location.x, location.y, location.z);
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'XYZ'
+            );
+            globalState.rightControls[userId].setRotationFromEuler(euler);
+            console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
+        }
+    });
+
+    if (allSubActions.length === 0) {
+        console.log('No suitable navigation actions found for user', userField, 'within the time range:', timestamp1, timestamp2);
+    }
+}
+
 
 
 function updateSceneBasedOnSelections() {
@@ -679,7 +814,7 @@ function updateSceneBasedOnSelections() {
         const actionStartTime = parseTimeToMillis(action.Timestamp);
         const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
         return actionEndTime >= globalState.lineTimeStamp1 &&
-               actionStartTime <= globalState.lineTimeStamp2; 
+               actionStartTime <= globalState.lineTimeStamp2;
 			//     &&
             //    selectedActions.includes(action.UserAction);
     });
@@ -689,7 +824,7 @@ function updateSceneBasedOnSelections() {
         if (action.ActionReferentType === "Virtual") {
             const filePath = `Context/${action.ActionReferent}`; // Path adjustment for context-related files
             const location = parseLocation(action.Location); // Extract and format location for rendering
-			console.log(filePath); 
+			console.log(filePath);
             // Load and render the virtual object at the specified location
             loadVirtualObject(filePath, location);
         }
@@ -791,22 +926,24 @@ function updateObjectsBasedOnSelections() {
 
 function parseLocation(locationString) {
     const parts = locationString.split(',');
+    if (parts.length !== 6) {
+        console.error('Invalid location format:', locationString);
+        return null;
+    }
     return {
         x: parseFloat(parts[0]),
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
-        pitch: parseFloat(parts[3]),
-        yaw: parseFloat(parts[4]),
-        roll: parseFloat(parts[5])
+        pitch: parseFloat(parts[3]),  // Rotation around X-axis in degrees
+        yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
+        roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
 }
-
-  
 
 async function initializeScene() {
 	globalState.scene = new THREE.Scene();
 	// globalState.scene.background = new THREE.Color(0xffffff);
-	globalState.scene.background = new THREE.Color(0x808080); 
+	globalState.scene.background = new THREE.Color(0x808080);
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
@@ -815,14 +952,12 @@ async function initializeScene() {
 	globalState.renderer = new THREE.WebGLRenderer({
 	  antialias: true
 	});
-	
-	console.log("here zainab");
+
 
 	globalState.renderer.setSize(spatialView.width, spatialView.height);
-	globalState.renderer.toneMapping = THREE.LinearToneMapping;
-	// globalState.renderer.toneMapping = THREE.NoToneMapping;
-	globalState.renderer.toneMappingExposure = 1;
-	
+	// globalState.renderer.toneMapping = THREE.LinearToneMapping;
+	// globalState.renderer.toneMappingExposure = 1;
+
 	document.getElementById('spatial-view').appendChild(globalState.renderer.domElement);
 
 
@@ -831,9 +966,9 @@ async function initializeScene() {
 
 	const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
 	globalState.scene.add(ambientLight);
-	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-	directionalLight.position.set(0, 1, 0);
-	globalState.scene.add(directionalLight);
+	// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+	// directionalLight.position.set(0, 1, 0);
+	// globalState.scene.add(directionalLight);
 
 	globalState.controls.update();
 
@@ -843,25 +978,23 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_VR_Game.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
+//   loadHand("RightHand.fbx");
+//   loadHand("LeftHand.fbx");
+  globalState.avatars = await Promise.all([
+    loadAvatarModel('oculus_quest_2.glb'),
+	]);
+	globalState.rightControls = await Promise.all([
+	loadAvatarModel("hand_r.glb"),
+	]);
+	globalState.leftControls = await Promise.all([
+	loadAvatarModel("hand_l.glb"),
+	]);
 
-//   const avatarArray = await Promise.all([
-//     loadAvatarModel('oculus_quest_2.glb'),
-//     loadAvatarModel('oculus_quest_2.glb'),
-// 	loadAvatarModel('oculus_controller_right.glb'),
-// 	loadAvatarModel('oculus_controller_right.glb'),
-// 	loadAvatarModel('oculus_controller_left.glb'),
-// 	loadAvatarModel('oculus_controller_left.glb'),
-// 	]);
+	console.log(globalState.leftControls);
 
-// 	globalState.avatars = [avatarArray[0], avatarArray[1]];
-	// globalState.avatars[0].scale.set(0.5,0.5,0.5);
-	// globalState.avatars[1].scale.set(0.5,0.5,0.5);
-
-	// globalState.leftControls = [avatarArray[4], avatarArray[5]];
-	// globalState.rightControls = [avatarArray[2], avatarArray[3]];
 
 	setTimes(globalState.finalData);
 
@@ -897,16 +1030,15 @@ function filterDataByType(data) {
 	};
 }
 
-function findClosestDataEntry(data, timestamp) {
-	if (data.length === 0) return null;
-	return data.reduce((prev, curr) => {
-		const currTimestamp = new Date(curr.Timestamp).getTime();
-		const prevTimestamp = new Date(prev.Timestamp).getTime();
-		return (Math.abs(currTimestamp - timestamp) < Math.abs(prevTimestamp - timestamp) ? curr : prev);
-	});
+function findClosestDataEntry(data, targetTimestamp) {
+    if (data.length === 0) return null;
+    return data.reduce((prev, curr) => {
+        const currTimestamp = parseTimeToMillis(curr.Timestamp);
+        const prevTimestamp = parseTimeToMillis(prev.Timestamp);
+        const targetTime = parseTimeToMillis(targetTimestamp);
+        return (Math.abs(currTimestamp - targetTime) < Math.abs(prevTimestamp - targetTime) ? curr : prev);
+    });
 }
-
-
 
 
 
@@ -1038,7 +1170,7 @@ function showContextMenu(event, topic) {
 function setTimes(data) {
 	// Assuming data is an array of action records
 	let timestamps = [];
-  
+
 	data.forEach(action => {
 	  if (action.Data && Array.isArray(action.Data)) {
 		action.Data.forEach(subAction => {
@@ -1049,10 +1181,10 @@ function setTimes(data) {
 	  }
 	});
 	timestamps.sort((a, b) => a - b);
-  
+
 	const globalStartTime = timestamps[0];
 	const globalEndTime = timestamps[timestamps.length - 1];
-  
+
 	console.log("Global Start Time:", new Date(globalStartTime));
 	console.log("Global End Time:", new Date(globalEndTime));
 
@@ -1066,75 +1198,9 @@ function setTimes(data) {
 	globalState.lineTimeStamp1 = globalStartTime;
 	globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
   }
-  
 
 
-function createTimeSlider(data) {
-	const globalStartTimes = globalState.jsonDatas.map(data => Math.min(...data.map(entry => new Date(entry.Timestamp).getTime())));
-	const globalEndTimes = globalState.jsonDatas.map(data => Math.max(...data.map(entry => new Date(entry.Timestamp).getTime())));
-	globalState.globalStartTime = Math.min(...globalStartTimes);
-	const globalStartTime = globalState.globalStartTime;
-	const somePadding = 0;
-	globalState.globalEndTime = Math.max(...globalEndTimes) + somePadding - 5000;
 
-	const globalEndTime = globalState.globalEndTime;
-	const totalTime = globalEndTime - globalStartTime;
-	globalState.intervalDuration = totalTime / globalState.bins;
-
-	const duration = (globalEndTime - globalStartTime) / 1000 / 60;
-	globalState.intervals = Array.from({
-		length: globalState.bins + 1
-	}, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
-
-	const slider = d3.select('#slider-container').append('input')
-		.attr('type', 'range')
-		.attr('min', 0)
-		.attr('max', duration)
-		.attr('step', 'any')
-		.on('input', function() {
-			const elapsedMinutes = +this.value;
-			globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-			const binIndex = Math.floor((globalState.currentTimestamp) / intervalDuration);
-			globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-
-			globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-			if (isAnimating) {
-				toggleAnimation();
-				updatePlayPauseButton();
-			}
-			isAnimating = false; // Optionally pause animation
-			const timestamp = globalState.globalStartTime + currentTimestamp;
-			jsonDatas.forEach((data, index) => {
-				// updateVisualization(timestamp, index);
-				// updateVisualizationOcculus(timestamp);
-			});
-			// animateTemporalView(timestamp);
-			createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-			updateTimeDisplay(timestamp, globalStartTime);
-		});
-	slider.node().value = 0;
-	slider.on('input', function() {
-		const elapsedMinutes = +this.value;
-		globalState.currentTimestamp = elapsedMinutes * 60 * 1000; // Convert minutes back to milliseconds
-		const binIndex = Math.floor((globalState.currentTimestamp) / globalState.intervalDuration);
-		globalState.startTimeStamp = globalState.globalStartTime + (binIndex * globalState.intervalDuration);
-		globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-		if (isAnimating) {
-			toggleAnimation();
-			updatePlayPauseButton();
-		}
-		isAnimating = false; // Optionally pause animation
-		const timestamp = globalState.globalStartTime + globalState.currentTimestamp;
-		globalState.currentTimestamp = timestamp;
-		globalState.jsonDatas.forEach((data, index) => {
-			// updateVisualization(timestamp, index);
-			// updateVisualizationOcculus(timestamp);
-		});
-		updateTimeDisplay(timestamp, globalState.globalStartTime);
-		// animateTemporalView(timestamp);
-		createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-	});
-}
 
 
 export function getGlobalState() {
@@ -1239,9 +1305,12 @@ function createLines(timestamp1, timestamp2) {
 	circle2.call(drag);
 	updateRangeDisplay(timestamp1,timestamp2);
 	// updateXRSnapshot();
-	// createLineSegment(0);
-	// createLineSegment(1);
-	// createDeviceSegment(0);
+	for (let i = 0; i < numUsers; i++) {
+        console.log(`Updating devices for user ${i + 1}.`);
+        updateUserDevice(i);
+        updateLeftControl(i);
+        updateRightControl(i);
+    }
 	// createDeviceSegment(1);
 	// createControllerSegment(0, 'right');
 	// createControllerSegment(0, 'left');
@@ -1251,7 +1320,7 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	updatePointCloudBasedOnSelections();
+	// updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
 	// // initializeShadedAreaDrag();
 
@@ -1317,17 +1386,18 @@ export function dragged(event,d) {
     generateHierToolBar();
 
     initializeOrUpdateSpeechBox();
-	updatePointCloudBasedOnSelections();
+	// updatePointCloudBasedOnSelections();
     // updateSceneBasedOnSelections();
-    // createLineSegment(0);
-    // createLineSegment(1);
-	// createDeviceSegment(0);
-	// createDeviceSegment(1);
-	// createControllerSegment(0, 'right');
-	// createControllerSegment(0, 'left');
-	// createControllerSegment(1, 'right');
-	// createControllerSegment(1, 'left');
+	for (let i = 0; i < numUsers; i++) {
+        console.log(`Updating devices for user ${i + 1}.`);
 
+        // Update the user's device
+        updateUserDevice(i);
+
+        // Update left and right controls
+        updateLeftControl(i);
+        updateRightControl(i);
+    }
 	// createRayCastSegment(0);
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
@@ -1358,7 +1428,7 @@ function initHierToolBar(){
     uniqueActions.forEach(actionName => {
         createTopicItem(actionName, toolbar);
     });
-	
+
 }
 
 //Keep only in the actionNames enabled and rest desabled and by default enabled ones will be checked
@@ -1385,7 +1455,7 @@ function generateHierToolBar() {
 
     const uniqueActions = new Set();
 
-    // Process each action directly, considering nested timestamps	
+    // Process each action directly, considering nested timestamps
     data.forEach(action => {
         action.Data.forEach(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
@@ -1406,7 +1476,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
     topicCheckbox.type = 'checkbox';
     topicCheckbox.id = `checkbox_broadtopic_${actionName.replace(/\s+/g, '_')}`;
     topicCheckbox.className = 'topic-checkbox';
-	topicCheckbox.value = actionName; 
+	topicCheckbox.value = actionName;
 
 	// Set the checkbox enabled or disabled based on the `isEnabled` parameter
     topicCheckbox.disabled = !isEnabled;
@@ -1431,7 +1501,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
         }
 		initializeOrUpdateSpeechBox();
     });
-	updatePointCloudBasedOnSelections();
+	// updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
 }
 
@@ -1507,7 +1577,7 @@ function parseTimeToMillis(customString) {
 function parseDurationToMillis(durationString) {
     // Split the string by underscores
     const parts = durationString.split('_');
-    
+
     // Extract the hours, minutes, seconds, and microseconds from the string
     const hours = parseInt(parts[1].slice(0, 2), 10);
     const minutes = parseInt(parts[1].slice(2, 4), 10);
@@ -1681,7 +1751,17 @@ function createSpeechBox(action, subAction) {
 	//   createLineSegment(1);
 
 	//   createDeviceSegment(0);
-	//   createDeviceSegment(1);
+
+	for (let i = 0; i < numUsers; i++) {
+        console.log(`Updating devices for user ${i + 1}.`);
+
+        // Update the user's device
+        updateUserDevice(i);
+
+        // Update left and right controls
+        updateLeftControl(i);
+        updateRightControl(i);
+    }
 	//   createControllerSegment(0, 'right');
 	//   createControllerSegment(0, 'left');
 	//   createControllerSegment(1, 'right');
@@ -1691,9 +1771,9 @@ function createSpeechBox(action, subAction) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	updatePointCloudBasedOnSelections();
+	// updatePointCloudBasedOnSelections();
 	//   updateSceneBasedOnSelections();
-	
+
 
 	  dragStartX = event.x;
 	};
@@ -1877,14 +1957,14 @@ async function initialize() {
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
 
-	  
+
 	document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
 	  checkbox.checked = true;
 	  checkbox.dispatchEvent(new Event('change'));
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-	updatePointCloudBasedOnSelections();
+	// updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
   }
 initialize();
@@ -1896,8 +1976,11 @@ onWindowResize();
 
 
 function animate() {
+	// console.log("hello?");
 	initializeInteraction();
+	// console.log("Hello again"); 
 	requestAnimationFrame(animate);
+	// console.log("BAZINGA");
 	globalState.controls.update();
 	// console.log(globalState.camera.position);
 	globalState.renderer.render(globalState.scene, globalState.camera);
