@@ -1644,29 +1644,80 @@ function initializeOrUpdateSpeechBox() {
     });
 }
 
+function formatLocation(locationString) {
+    const location = parseLocation(locationString);
+
+    if (!location) {
+        return `<strong>Location:</strong><br>${formattedLocation}`;
+    }
+
+    const position = `${location.x.toFixed(3)}, ${location.y.toFixed(3)}, ${location.z.toFixed(3)}`;
+    const orientation = `${location.pitch.toFixed(3)}, ${location.yaw.toFixed(3)}, ${location.roll.toFixed(3)}`;
+
+    return `
+        <strong>Position (X, Y, Z):</strong> ${position}<br>
+        <strong>Orientation (Pitch, Yaw, Roll):</strong> ${orientation}
+    `;
+}
+
 function createSpeechBox(action, subAction) {
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
-    speechBox.style.border = '1px solid grey';
-    speechBox.style.borderRadius = '8px';
-    speechBox.style.padding = '15px';
-    speechBox.style.marginBottom = '8px';
-    speechBox.style.marginRight = '8px';
-    speechBox.style.marginLeft = '8px';
 
-    // Adding a title for each action
+    const userColors = {
+        'User1': '#8dd3c7',
+        'User2': '#fdcdac',
+        // Add more users and colors as needed
+    };
+
+    // Create a container for title and user label
+    const titleContainer = document.createElement('div');
+    titleContainer.style.display = 'flex';
+    titleContainer.style.justifyContent = 'space-between';
+    titleContainer.style.alignItems = 'center';
+    titleContainer.style.marginBottom = '10px';
+
+    // Format the action and type string
     const title = document.createElement('h4');
-    title.textContent = `Action: ${action.Name} - Type: ${action.Type}`;
-    speechBox.appendChild(title);
+    title.textContent = `Action: ${action.Name} | Type: ${action.Type}`;
+    title.style.margin = '0'; // Remove margin for better alignment
+
+    // Get the background color for the user
+    const userColor = userColors[action.User] || '#6c757d'; // Default to gray if user is not in the mapping
+
+    // Create user label
+    const userLabel = document.createElement('div');
+    userLabel.textContent = action.User;
+    userLabel.className = 'user-label';
+    userLabel.style.backgroundColor = userColor;
+    userLabel.style.padding = '5px 10px';
+    userLabel.style.borderRadius = '5px';
+    userLabel.style.color = 'white';
+
+    // Position the user label to the right
+    userLabel.style.marginLeft = 'auto'; // Pushes userLabel to the right
+
+    // Append the title and user label to the container
+    titleContainer.appendChild(title);
+    titleContainer.appendChild(userLabel);
+
+    // Append the container to the speech box
+    speechBox.appendChild(titleContainer);
+
+    // Format Location as Position (X, Y, Z) and Orientation (Roll, Pitch, Yaw)
+    const locationString = subAction.ActionInvokeLocation;
+    const formattedLocation = formatLocation(locationString);
+
+	// <strong>Location:</strong> ${subAction.ActionInvokeLocation}<br>
+	// <strong>Location:</strong><br>${formattedLocation}<br>
 
     // Adding more detailed information
     const details = document.createElement('div');
     details.innerHTML = `
-        <strong>User:</strong> ${action.User}<br>
         <strong>Intent:</strong> ${action.Intent}<br>
-        <strong>Location:</strong> ${subAction.ActionInvokeLocation}<br>
-        <strong>Timestamp:</strong> ${Date(parseTimeToMillis(subAction.ActionInvokeTimestamp))}<br>
-        <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)}<br>
+        ${formattedLocation}<br>
+        <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
+        <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
         <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
         <strong>Referent Type:</strong> ${action.ReferentType}<br>
         <strong>Context Type:</strong> ${action.ContextType}<br>
@@ -1678,9 +1729,6 @@ function createSpeechBox(action, subAction) {
 
     return speechBox;
 }
-
-
-
 
 
   function updateRangeDisplay(time1, time2) {
