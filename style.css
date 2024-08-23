@@ -85,17 +85,18 @@ html, body {
     left: 20%;
     padding: 5px;
     margin: 10px;
-    font-size: 1.2em;
+    font-size: 0.9em;
     z-index: 2;
 }
 
 
 
 #temporal-view {
-    height: 35%;
+    /* height: 35%; */
     overflow-x: auto;
     overflow-y: auto;
     display: block;
+    bottom: 0px;
 }
 
 .toolbar, #obj-toolbar, #toolbar, #user-toolbar, #bin-selection-container {
@@ -201,7 +202,7 @@ html, body {
 .user-interest-icon {
     color: #80b1d3; /* Purple color for the star */
     margin-right: 8px; /* Spacing between star and input box */
-    font-size: 2.2em;
+    font-size: 2.0em;
 }
 
 #user-interest-topic {
@@ -228,7 +229,7 @@ html, body {
     /* content: '▼'; Add a downward arrow */
     color: #333; /* Same color as the dropdown text for consistency */
     padding-right: 10px; /* Space before the arrow */
-    font-size: 1.01em;
+    font-size: 0.9em;
 }
 
 

@@ -1109,8 +1109,9 @@ function createPlotTemporal() {
 
 
     const temporalViewContainer = d3.select("#temporal-view");
-    const width = document.getElementById('spatial-view').clientWidth - margin.left - margin.right;
-    const height = document.getElementById('temporal-view').clientHeight - margin.top - margin.bottom;
+    const width = (document.getElementById('spatial-view').clientWidth - margin.left - margin.right) * 0.9;
+    // const height = document.getElementById('temporal-view').clientHeight - margin.top - margin.bottom;
+	const height = 220;
     const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
@@ -1135,15 +1136,18 @@ function createPlotTemporal() {
         .attr("class", "axis axis--y")
         .call(d3.axisLeft(yScale));
 
+	const rectHeightFactor = 0.7;  // Reduce the height to 50% of the original band height
+
     // Drawing bars for each action
     svg.selectAll(".bar")
         .data(topicsData)
         .enter().append("rect")
         .attr("class", "bar")
         .attr("x", d => x(d.startTime))
-        .attr("y", d => yScale(d.topic))
+        // .attr("y", d => yScale(d.topic))
+		.attr("y", d => yScale(d.topic) + (yScale.bandwidth() * (1 - rectHeightFactor)) / 2)
         .attr("width", d => x(d.endTime) - x(d.startTime))
-        .attr("height", yScale.bandwidth())
+        .attr("height", yScale.bandwidth() * rectHeightFactor)
         .attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0"); // Conditional fill based on user interest
 
     // Optional: Add mouse event handlers if needed for interactivity
@@ -1206,8 +1210,8 @@ export function getGlobalState() {
 function createLines(timestamp1, timestamp2) {
 	const svg = d3.select("#temporal-view");
 	// const height = parseInt(svg.style("height")) - margin.top ;
-	let height = parseInt(d3.select("#speech-plot-container").style("height"));
-	height = 430;
+	let height = parseInt(d3.select("#speech-plot-container").style("height")) * 1.1;
+	// height = 300;
 	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
   const dynamicWidth = globalState.dynamicWidth;
   // const width = globalState.dynamicWidth;
@@ -1823,7 +1827,7 @@ function createSpeechBox(action, subAction) {
 	};
 
 	const dragended = () => {
-	};
+			};
 
 	const drag = d3.drag()
 	  .on("start", dragstarted)
