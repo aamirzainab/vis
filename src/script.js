@@ -42,7 +42,7 @@ let globalState = {
 	startTimeStamp: 0,
 	endTimeStamp: 0,
 	currentDataIndex: -1,
-	show: Array(numUsers).fill(true),
+	show: Array(numUsers+1).fill(true),
 	lineTimeStamp1: 0,
 	lineTimeStamp2: 0,
   	finalData: undefined,
@@ -72,7 +72,7 @@ const hsl = {
 };
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
-    .domain(["User_1", "User_2", "User_3", "0", "1", "2"])
+    .domain(["User1", "User2", "User3", "0", "1", "2"])
     .range(["#8dd3c7", "#fdcdac", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
@@ -97,6 +97,7 @@ export function updateIntervals() {
   createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
   generateHierToolBar();
   createPlotTemporal();
+  plotUserSpecificBarChart();
 }
 
 function changeBinSize(newBinSize) {
@@ -236,168 +237,90 @@ function toggleInstanceRange(selectedOption){
 	}
   }
 window.onload = function() {
-	document.getElementById('toggle-user1').addEventListener('change', function() {
-		const userID = 1 ;
-		globalState.show[userID] = this.checked;
-		if (globalState.show[userID]) {
-			// console.log("hellooo?")
-			if (globalState.currentLineSegments[userID]) {
-				globalState.scene.add(globalState.currentLineSegments[userID]);
+	generateUserLegends();
+	for (let i = 1; i <= numUsers; i++) {
+		document.getElementById(`toggle-user${i}`).addEventListener('change', function() {
+			const userID = i ;
+			globalState.show[userID] = this.checked;
+			if (globalState.show[userID]) {
+				// console.log("hellooo?")
+				if (globalState.currentLineSegments[userID]) {
+					globalState.scene.add(globalState.currentLineSegments[userID]);
+				}
+				if (globalState.triangleMesh[userID]) {
+					globalState.triangleMesh[userID].forEach(mesh => {
+							globalState.scene.add(mesh);
+					});
+				}
+				if (globalState.avatars[userID]) {
+					globalState.avatars[userID].visible = true ;
+				}
+				if (globalState.rightControls[userID]) {
+					globalState.rightControls[userID].visible = true ;
+				}
+				if (globalState.leftControls[userID]) {
+					globalState.leftControls[userID].visible = true ;
+				}
+				if (globalState.raycastLines[userID]) {
+					globalState.raycastLines[userID].forEach(mesh => {
+							globalState.scene.add(mesh);
+					});
+				}
+				if (globalState.lineDrawing[userID]) {
+					globalState.lineDrawing[0].forEach(filename => {
+						const existingObject = globalState.scene.getObjectByName(filename);
+						if (existingObject) {
+							existingObject.visible = true ;
+						  }
+					});
+				}
+	
 			}
-			if (globalState.triangleMesh[userID]) {
-				globalState.triangleMesh[userID].forEach(mesh => {
-						globalState.scene.add(mesh);
-				});
+			else {
+	
+				if (globalState.currentLineSegments[userID]) {
+	
+					globalState.scene.remove(globalState.currentLineSegments[userID]);
+	
+				}
+				if (globalState.triangleMesh[userID]) {
+					globalState.triangleMesh[userID].forEach(mesh => {
+							globalState.scene.remove(mesh);
+					});
+				}
+	
+				if (globalState.avatars[userID]) {
+					globalState.avatars[userID].visible = false ;
+				}
+				if (globalState.rightControls[userID]) {
+					globalState.rightControls[userID].visible = false ;
+				}
+				if (globalState.leftControls[userID]) {
+					globalState.leftControls[userID].visible = false ;
+				}
+				if (globalState.raycastLines[userID]) {
+					globalState.raycastLines[userID].forEach(mesh => {
+							globalState.scene.remove(mesh);
+					});
+				}
+				if (globalState.lineDrawing[userID]) {
+					globalState.lineDrawing[0].forEach(filename => {
+						const existingObject = globalState.scene.getObjectByName(filename);
+						// console.log("here?")
+						if (existingObject) {
+							// console.log(" and then here?");
+							existingObject.visible = false ;
+						  }
+						globalState.scene.remove(existingObject);
+					});
+				}
 			}
-			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = true ;
-			}
-			if (globalState.rightControls[userID]) {
-				globalState.rightControls[userID].visible = true ;
-			}
-			if (globalState.leftControls[userID]) {
-				globalState.leftControls[userID].visible = true ;
-			}
-			if (globalState.raycastLines[userID]) {
-				globalState.raycastLines[userID].forEach(mesh => {
-						globalState.scene.add(mesh);
-				});
-			}
-			if (globalState.lineDrawing[userID]) {
-				globalState.lineDrawing[0].forEach(filename => {
-					const existingObject = globalState.scene.getObjectByName(filename);
-					if (existingObject) {
-						existingObject.visible = true ;
-					  }
-				});
-			}
-
-		}
-		else {
-
-			if (globalState.currentLineSegments[userID]) {
-
-				globalState.scene.remove(globalState.currentLineSegments[userID]);
-
-			}
-			if (globalState.triangleMesh[userID]) {
-				globalState.triangleMesh[userID].forEach(mesh => {
-						globalState.scene.remove(mesh);
-				});
-			}
-
-			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = false ;
-			}
-			if (globalState.rightControls[userID]) {
-				globalState.rightControls[userID].visible = false ;
-			}
-			if (globalState.leftControls[userID]) {
-				globalState.leftControls[userID].visible = false ;
-			}
-			if (globalState.raycastLines[userID]) {
-				globalState.raycastLines[userID].forEach(mesh => {
-						globalState.scene.remove(mesh);
-				});
-			}
-			if (globalState.lineDrawing[userID]) {
-				globalState.lineDrawing[0].forEach(filename => {
-					const existingObject = globalState.scene.getObjectByName(filename);
-					// console.log("here?")
-					if (existingObject) {
-						// console.log(" and then here?");
-						existingObject.visible = false ;
-					  }
-					globalState.scene.remove(existingObject);
-				});
-			}
-		}
-
-		//mits: update
-		initializeOrUpdateSpeechBox();
-	});
-
-	document.getElementById('toggle-user2').addEventListener('change', function() {
-
-		const userID = 2 ;
-		globalState.show[userID] = this.checked;
-		if (globalState.show[userID]) {
-			// console.log("hellooo?")
-			if (globalState.currentLineSegments[userID]) {
-				globalState.scene.add(globalState.currentLineSegments[userID]);
-			}
-			if (globalState.triangleMesh[userID]) {
-				globalState.triangleMesh[userID].forEach(mesh => {
-						globalState.scene.add(mesh);
-				});
-			}
-			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = true ;
-			}
-			if (globalState.rightControls[userID]) {
-				globalState.rightControls[userID].visible = true ;
-			}
-			if (globalState.leftControls[userID]) {
-				globalState.leftControls[userID].visible = true ;
-			}
-			if (globalState.raycastLines[userID]) {
-				globalState.raycastLines[userID].forEach(mesh => {
-						globalState.scene.add(mesh);
-				});
-			}
-
-			if (globalState.lineDrawing[userID]) {
-				globalState.lineDrawing[0].forEach(filename => {
-					const existingObject = globalState.scene.getObjectByName(filename);
-					if (existingObject) {
-						existingObject.visible = true ;
-					  }
-					// globalState.scene.add(existingObject);
-				});
-			}
-
-		}
-		else {
-			if (globalState.currentLineSegments[userID]) {
-
-				globalState.scene.remove(globalState.currentLineSegments[userID]);
-
-			}
-			if (globalState.triangleMesh[userID]) {
-				globalState.triangleMesh[userID].forEach(mesh => {
-						globalState.scene.remove(mesh);
-				});
-			}
-
-			if (globalState.avatars[userID]) {
-				globalState.avatars[userID].visible = false ;
-			}
-			if (globalState.rightControls[userID]) {
-				globalState.rightControls[userID].visible = false ;
-			}
-			if (globalState.leftControls[userID]) {
-				globalState.leftControls[userID].visible = false ;
-			}
-			if (globalState.raycastLines[userID]) {
-				globalState.raycastLines[userID].forEach(mesh => {
-						globalState.scene.remove(mesh);
-				});
-			}
-			if (globalState.lineDrawing[userID]) {
-				globalState.lineDrawing[0].forEach(filename => {
-					const existingObject = globalState.scene.getObjectByName(filename);
-					if (existingObject) {
-						existingObject.visible = false ;
-					  }
-					// globalState.scene.remove(existingObject);
-				});
-			}
-		}
-
-		//mits: update
-		initializeOrUpdateSpeechBox();
-	});
-
+	
+			//mits: update
+			initializeOrUpdateSpeechBox();
+			plotUserSpecificBarChart();
+		});
+	}
 
 	const playPauseButton = document.getElementById('playPauseButton');
 	const playPauseButtonHeight = playPauseButton.offsetHeight;
@@ -1384,8 +1307,10 @@ export function dragged(event,d) {
     updateRangeDisplay(timeStamp1, timeStamp2);
 	// updateXRSnapshot();
     generateHierToolBar();
+	plotUserSpecificBarChart()
 
     initializeOrUpdateSpeechBox();
+	initializeOrUpdateSpeechBox();
 	updatePointCloudBasedOnSelections();
     // updateSceneBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
@@ -1500,9 +1425,202 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
             // console.log(`${actionName} is deselected`);
         }
 		initializeOrUpdateSpeechBox();
+		plotUserSpecificBarChart();
     });
 	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
+}
+
+function generateUserLegends(){
+	const legendContainer = document.getElementById('user-legend-container');
+
+    for (let i = 1; i <= numUsers; i++) {
+        const userLegendItem = document.createElement('div');
+        userLegendItem.className = 'user-legend-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'legend-checkbox';
+        checkbox.id = `toggle-user${i}`;
+        checkbox.name = 'userVisibility';
+        checkbox.checked = true;
+
+        const legendSquare = document.createElement('div');
+        legendSquare.className = 'legend-square';
+        legendSquare.style.backgroundColor = colorScale(`User${i}`);
+
+        const label = document.createElement('label');
+        label.htmlFor = `toggle-user${i}`;
+        label.textContent = `User ${i}`;
+
+        userLegendItem.appendChild(checkbox);
+        userLegendItem.appendChild(legendSquare);
+        userLegendItem.appendChild(label);
+
+        legendContainer.appendChild(userLegendItem);
+	}
+}
+
+function plotUserSpecificBarChart() {
+	const plotBox = d3.select("#plot-box1").html("");
+	const margin = { top: 20, right: 20, bottom: 60, left: 70 };
+	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+	// const height = 500 - margin.top - margin.bottom;
+	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+	const svg = plotBox.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	// Assuming globalState.finalData.action_dict exists and is structured appropriately
+	let allUsers = new Set();
+	let userDataByAction = {};
+
+	// Get selected users and actions from checkboxes
+	const selectedUsers = Object.keys(globalState.show)
+	.filter(userID => globalState.show[userID])
+	.map(userID => `User${userID}`);
+	const selectedActions = getSelectedTopics();
+
+	// Filter and process data based on selected checkboxes
+	globalState.finalData
+		.filter(action => selectedActions.includes(action.Name) && selectedUsers.includes(action.User))
+		.forEach(action => {
+			const actorName = action.User;
+			const actionName = action.Name;
+
+			if (!userDataByAction[actionName]) {
+				userDataByAction[actionName] = {};
+			}
+
+			userDataByAction[actionName][actorName] = (userDataByAction[actionName][actorName] || 0) + 1;
+			allUsers.add(actorName);
+		});
+
+	const users = Array.from(allUsers);
+	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
+		actionName,
+		...counts
+	}));
+
+	// Setup scales
+	const x0 = d3.scaleBand()
+		.rangeRound([0, width])
+		.paddingInner(0.1)
+		.domain(processedData.map(d => d.actionName));
+
+	const x1 = d3.scaleBand()
+		.padding(0.05)
+		.domain(users)
+		.rangeRound([0, x0.bandwidth()]);
+
+	const y = d3.scaleLinear()
+		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
+		.nice()
+		.range([height, 0]);
+
+	const color = colorScale;
+
+	// Create the grouped bars
+	const action = svg.selectAll(".action")
+		.data(processedData)
+		.enter().append("g")
+		.attr("class", "g")
+		.attr("transform", d => `translate(${x0(d.actionName)},0)`);
+
+	action.selectAll("rect")
+		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
+		.enter().append("rect")
+		.attr("width", d => Math.min(x1.bandwidth(), 60))
+		.attr("x", d => x1(d.key))
+		.attr("y", d => y(d.value))
+		.attr("height", d => height - y(d.value))
+		.attr("fill", d => colorScale(d.key))
+		.on("mouseover", function(event, d) {
+			d3.select(this)
+				.transition()
+				.duration(100)
+				.attr("fill", d3.rgb(colorScale(d.key)).darker(2)); // Darken the color on hover
+	
+			tooltip.style("visibility", "visible")
+				.text(`${d.key}: ${d.value}`)
+				.style("left", `${event.pageX + 5}px`)
+				.style("top", `${event.pageY - 28}px`);
+		})
+		.on("mouseout", function(event, d) {
+			d3.select(this)
+				.transition()
+				.duration(100)
+				.attr("fill", colorScale(d.key)); // Revert to original color on mouse out
+	
+			tooltip.style("visibility", "hidden");
+		});
+
+	// Add the axes
+	svg.append("g")
+		.attr("class", "axis")
+		.attr("transform", `translate(0,${height})`)
+		.call(d3.axisBottom(x0))
+		.selectAll("text")
+		.style("text-anchor", "end")
+		.attr("dx", "-.4em")
+		.attr("dy", ".25em")
+		.attr("transform", "rotate(-30)")
+		.style("font-size", "1.2em");
+
+	svg.append("g")
+		.call(d3.axisLeft(y))
+		.selectAll(".tick text") // Select all tick texts
+		.style("font-family", "Lato")
+		.style("font-size", "1.2em");
+
+		svg.append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 0 - margin.left)
+		.attr("x", 0 - (height / 2))
+		.attr("dy", "1em")
+		.style("text-anchor", "middle")
+		.text("Count")
+		.style("font-size", "0.8em");
+
+	// Add a legend
+	const legend = svg.selectAll(".legend")
+	.data(users)
+	.enter().append("g")
+	.attr("class", "legend")
+	.attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+	legend.append("rect")
+	.attr("x", width - 18)
+	.attr("width", 18)
+	.attr("height", 18)
+	.style("fill", colorScale);
+
+	legend.append("text")
+	.attr("x", width - 24)
+	.attr("y", 9)
+	.attr("dy", ".35em")
+	.style("text-anchor", "end")
+	.text(d => d)
+	.style("font-size", "0.7em");
+
+	// Tooltip for interactivity
+	const tooltip = d3.select("body").append("div")
+	.attr("class", "d3-tooltip")
+	.style("position", "absolute")
+	.style("z-index", "1000") // Set a high z-index to ensure visibility
+	.style("text-align", "center")
+	.style("width", "auto")
+	.style("height", "auto")
+	.style("padding", "8px")
+	.style("font", "12px sans-serif")
+	.style("background", "lightsteelblue")
+	.style("border", "0px")
+	.style("border-radius", "8px")
+	.style("pointer-events", "none")
+	.style("visibility", "hidden");
 }
 
 
@@ -1512,8 +1630,9 @@ function getSelectedTopics() {
     let selectedActions = [];
 
     topicCheckboxes.forEach(checkbox => {
-        // console.log(`Adding action: ${checkbox.value}`);  // Debug what is being added
-        selectedActions.push(checkbox.value);
+        if (!checkbox.disabled) {  // Only include enabled checkboxes
+            selectedActions.push(checkbox.value);
+        }
     });
 
     return selectedActions;
@@ -1687,7 +1806,7 @@ function createSpeechBox(action, subAction) {
     title.style.margin = '0'; // Remove margin for better alignment
 
     // Get the background color for the user
-    const userColor = userColors[action.User] || '#6c757d'; // Default to gray if user is not in the mapping
+    const userColor = colorScale(action.User); // Default to gray if user is not in the mapping
 
     // Create user label
     const userLabel = document.createElement('div');
@@ -2000,7 +2119,7 @@ async function initialize() {
 
 	createSharedAxis();
 	createPlotTemporal();
-	initHierToolBar();////mits
+	initHierToolBar();
 	generateHierToolBar();
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
@@ -2014,7 +2133,8 @@ async function initialize() {
 	initializeOrUpdateSpeechBox();
 	updatePointCloudBasedOnSelections();
 	// updateSceneBasedOnSelections();
-  }
+	plotUserSpecificBarChart()
+}
 initialize();
 globalState.camera.updateProjectionMatrix();
 initializeInteraction();

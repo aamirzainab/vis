@@ -51,15 +51,29 @@ html, body {
     padding:0;
 }
 
+#right-pane {
+    display: flex;
+    flex-direction: column; /* Stack the plot-boxes vertically */
+    height: 100%; /* Full height of the viewport */
+}
+
+#plot-box1 {
+    height: 20%; /* 20% of the height */
+}
+
+#plot-box2 {
+    height: 20%; /* 20% of the height */
+}
+
+#plot-box3 {
+    height: 60%; /* 60% of the height */
+}
+
 .plot-box {
-    flex: 1;
-    width: 100%;
-    /* overflow-y: auto; */
-    /* border: 1px solid #ddd; */
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    margin:0;
-    padding:0;
+    width: 100%; /* Full width of the right pane */
+    margin: 0;
+    padding: 0;
+    border: 1px solid #ccc; /* Optional: Add a border to visualize the boxes */
 }
 
 #spatial-view, #temporal-view {
