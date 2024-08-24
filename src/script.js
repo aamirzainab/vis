@@ -22,7 +22,7 @@ import {
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
-let numUsers = 1;
+let numUsers = 0;
 let x ;
 let yScale ;
 let intervals;
@@ -236,7 +236,7 @@ function toggleInstanceRange(selectedOption){
 	  circle2.style('display',null);
 	}
   }
-window.onload = function() {
+  function window_onload() {
 	generateUserLegends();
 	for (let i = 1; i <= numUsers; i++) {
 		document.getElementById(`toggle-user${i}`).addEventListener('change', function() {
@@ -900,6 +900,8 @@ async function initializeScene() {
 		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
+  updateNumUsers();
+  window_onload();
 //   loadHand("RightHand.fbx");
 //   loadHand("LeftHand.fbx");
   globalState.avatars = await Promise.all([
@@ -1332,7 +1334,18 @@ export function dragged(event,d) {
     // // console.log('Dragging Event Ended');
 }
 
-//added: Mits
+//updates the numUsers as soon as on log read
+function updateNumUsers(){
+	const uniqueUsers = new Set(globalState.finalData.map(action => action.User));
+	numUsers = uniqueUsers.size;
+	updateGlobalShow();
+}
+
+//Update global show, 0 index is not used
+function updateGlobalShow(){
+	globalState.show = Array(numUsers+1).fill(true);
+}
+
 function initHierToolBar(){
 	const data = globalState.finalData;
 	const uniqueActions = new Set();
@@ -1463,7 +1476,7 @@ function generateUserLegends(){
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 20, right: 20, bottom: 60, left: 70 };
+	const margin = { top: 20, right: 20, bottom: 80, left: 70 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	// const height = 500 - margin.top - margin.bottom;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
