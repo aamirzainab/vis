@@ -1476,7 +1476,7 @@ function generateUserLegends(){
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 20, right: 20, bottom: 80, left: 70 };
+	const margin = { top: 30, right: 20, bottom: 80, left: 70 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	// const height = 500 - margin.top - margin.bottom;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
@@ -1486,6 +1486,17 @@ function plotUserSpecificBarChart() {
 		.attr("height", height + margin.top + margin.bottom)
 		.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	// Add plot title
+    svg.append("text")
+        .attr("x", width / 2)
+        // .attr("y", 0 - margin.top / 2)
+        .attr("y", -4)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-family", "Lato")
+        .style("font-weight", "bold")
+        .text("User-Specific Actions Bar Chart");
 
 	// Assuming globalState.finalData.action_dict exists and is structured appropriately
 	let allUsers = new Set();
@@ -1519,15 +1530,18 @@ function plotUserSpecificBarChart() {
 	}));
 
 	// Setup scales
+	const maxBandwidth = 200; // Example max bandwidth; adjust as needed
 	const x0 = d3.scaleBand()
 		.rangeRound([0, width])
 		.paddingInner(0.1)
-		.domain(processedData.map(d => d.actionName));
+		.domain(processedData.map(d => d.actionName))
+		.paddingOuter(0.1) // Add some outer padding to visually balance the plot
+		.align(0.1); // Center-align the scale
 
 	const x1 = d3.scaleBand()
 		.padding(0.05)
 		.domain(users)
-		.rangeRound([0, x0.bandwidth()]);
+		.rangeRound([0, Math.min(x0.bandwidth(), maxBandwidth)]); // Cap the bandwidth
 
 	const y = d3.scaleLinear()
 		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
@@ -1541,7 +1555,8 @@ function plotUserSpecificBarChart() {
 		.data(processedData)
 		.enter().append("g")
 		.attr("class", "g")
-		.attr("transform", d => `translate(${x0(d.actionName)},0)`);
+		// .attr("transform", d => `translate(${x0(d.actionName)},0)`);
+		.attr("transform", d => `translate(${x0(d.actionName) + x0.bandwidth() / 2 - x1.bandwidth() * users.length / 2},0)`);
 
 	action.selectAll("rect")
 		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
@@ -1584,7 +1599,7 @@ function plotUserSpecificBarChart() {
 		.style("font-size", "1.2em");
 
 	svg.append("g")
-		.call(d3.axisLeft(y))
+		.call(d3.axisLeft(y).ticks(5))
 		.selectAll(".tick text") // Select all tick texts
 		.style("font-family", "Lato")
 		.style("font-size", "1.2em");
@@ -1595,7 +1610,7 @@ function plotUserSpecificBarChart() {
 		.attr("x", 0 - (height / 2))
 		.attr("dy", "1em")
 		.style("text-anchor", "middle")
-		.text("Count")
+		.text("Action Count")
 		.style("font-size", "0.8em");
 
 	// Add a legend
