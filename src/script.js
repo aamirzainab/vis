@@ -190,8 +190,8 @@ async function loadVirtualObject(filePath, location) {
 async function loadOBJModel(filename) {
     const loader = new OBJLoader();  // Using OBJLoader for OBJ files
     try {
-        const obj = await loader.loadAsync(filename); 
-        obj.name = filename;  
+        const obj = await loader.loadAsync(filename);
+        obj.name = filename;
         globalState.scene.add(obj);  // Add the model to the scene
         console.log(`Model ${filename} loaded successfully.`);
         return obj;  // Return the loaded model
@@ -274,21 +274,21 @@ function toggleInstanceRange(selectedOption){
 						  }
 					});
 				}
-	
+
 			}
 			else {
-	
+
 				if (globalState.currentLineSegments[userID]) {
-	
+
 					globalState.scene.remove(globalState.currentLineSegments[userID]);
-	
+
 				}
 				if (globalState.triangleMesh[userID]) {
 					globalState.triangleMesh[userID].forEach(mesh => {
 							globalState.scene.remove(mesh);
 					});
 				}
-	
+
 				if (globalState.avatars[userID]) {
 					globalState.avatars[userID].visible = false ;
 				}
@@ -315,7 +315,7 @@ function toggleInstanceRange(selectedOption){
 					});
 				}
 			}
-	
+
 			//mits: update
 			initializeOrUpdateSpeechBox();
 			plotUserSpecificBarChart();
@@ -331,70 +331,6 @@ function toggleInstanceRange(selectedOption){
 
 
 
-
-
-
-
-function createDeviceSegment(id){
-	const userID = "User_" + (id + 1 ) ;
-	const avatar = globalState.avatars[id];
-	console.log()
-	const linewidth = 7;
-	// const data = globalState.finalData;
-	const data = globalState.finalData.action_dict["User Transformation"].actions;
-	  const filteredData = data.filter(action => {
-		  const actionStartTime = parseTimeToMillis(action.start_time);
-		  const actionEndTime = parseTimeToMillis(action.end_time);
-		  return action.action_type === "Transformation" &&
-				 action.formatted_data.action_property_specific_action === "PhysicalXRDisplay Transformation" &&
-		   action.actor_name == userID &&
-				 actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-	  });
-
-	if (filteredData.length !== 0) {
-	  filteredData.forEach(entry => {
-		const spatialExent = entry.spatial_extent;
-		const {x,y,z} = getCoordinates(spatialExent);
-		avatar.position.x = x ;
-		avatar.position.y = y ;
-		avatar.position.z = z ;
-		const euler = new THREE.Euler(THREE.MathUtils.degToRad(spatialExent[1][0]), THREE.MathUtils.degToRad(spatialExent[1][1]), THREE.MathUtils.degToRad(spatialExent[1][2]), 'XYZ');
-		avatar.rotation.set(0, 0, 0);
-		avatar.setRotationFromEuler(euler);
-	  });
-	  }
-	}
-
-
-function createControllerSegment(id, rightOrLeft){
-	const userID = "User_" + (id + 1 ) ;
-	let avatar = rightOrLeft === "right" ? globalState.rightControls[id] : globalState.leftControls[id];
-
-	const data = globalState.finalData.action_dict["User Transformation"].actions;
-
-	const filteredData = data.filter(action => {
-		const actionStartTime = parseTimeToMillis(action.start_time);
-		const actionEndTime = parseTimeToMillis(action.end_time);
-		return action.action_type === "Transformation" &&
-				action.formatted_data.action_property_specific_action ===  (rightOrLeft === "right" ? "PhysicalXRController_R Transformation" : "PhysicalXRController_L Transformation")
-				&& action.actor_name == userID &&
-				actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-	});
-
-	if (filteredData.length !== 0) {
-		filteredData.forEach(entry => {
-			const spatialExtent = entry.spatial_extent;
-			const {x, y, z} = getCoordinates(spatialExtent);
-			// console.log(spatialExtent);
-			avatar.position.x = x;
-			avatar.position.y = y;
-			avatar.position.z = z;
-			const euler = new THREE.Euler(THREE.MathUtils.degToRad(entry.spatial_extent[1][0]), THREE.MathUtils.degToRad(entry.spatial_extent[1][1]), THREE.MathUtils.degToRad(entry.spatial_extent[1][2]), 'XYZ');
-			avatar.rotation.set(0, 0, 0);
-			avatar.setRotationFromEuler(euler);
-		});
-	}
-}
 
 function createRayCastSegment(id) {
 		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
@@ -498,64 +434,6 @@ function createLineDrawing(id) {
 		});
 	}
 
-// function createLineSegment(id){
-//     const geometry = new LineGeometry();
-//     const positions = [];
-//     const colors = [];
-
-// 	const userID = "User_" + (id + 1 ) ;
-// 	// console.log(id);
-// 	// console.log(userID)
-//     let colorShade = colorScale(String(id));
-// 	// console.log(colorShade);
-// 	// console.log(colorShade);
-//     let baseColor = new THREE.Color(colorShade);
-//     const linewidth = 7; // Adjust as necessary
-//     baseColor.getHSL(hsl);
-// 	const data = globalState.finalData.action_dict["User Transformation"].actions;
-//     // Filter actions for the specific transformation and within the time range
-//     const filteredData = data.filter(action => {
-//         const actionStartTime = parseTimeToMillis(action.start_time);
-//         const actionEndTime = parseTimeToMillis(action.end_time);
-//         return action.action_type === "Transformation" &&
-//                action.formatted_data.action_property_specific_action === "PhysicalXRDisplay Transformation" &&
-// 			   action.actor_name == userID &&
-//                actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
-//     });
-
-// 	if (globalState.currentLineSegments[id]) {
-//         globalState.scene.remove(globalState.currentLineSegments[id]);
-//         globalState.currentLineSegments[id] = null;
-//     }
-
-//     // Assuming a method to interpret or mock spatial data from raw_log_text
-// 	if (filteredData.length !== 0) {
-// 		filteredData.forEach(entry => {
-// 			const spatialExent = entry.spatial_extent;
-// 			const {x,y,z} = getCoordinates(spatialExent);
-// 			positions.push(x, y, z);
-// 			const color = new THREE.Color().setHSL(hsl.h, hsl.s, 1);
-// 			colors.push(color.r, color.g, color.b);
-// 		});
-// 		geometry.setPositions(positions.flat());
-// 		geometry.setColors(colors);
-
-// 		let material = new LineMaterial({
-// 			linewidth: linewidth,
-// 			color: baseColor,
-// 			opacity: 1,
-// 			transparent: true,
-// 			linewidth: linewidth,
-// 			resolution: new THREE.Vector2(window.innerWidth, window.innerHeight) // Ensure the resolution is set for proper rendering
-// 		});
-
-// 		const line = new Line2(geometry, material);
-// 			globalState.scene.add(line);
-// 		globalState.currentLineSegments[id] = line;
-
-// 		return line;
-// 	}
-// }
 function clearPreviousTriangles(id) {
 if (globalState.triangleMesh[id]) {
 	globalState.triangleMesh[id].forEach(mesh => {
@@ -604,7 +482,7 @@ function updateUserDevice(userId) {
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'XYZ'
+                'ZXY'
             );
             globalState.avatars[userId].setRotationFromEuler(euler);
             // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
@@ -644,22 +522,22 @@ function updateLeftControl(userId) {
 
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
-	
+
 
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.leftControls[userId]) {
             // globalState.leftControls[userId].position.set(location.x, location.y, location.z);
-			globalState.leftControls[userId].position.x = location.x ; 
-			globalState.leftControls[userId].position.y = location.y ; 
-			globalState.leftControls[userId].position.z = location.z ; 
+			globalState.leftControls[userId].position.x = location.x ;
+			globalState.leftControls[userId].position.y = location.y ;
+			globalState.leftControls[userId].position.z = location.z ;
 
 
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'XYZ'
+                'ZXY'
             );
             globalState.leftControls[userId].setRotationFromEuler(euler);
             // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
@@ -711,10 +589,10 @@ function updateRightControl(userId) {
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'XYZ'
+                'ZXY'
             );
             globalState.rightControls[userId].setRotationFromEuler(euler);
-            console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
+            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
         }
     });
 
@@ -750,9 +628,6 @@ function updateSceneBasedOnSelections() {
         }
     });
 }
-
-
-
 
 
 function updatePointCloudBasedOnSelections() {
@@ -797,51 +672,71 @@ function updatePointCloudBasedOnSelections() {
 }
 
 
-function updateObjectsBasedOnSelections() {
+async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
-    const selectedActions = getSelectedTopics();
 
     const newFilteredActions = new Set();
-    const filteredActions = data.filter(action => {
-        return selectedActions.includes(action.Name) && action.Data.some(subAction => {
+    const actionsToLoad = [];
+	const selectedActions = getSelectedTopics();
+
+    // Gather all actions that meet the time range and have not been loaded yet
+    for (const action of data) {
+        for (const subAction of action.Data) {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2) {
-                newFilteredActions.add(`${action.User}/${subAction.ActionContext}`);
-                return true;
-            }
-            return false;
-        });
-    });
-
-    // Remove objects that are no longer relevant
-    Object.keys(globalState.loadedObjects).forEach(key => {
-        if (!newFilteredActions.has(key)) {
-            const obj = globalState.loadedObjects[key];
-            globalState.scene.remove(obj);
-            delete globalState.loadedObjects[key];
-            console.log(`Removed object: ${key}`);
-        }
-    });
-
-    // Load new and keep existing relevant objects
-    for (const action of filteredActions) {
-        for (const subAction of action.Data) {
-            if (action.ReferentType === "Virtual" && subAction.ActionReferentBody) {
-                const key = `${action.User}/${subAction.ActionReferentBody}`;
-                if (!globalState.loadedObjects[key]) {  // Only load if not already loaded
-                    const userNumber = action.User.match(/\d+/)[0];
-                    const filePath = `user${userNumber}/Object/${subAction.ActionContext}`;
-                    const location = parseLocation(subAction.ActionReferentLocation);
-                    const obj = loadVirtualObject(filePath, location);
-                    globalState.loadedObjects[key] = obj; // Track the loaded object
-                    console.log(`Loaded new object: ${key}`);
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 
+				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
+				&& selectedActions.includes(action.Name)) {
+                const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
+                if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]) {
+                    newFilteredActions.add(key);
+                    actionsToLoad.push({ key, subAction }); // Store for loading later
                 }
             }
         }
     }
-}
 
+    // Unload objects that are no longer needed
+    for (const key of Object.keys(globalState.loadedObjects)) {
+        if (!newFilteredActions.has(key) && globalState.loadedObjects[key]) {
+            const obj = await globalState.loadedObjects[key];  // Ensure the object is fully loaded
+            if (obj && obj.parent) { // Check if the object is still part of the scene
+                if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+                if (obj.material) obj.material.dispose();
+                globalState.scene.remove(obj);
+                delete globalState.loadedObjects[key];
+                // console.log(`Object removed from scene and state: ${key}`);
+            }
+        }
+    }
+
+    // Load new objects that are required
+    for (const { key, subAction } of actionsToLoad) {
+        if (!globalState.loadedObjects[key]) { // Double check to prevent race conditions
+            // console.log(`Loading new object: ${key}`);
+            globalState.loadedObjects[key] = loadAvatarModel(subAction.ActionReferentBody)
+                .then(obj => {
+                    obj.name = key;
+                    const location = parseLocation(subAction.ActionReferentLocation);
+                    obj.position.set(location.x, location.y, location.z);
+                    // const euler = new THREE.Euler(
+                    //     THREE.MathUtils.degToRad(location.eulerx),
+                    //     THREE.MathUtils.degToRad(location.eulery),
+                    //     THREE.MathUtils.degToRad(location.eulerz),
+                    //     'ZXY'
+                    // );
+                    // obj.setRotationFromEuler(euler);
+                    globalState.scene.add(obj);
+                    // console.log(`Object loaded and added to scene: ${key}`);
+                    return obj; // Return the loaded object
+                })
+                .catch(error => {
+                    // console.error(`Failed to load object ${key}:`, error);
+                    delete globalState.loadedObjects[key]; // Clean up state on failure
+                });
+        }
+    }
+}
 
 function parseLocation(locationString) {
     const parts = locationString.split(',');
@@ -850,14 +745,15 @@ function parseLocation(locationString) {
         return null;
     }
     return {
-        x: parseFloat(parts[0]),
+        x: -parseFloat(parts[0]),
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
-        pitch: parseFloat(parts[3]),  // Rotation around X-axis in degrees
-        yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
+        pitch: -parseFloat(parts[3]),  // Rotation around X-axis in degrees
+        yaw: -parseFloat(parts[4]),    // Rotation around Y-axis in degrees
         roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
 }
+
 
 async function initializeScene() {
 	globalState.scene = new THREE.Scene();
@@ -897,7 +793,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -1246,7 +1142,7 @@ function createLines(timestamp1, timestamp2) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	updatePointCloudBasedOnSelections();
-	// updateSceneBasedOnSelections();
+	updateObjectsBasedOnSelections();
 	// // initializeShadedAreaDrag();
 
 
@@ -1313,8 +1209,9 @@ export function dragged(event,d) {
 
     initializeOrUpdateSpeechBox();
 	initializeOrUpdateSpeechBox();
+	
 	updatePointCloudBasedOnSelections();
-    // updateSceneBasedOnSelections();
+	updateObjectsBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
         console.log(`Updating devices for user ${i + 1}.`);
 
@@ -1440,8 +1337,9 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		initializeOrUpdateSpeechBox();
 		plotUserSpecificBarChart();
     });
+	
 	updatePointCloudBasedOnSelections();
-	// updateSceneBasedOnSelections();
+	updateObjectsBasedOnSelections();
 }
 
 function generateUserLegends(){
@@ -1486,7 +1384,7 @@ function plotUserSpecificBarChart() {
 		.attr("height", height + margin.top + margin.bottom)
 		.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
+
 	// Add plot title
     svg.append("text")
         .attr("x", width / 2)
@@ -1571,7 +1469,7 @@ function plotUserSpecificBarChart() {
 				.transition()
 				.duration(100)
 				.attr("fill", d3.rgb(colorScale(d.key)).darker(2)); // Darken the color on hover
-	
+
 			tooltip.style("visibility", "visible")
 				.text(`${d.key}: ${d.value}`)
 				.style("left", `${event.pageX + 5}px`)
@@ -1582,7 +1480,7 @@ function plotUserSpecificBarChart() {
 				.transition()
 				.duration(100)
 				.attr("fill", colorScale(d.key)); // Revert to original color on mouse out
-	
+
 			tooltip.style("visibility", "hidden");
 		});
 
@@ -1966,8 +1864,10 @@ function createSpeechBox(action, subAction) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
+	
+
 	updatePointCloudBasedOnSelections();
-	//   updateSceneBasedOnSelections();
+	updateObjectsBasedOnSelections();
 
 
 	  dragStartX = event.x;
@@ -2159,8 +2059,9 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
+	
 	updatePointCloudBasedOnSelections();
-	// updateSceneBasedOnSelections();
+	updateObjectsBasedOnSelections();
 	plotUserSpecificBarChart()
 }
 initialize();
@@ -2174,7 +2075,7 @@ onWindowResize();
 function animate() {
 	// console.log("hello?");
 	initializeInteraction();
-	// console.log("Hello again"); 
+	// console.log("Hello again");
 	requestAnimationFrame(animate);
 	// console.log("BAZINGA");
 	globalState.controls.update();
