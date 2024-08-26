@@ -99,6 +99,7 @@ export function updateIntervals() {
   createPlotTemporal();
   plotUserSpecificBarChart();
   plotUserSpecificDurationBarChart();
+  updateObjectsBasedOnSelections();
 }
 
 function changeBinSize(newBinSize) {
@@ -619,7 +620,7 @@ function parseLocation(locationString) {
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
         pitch: -parseFloat(parts[3]),  // Rotation around X-axis in degrees
-        yaw: -parseFloat(parts[4]),    // Rotation around Y-axis in degrees
+        yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
         roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
 }
@@ -663,7 +664,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_VR_Game.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -673,12 +674,12 @@ async function initializeScene() {
   globalState.avatars = await Promise.all([
     loadAvatarModel('ipad.glb'),
 	]);
-	// globalState.rightControls = await Promise.all([
-	// loadHand("hand_r.glb"),
-	// ]);
-	// globalState.leftControls = await Promise.all([
-	// loadHand("hand_l.glb"),
-	// ]);
+	globalState.rightControls = await Promise.all([
+	loadHand("hand_r.glb"),
+	]);
+	globalState.leftControls = await Promise.all([
+	loadHand("hand_l.glb"),
+	]);
 
 	setTimes(globalState.finalData);
 
@@ -1602,6 +1603,34 @@ function plotUserSpecificDurationBarChart() {
         .style("visibility", "hidden");
 }
 
+function plotLLMData(){
+	d3.json('path/to/your/data.json').then(function(data) {
+        // Select the container element
+        const container = d3.select('#plot-box-3');
+
+        // Get the top 10 insights
+        const insights = Object.keys(data).slice(0, 10).map(key => data[key]);
+
+        // Append insights to the container
+        insights.forEach((insight, index) => {
+            const insightDiv = container.append('div')
+                .attr('class', 'insight')
+                .style('margin-bottom', '10px');
+
+            // Append topic
+            insightDiv.append('h3')
+                .text(`${index + 1}. ${insight.topic}`)
+                .style('font-weight', 'bold');
+
+            // Append insight description
+            insightDiv.append('p')
+                .text(insight.insight);
+        });
+    }).catch(function(error) {
+        console.error('Error loading JSON data:', error);
+    });
+}
+
 function getSelectedTopics() {
     const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
     // console.log(`Found ${topicCheckboxes.length} checked checkboxes.`);  // Debug how many checkboxes are found
@@ -1924,6 +1953,7 @@ function createSpeechBox(action, subAction) {
 		generateHierToolBar();
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
+		updateObjectsBasedOnSelections();
 	};
 
 	const drag = d3.drag()
