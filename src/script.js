@@ -144,15 +144,15 @@ async function loadAvatarModel(filename) {
 }
 
 async function loadHand(filename) {
-	const loader = new FBXLoader(); // Use FBXLoader instead of GLTFLoader
-	const avatar = await loader.loadAsync(filename);
-	avatar.scale.set(0.25, 0.25, 0.25);
+	const loader = new GLTFLoader();
+	const gltf = await loader.loadAsync(filename);
+	const avatar = gltf.scene;
+	avatar.scale.set(2, 2, 2);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
 	avatarLoaded = true;
 	return avatar;
 }
-
 
 async function loadRoomModel() {
 	const loader = new GLTFLoader();
@@ -319,6 +319,8 @@ function toggleInstanceRange(selectedOption){
 			//mits: update
 			initializeOrUpdateSpeechBox();
 			plotUserSpecificBarChart();
+			updatePointCloudBasedOnSelections();
+			updateObjectsBasedOnSelections();
 		});
 	}
 
@@ -330,118 +332,6 @@ function toggleInstanceRange(selectedOption){
 };
 
 
-
-
-function createRayCastSegment(id) {
-		const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-		if (!globalState.raycastLines[id]) {
-			globalState.raycastLines[id] = [];
-		}
-		if (globalState.raycastLines[0]) {
-			globalState.raycastLines[0].forEach(mesh => {
-				globalState.scene.remove(mesh);
-			});
-			globalState.raycastLines[0] = [];
-		}
-		if (globalState.raycastLines[1]) {
-			globalState.raycastLines[1].forEach(mesh => {
-				globalState.scene.remove(mesh);
-			});
-			globalState.raycastLines[1] = [];
-		}
-
-
-		Object.values(globalState.finalData.action_dict).forEach(topic => {
-			topic.actions.filter(action => {
-				const actionStartTime = parseTimeToMillis(action.start_time);
-				const actionEndTime = parseTimeToMillis(action.end_time);
-				// Object selection
-				return action.formatted_data.action_property_specific_action === "Object selection" &&
-					   actionEndTime >= globalState.lineTimeStamp1 &&
-					   actionStartTime <= globalState.lineTimeStamp2 ;
-			}).forEach(action => {
-
-				const raycastPosition = action.specific_action_data;
-				const x = raycastPosition[2];
-				const y = raycastPosition[1];
-				const z = -raycastPosition[0];
-
-
-				let match = action.actor_name.match(/\d+/);
-				let id = match ? parseInt(match[0], 10) - 1 : null;
-
-				const userAvatar = globalState.leftControls[id]
-				if (!userAvatar) return;
-
-				const points = [
-					new THREE.Vector3(userAvatar.position.x, userAvatar.position.y, userAvatar.position.z),
-					new THREE.Vector3(x, y,z)
-				];
-				const geometry = new THREE.BufferGeometry().setFromPoints(points);
-				const line = new THREE.Line(geometry, lineMaterial);
-
-				globalState.scene.add(line);
-				globalState.raycastLines[id].push(line);
-
-			});
-		});
-	}
-
-
-function createLineDrawing(id) {
-		if (!globalState.lineDrawing[0]) {
-			globalState.lineDrawing[0] = [];
-		}
-		if (!globalState.lineDrawing[1]) {
-			globalState.lineDrawing[1] = [];
-		}
-		if (globalState.lineDrawing[0]) {
-			globalState.lineDrawing[0].forEach(filename => {
-				const existingObject = globalState.scene.getObjectByName(filename);
-				if (existingObject) {
-					existingObject.visible = false ;
-				  }
-				globalState.scene.remove(existingObject);
-			});
-
-		}
-		globalState.lineDrawing[0] = [];
-		if (globalState.lineDrawing[1]) {
-			globalState.lineDrawing[1].forEach(filename => {
-				const existingObject = globalState.scene.getObjectByName(filename);
-				if (existingObject) {
-					existingObject.visible = false ;
-				  }
-				globalState.scene.remove(existingObject);
-			});
-		}
-			globalState.lineDrawing[1] = [];
-
-
-		Object.values(globalState.finalData.action_dict).forEach(topic => {
-			topic.actions.filter(action => {
-				const actionStartTime = parseTimeToMillis(action.start_time);
-				const actionEndTime = parseTimeToMillis(action.end_time);
-				return action.formatted_data.action_property_specific_action === "Line drawing" &&
-						actionEndTime >= globalState.lineTimeStamp1 &&
-						actionStartTime <= globalState.lineTimeStamp2 &&
-						action.specific_action_data;
-			}).forEach(action => {
-				const glbPath = action.actor_name + '\\Object\\' + action.specific_action_data;
-				const avatar = loadLine(glbPath,id);
-
-			});
-		});
-	}
-
-function clearPreviousTriangles(id) {
-if (globalState.triangleMesh[id]) {
-	globalState.triangleMesh[id].forEach(mesh => {
-		globalState.scene.remove(mesh);
-	});
-	globalState.triangleMesh[id] = []; // Reset the array for this user
-}
-}
 function updateUserDevice(userId) {
     // console.log("Update process initiated for user", userId);
 
@@ -527,11 +417,7 @@ function updateLeftControl(userId) {
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.leftControls[userId]) {
-            // globalState.leftControls[userId].position.set(location.x, location.y, location.z);
-			globalState.leftControls[userId].position.x = location.x ;
-			globalState.leftControls[userId].position.y = location.y ;
-			globalState.leftControls[userId].position.z = location.z ;
-
+            globalState.leftControls[userId].position.set(location.x, location.y, location.z);
 
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
@@ -603,32 +489,6 @@ function updateRightControl(userId) {
 
 
 
-function updateSceneBasedOnSelections() {
-    const data = globalState.finalData; // Assuming this holds the full data
-    const selectedActions = getSelectedTopics(); // Get the selected topics from the toolbar
-
-    // Filter actions based on time range and selected actions
-    const filteredActions = data.filter(action => {
-        const actionStartTime = parseTimeToMillis(action.Timestamp);
-        const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-        return actionEndTime >= globalState.lineTimeStamp1 &&
-               actionStartTime <= globalState.lineTimeStamp2;
-			//     &&
-            //    selectedActions.includes(action.UserAction);
-    });
-
-    // Load virtual objects based on the filtered actions
-    filteredActions.forEach(action => {
-        if (action.ActionReferentType === "Virtual") {
-            const filePath = `Context/${action.ActionReferent}`; // Path adjustment for context-related files
-            const location = parseLocation(action.Location); // Extract and format location for rendering
-			console.log(filePath);
-            // Load and render the virtual object at the specified location
-            loadVirtualObject(filePath, location);
-        }
-    });
-}
-
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
@@ -678,15 +538,21 @@ async function updateObjectsBasedOnSelections() {
     const newFilteredActions = new Set();
     const actionsToLoad = [];
 	const selectedActions = getSelectedTopics();
+	// console.log(selectedActions);
 
     // Gather all actions that meet the time range and have not been loaded yet
+
+	const selectedUsers = Object.keys(globalState.show)
+	.filter(userID => globalState.show[userID])
+	.map(userID => `User${userID}`);
+
     for (const action of data) {
         for (const subAction of action.Data) {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 
 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
-				&& selectedActions.includes(action.Name)) {
+				&& selectedActions.includes(action.Name) && selectedUsers.includes(action.User)) {
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
                 if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]) {
                     newFilteredActions.add(key);
@@ -804,14 +670,11 @@ async function initializeScene() {
     loadAvatarModel('oculus_quest_2.glb'),
 	]);
 	globalState.rightControls = await Promise.all([
-	loadAvatarModel("hand_r.glb"),
+	loadHand("hand_r.glb"),
 	]);
 	globalState.leftControls = await Promise.all([
-	loadAvatarModel("hand_l.glb"),
+	loadHand("hand_l.glb"),
 	]);
-
-	console.log(globalState.leftControls);
-
 
 	setTimes(globalState.finalData);
 
@@ -1208,17 +1071,13 @@ export function dragged(event,d) {
 	plotUserSpecificBarChart()
 
     initializeOrUpdateSpeechBox();
-	initializeOrUpdateSpeechBox();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
-        console.log(`Updating devices for user ${i + 1}.`);
 
         // Update the user's device
         updateUserDevice(i);
-
-        // Update left and right controls
         updateLeftControl(i);
         updateRightControl(i);
     }
@@ -1335,11 +1194,11 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
             // console.log(`${actionName} is deselected`);
         }
 		initializeOrUpdateSpeechBox();
-		plotUserSpecificBarChart();
+		plotUserSpecificBarChart();	
+		updatePointCloudBasedOnSelections();
+		updateObjectsBasedOnSelections();
     });
-	
-	updatePointCloudBasedOnSelections();
-	updateObjectsBasedOnSelections();
+
 }
 
 function generateUserLegends(){
@@ -1846,12 +1705,7 @@ function createSpeechBox(action, subAction) {
 	//   createDeviceSegment(0);
 
 	for (let i = 0; i < numUsers; i++) {
-        console.log(`Updating devices for user ${i + 1}.`);
-
-        // Update the user's device
         updateUserDevice(i);
-
-        // Update left and right controls
         updateLeftControl(i);
         updateRightControl(i);
     }
