@@ -820,19 +820,27 @@ function createPlotTemporal() {
         .attr("class", "axis axis--y")
         .call(d3.axisLeft(yScale));
 
-	const rectHeightFactor = 0.7;  // Reduce the height to 50% of the original band height
+	// Calculate density
+    const densityData = topicsData.map(d => {
+        const totalDuration = d.endTime - d.startTime;
+        const density = totalDuration / (globalState.lineTimeStamp2 - globalState.lineTimeStamp1); // Simplified density calculation
+        return { ...d, density };
+    });
 
-    // Drawing bars for each action
+    // Create color scale for density
+    const colorScale = d3.scaleSequential(d3.interpolateBlues) //interpolateBlues //interpolateOranges //interpolatePurples //interpolateGreys //interpolateViridis //interpolateCividis
+        .domain([0, d3.max(densityData, d => d.density*0.15)]);
+
+    // Drawing bars for each action with density-based color
     svg.selectAll(".bar")
-        .data(topicsData)
+        .data(densityData)
         .enter().append("rect")
         .attr("class", "bar")
         .attr("x", d => x(d.startTime))
-        // .attr("y", d => yScale(d.topic))
-		.attr("y", d => yScale(d.topic) + (yScale.bandwidth() * (1 - rectHeightFactor)) / 2)
+        .attr("y", d => yScale(d.topic) + (yScale.bandwidth() * 0.15)) // Center the bar in the y band
         .attr("width", d => x(d.endTime) - x(d.startTime))
-        .attr("height", yScale.bandwidth() * rectHeightFactor)
-        .attr("fill", d => d.hasUserInterestAction ? "#80b1d3" : "#d0d0d0"); // Conditional fill based on user interest
+        .attr("height", yScale.bandwidth() * 0.7)
+        .attr("fill", d => colorScale(d.density)); // Apply density color
 
     // Optional: Add mouse event handlers if needed for interactivity
     svg.selectAll(".bar")
@@ -1233,7 +1241,7 @@ function generateUserLegends(){
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 30, right: 20, bottom: 80, left: 70 };
+	const margin = { top: 30, right: 20, bottom: 40, left: 70 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	// const height = 500 - margin.top - margin.bottom;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
@@ -1287,7 +1295,7 @@ function plotUserSpecificBarChart() {
 	}));
 
 	// Setup scales
-	const maxBandwidth = 200; // Example max bandwidth; adjust as needed
+	const maxBandwidth = 120; // Example max bandwidth; adjust as needed
 	const x0 = d3.scaleBand()
 		.rangeRound([0, width])
 		.paddingInner(0.1)
@@ -1318,7 +1326,7 @@ function plotUserSpecificBarChart() {
 	action.selectAll("rect")
 		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
 		.enter().append("rect")
-		.attr("width", d => Math.min(x1.bandwidth(), 60))
+		.attr("width", d => Math.min(x1.bandwidth(), 40))
 		.attr("x", d => x1(d.key))
 		.attr("y", d => y(d.value))
 		.attr("height", d => height - y(d.value))
@@ -1350,9 +1358,9 @@ function plotUserSpecificBarChart() {
 		.call(d3.axisBottom(x0))
 		.selectAll("text")
 		.style("text-anchor", "end")
-		.attr("dx", "-.4em")
+		.attr("dx", "1em")
 		.attr("dy", ".25em")
-		.attr("transform", "rotate(-30)")
+		// .attr("transform", "rotate(-30)")
 		.style("font-size", "1.2em");
 
 	svg.append("g")
