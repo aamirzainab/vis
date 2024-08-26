@@ -136,6 +136,7 @@ async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
+	avatar.rotation.set(0, 0, 0);
 	avatar.scale.set(1, 1, 1);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
@@ -147,6 +148,7 @@ async function loadHand(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
+	avatar.rotation.set(0, 0, 0);
 	avatar.scale.set(2, 2, 2);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
@@ -252,14 +254,14 @@ function toggleInstanceRange(selectedOption){
 							globalState.scene.add(mesh);
 					});
 				}
-				if (globalState.avatars[userID]) {
-					globalState.avatars[userID].visible = true ;
+				if (globalState.avatars[userID-1]) {
+					globalState.avatars[userID-1].visible = true ;
 				}
-				if (globalState.rightControls[userID]) {
-					globalState.rightControls[userID].visible = true ;
+				if (globalState.rightControls[userID-1]) {
+					globalState.rightControls[userID-1].visible = true ;
 				}
-				if (globalState.leftControls[userID]) {
-					globalState.leftControls[userID].visible = true ;
+				if (globalState.leftControls[userID-1]) {
+					globalState.leftControls[userID-1].visible = true ;
 				}
 				if (globalState.raycastLines[userID]) {
 					globalState.raycastLines[userID].forEach(mesh => {
@@ -289,14 +291,14 @@ function toggleInstanceRange(selectedOption){
 					});
 				}
 
-				if (globalState.avatars[userID]) {
-					globalState.avatars[userID].visible = false ;
+				if (globalState.avatars[userID-1]) {
+					globalState.avatars[userID-1].visible = false ;
 				}
-				if (globalState.rightControls[userID]) {
-					globalState.rightControls[userID].visible = false ;
+				if (globalState.rightControls[userID-1]) {
+					globalState.rightControls[userID-1].visible = false ;
 				}
-				if (globalState.leftControls[userID]) {
-					globalState.leftControls[userID].visible = false ;
+				if (globalState.leftControls[userID-1]) {
+					globalState.leftControls[userID-1].visible = false ;
 				}
 				if (globalState.raycastLines[userID]) {
 					globalState.raycastLines[userID].forEach(mesh => {
@@ -340,7 +342,7 @@ function updateUserDevice(userId) {
 
     const navigateActions = globalState.finalData.filter(action =>
         action.Name === 'Navigate' &&
-        action.TriggerSource === 'XRHMD' &&
+        action.TriggerSource === 'HandheldARInputDevice' &&
         action.User === userField
     );
     // console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
@@ -659,7 +661,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -667,14 +669,14 @@ async function initializeScene() {
 //   loadHand("RightHand.fbx");
 //   loadHand("LeftHand.fbx");
   globalState.avatars = await Promise.all([
-    loadAvatarModel('oculus_quest_2.glb'),
+    loadAvatarModel('ipad.glb'),
 	]);
-	globalState.rightControls = await Promise.all([
-	loadHand("hand_r.glb"),
-	]);
-	globalState.leftControls = await Promise.all([
-	loadHand("hand_l.glb"),
-	]);
+	// globalState.rightControls = await Promise.all([
+	// loadHand("hand_r.glb"),
+	// ]);
+	// globalState.leftControls = await Promise.all([
+	// loadHand("hand_l.glb"),
+	// ]);
 
 	setTimes(globalState.finalData);
 
@@ -1014,7 +1016,7 @@ function createLines(timestamp1, timestamp2) {
 	// createLineDrawing(1);
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
-	// // initializeShadedAreaDrag();
+	initializeShadedAreaDrag();
 
 
 }
@@ -1727,7 +1729,7 @@ function createSpeechBox(action, subAction) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	
-
+	generateHierToolBar();
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 
