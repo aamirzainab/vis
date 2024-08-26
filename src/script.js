@@ -98,6 +98,7 @@ export function updateIntervals() {
   generateHierToolBar();
   createPlotTemporal();
   plotUserSpecificBarChart();
+  plotUserSpecificDurationBarChart();
 }
 
 function changeBinSize(newBinSize) {
@@ -321,6 +322,7 @@ function toggleInstanceRange(selectedOption){
 			//mits: update
 			initializeOrUpdateSpeechBox();
 			plotUserSpecificBarChart();
+			plotUserSpecificDurationBarChart();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
 		});
@@ -1077,8 +1079,6 @@ export function dragged(event,d) {
     const timeStamp2 = globalState.lineTimeStamp2;
     updateRangeDisplay(timeStamp1, timeStamp2);
 	// updateXRSnapshot();
-    generateHierToolBar();
-	plotUserSpecificBarChart()
 
     initializeOrUpdateSpeechBox();
 	
@@ -1204,7 +1204,8 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
             // console.log(`${actionName} is deselected`);
         }
 		initializeOrUpdateSpeechBox();
-		plotUserSpecificBarChart();	
+		plotUserSpecificBarChart();
+		plotUserSpecificDurationBarChart();
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
     });
@@ -1360,7 +1361,7 @@ function plotUserSpecificBarChart() {
 		.call(d3.axisBottom(x0))
 		.selectAll("text")
 		.style("text-anchor", "end")
-		.attr("dx", "1em")
+		.attr("dx", "2em")
 		.attr("dy", ".25em")
 		// .attr("transform", "rotate(-30)")
 		.style("font-size", "1.2em");
@@ -1418,6 +1419,188 @@ function plotUserSpecificBarChart() {
 	.style("visibility", "hidden");
 }
 
+function plotUserSpecificDurationBarChart() {
+    const plotBox = d3.select("#plot-box2").html("");
+    const margin = { top: 30, right: 20, bottom: 40, left: 70 };
+    const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
+    const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+    const svg = plotBox.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Add plot title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -4)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-family", "Lato")
+        .style("font-weight", "bold")
+        .text("User-Specific Action Durations");
+
+    let allUsers = new Set();
+    let userDurationByAction = {};
+
+    // Get selected users and actions from checkboxes
+    const selectedUsers = Object.keys(globalState.show)
+        .filter(userID => globalState.show[userID])
+        .map(userID => `User${userID}`);
+    const selectedActions = getSelectedTopics();
+
+    // Filter and process data based on selected checkboxes
+    globalState.finalData
+        .filter(action => selectedActions.includes(action.Name) && selectedUsers.includes(action.User))
+        .forEach(action => {
+            const actorName = action.User;
+            const actionName = action.Name;
+            const duration = parseDurationToMillis(action.Duration);
+
+            if (!userDurationByAction[actionName]) {
+                userDurationByAction[actionName] = {};
+            }
+
+            userDurationByAction[actionName][actorName] = (userDurationByAction[actionName][actorName] || 0) + duration;
+            allUsers.add(actorName);
+        });
+
+    const users = Array.from(allUsers);
+    const processedData = Object.entries(userDurationByAction).map(([actionName, durations]) => ({
+        actionName,
+        ...durations
+    }));
+
+    // Determine the maximum duration to decide the scale
+    const maxDuration = d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)));
+    let yLabel = "Total Duration (ms)";
+    let yScaleFactor = 1;  // Default to milliseconds
+
+    if (maxDuration > 9000) {
+        yLabel = "Total Duration (s)";
+        yScaleFactor = 1000;  // Convert milliseconds to seconds
+    }
+
+    // Setup scales
+    const maxBandwidth = 120; // Example max bandwidth; adjust as needed
+    const x0 = d3.scaleBand()
+        .rangeRound([0, width])
+        .paddingInner(0.1)
+        .domain(processedData.map(d => d.actionName))
+        .paddingOuter(0.1) // Add some outer padding to visually balance the plot
+        .align(0.1); // Center-align the scale
+
+    const x1 = d3.scaleBand()
+        .padding(0.05)
+        .domain(users)
+        .rangeRound([0, Math.min(x0.bandwidth(), maxBandwidth)]); // Cap the bandwidth
+
+    const y = d3.scaleLinear()
+        .domain([0, maxDuration / yScaleFactor])
+        .nice()
+        .range([height, 0]);
+
+    const color = colorScale;
+
+    // Create the grouped bars
+    const action = svg.selectAll(".action")
+        .data(processedData)
+        .enter().append("g")
+        .attr("class", "g")
+        .attr("transform", d => `translate(${x0(d.actionName) + x0.bandwidth() / 2 - x1.bandwidth() * users.length / 2},0)`);
+
+    action.selectAll("rect")
+        .data(d => users.map(key => ({ key, value: d[key] || 0 })))
+        .enter().append("rect")
+        .attr("width", d => Math.min(x1.bandwidth(), 40))
+        .attr("x", d => x1(d.key))
+        .attr("y", d => y(d.value / yScaleFactor))
+        .attr("height", d => height - y(d.value / yScaleFactor))
+        .attr("fill", d => colorScale(d.key))
+        .on("mouseover", function(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(100)
+                .attr("fill", d3.rgb(colorScale(d.key)).darker(2)); // Darken the color on hover
+
+            tooltip.style("visibility", "visible")
+                .text(`${d.key}: ${(d.value / yScaleFactor).toFixed(2)} ${yScaleFactor === 1000 ? 's' : 'ms'}`)
+                .style("left", `${event.pageX + 5}px`)
+                .style("top", `${event.pageY - 28}px`);
+        })
+        .on("mouseout", function(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(100)
+                .attr("fill", colorScale(d.key)); // Revert to original color on mouse out
+
+            tooltip.style("visibility", "hidden");
+        });
+
+    // Add the axes
+    svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x0))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "2em")
+        .attr("dy", ".25em")
+        .style("font-size", "1.2em");
+
+    svg.append("g")
+        .call(d3.axisLeft(y).ticks(5))
+        .selectAll(".tick text") // Select all tick texts
+        .style("font-family", "Lato")
+        .style("font-size", "1.2em");
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text(yLabel)
+        .style("font-size", "0.8em");
+
+    // Add a legend
+    const legend = svg.selectAll(".legend")
+        .data(users)
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+    legend.append("rect")
+        .attr("x", width - 18)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", colorScale);
+
+    legend.append("text")
+        .attr("x", width - 24)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "end")
+        .text(d => d)
+        .style("font-size", "0.7em");
+
+    // Tooltip for interactivity
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "d3-tooltip")
+        .style("position", "absolute")
+        .style("z-index", "1000")
+        .style("text-align", "center")
+        .style("width", "auto")
+        .style("height", "auto")
+        .style("padding", "8px")
+        .style("font", "12px sans-serif")
+        .style("background", "lightsteelblue")
+        .style("border", "0px")
+        .style("border-radius", "8px")
+        .style("pointer-events", "none")
+        .style("visibility", "hidden");
+}
 
 function getSelectedTopics() {
     const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
@@ -1729,7 +1912,7 @@ function createSpeechBox(action, subAction) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	
-	generateHierToolBar();
+	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 
@@ -1738,7 +1921,10 @@ function createSpeechBox(action, subAction) {
 	};
 
 	const dragended = () => {
-			};
+		generateHierToolBar();
+		plotUserSpecificBarChart();
+		plotUserSpecificDurationBarChart();
+	};
 
 	const drag = d3.drag()
 	  .on("start", dragstarted)
@@ -1926,7 +2112,8 @@ async function initialize() {
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
-	plotUserSpecificBarChart()
+	plotUserSpecificBarChart();
+	plotUserSpecificDurationBarChart();
 }
 initialize();
 globalState.camera.updateProjectionMatrix();
