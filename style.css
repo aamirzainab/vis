@@ -207,27 +207,6 @@ html, body {
     color: white; /* Text color for selected option */
 }
 
-#user-interest-topic-container {
-    display: flex;
-    align-items: center;
-
-}
-
-.user-interest-icon {
-    color: #80b1d3; /* Purple color for the star */
-    margin-right: 8px; /* Spacing between star and input box */
-    font-size: 2.0em;
-}
-
-#user-interest-topic {
-    border: 2px solid #80b1d3; /* Purple border */
-    background-color: #80b1d3; /* Purple background */
-    color: #ffc000; /* Yellow text */
-    padding: 5px 10px; /* Padding inside the text box */
-    border-radius: 4px; /* Rounded corners */
-    font-size: 1.3em;
-}
-
 
 #bin-selection-container select {
     appearance: none; /* Remove default styling */
@@ -274,10 +253,12 @@ html, body {
     flex-shrink: 0;
     overflow-y: auto; /* Enables vertical scrolling within the toolbar */
     max-height: 30%; /* Takes up 30% of the left pane's height */
-    width: 100%; /* Uses the full width of its container */
+    width: 95%; /* Uses the full width of its container */
     font-size: 1em;
-    border: 2px solid #ccc; /* Adds a border around the toolbar */
+    /*border: 1px solid #ccc; /* Adds a border around the toolbar */
     margin-top: 5px;
+    padding-left: 15px;
+    /* border-radius: 8px; */
 }
 
 #speech-box{
@@ -402,17 +383,16 @@ html, body {
     left: 5px;
     z-index: 1000;
     /* background-color: #f9f9f9; */
-    padding: 10px;
+    padding: 5px;
     display: block; /* Or flex, depending on your content */
-    /* border-radius: 5px; */
+    border-radius: 8px;
 }
 
 .user-legend {
     display: flex;
     flex-direction: column;
-    margin-bottom: 10px;
-    height: 80x;
-    width:150px;
+    height: 75px;
+    width:120px;
 }
 .user-legend-item {
     font-size:1.1em;
