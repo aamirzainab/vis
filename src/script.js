@@ -73,7 +73,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#8dd3c7", "#fdcdac", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]);
+    .range(["#76C7C0", "#3B6978", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]); //"#B0BEC5", "#455A64" | "#87CEFA", "#005F73"
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -1799,11 +1799,6 @@ function createSpeechBox(action, subAction) {
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
 
-    const userColors = {
-        'User1': '#8dd3c7',
-        'User2': '#fdcdac',
-        // Add more users and colors as needed
-    };
 
     // Create a container for title and user label
     const titleContainer = document.createElement('div');
@@ -1814,8 +1809,9 @@ function createSpeechBox(action, subAction) {
 
     // Format the action and type string
     const title = document.createElement('h4');
-    title.textContent = `Action: ${action.Name} | Type: ${action.Type}`;
+    title.textContent = `Action: ${action.Name}`;// | Type: ${action.Type}`;
     title.style.margin = '0'; // Remove margin for better alignment
+	title.style.marginLeft = '10px'
 
     // Get the background color for the user
     const userColor = colorScale(action.User); // Default to gray if user is not in the mapping
@@ -1848,18 +1844,25 @@ function createSpeechBox(action, subAction) {
 
     // Adding more detailed information
     const details = document.createElement('div');
-    details.innerHTML = `
-        <strong>Intent:</strong> ${action.Intent}<br>
+	// Highlight the Intent field
+    const intentDiv = document.createElement('div');
+    intentDiv.style.backgroundColor = '#8bb6d9';  // Cool Mint for highlighting
+    intentDiv.style.color = 'white';
+    intentDiv.style.padding = '4px';
+    intentDiv.style.borderRadius = '5px';
+    intentDiv.style.fontSize = '1em';
+    intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
+
+    const otherDetails = `
         ${formattedLocation}<br>
         <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
         <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
-        <strong>Referent Type:</strong> ${action.ReferentType}<br>
-        <strong>Context Type:</strong> ${action.ContextType}<br>
-        <strong>Context Description:</strong> ${action.ActionContextDescription || 'N/A'}<br>
         <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
-        <strong>Referent Body:</strong> ${subAction.ActionReferentBody || 'N/A'}
     `;
+	details.appendChild(intentDiv);
+    details.innerHTML += otherDetails;
+
     speechBox.appendChild(details);
 
     return speechBox;
