@@ -73,7 +73,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#bebada", "#8dd3c7", "#fdcdac", "#bebada"]); //"#B0BEC5", "#455A64" | "#87CEFA", "#005F73"
+    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]); //"#B0BEC5", "#455A64" | "#87CEFA", "#005F73"
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -664,7 +664,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_VR_Game.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_InfoVisCollab.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();

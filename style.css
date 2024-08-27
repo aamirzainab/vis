@@ -446,7 +446,7 @@ html, body {
     left: 5px;
     z-index: 1000;
     /* background-color: #f9f9f9; */
-    padding: 5px;
+    padding: 20px;
     display: block; /* Or flex, depending on your content */
     border-radius: 8px;
 }
