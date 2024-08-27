@@ -357,6 +357,69 @@ html, body {
     display: block;
 }
 
+#plot-box3 {
+    height: 60%; /* Occupies 60% of the height of its parent container */
+    padding: 10px; /* Adds padding to avoid content touching the edges */
+    box-sizing: border-box; /* Ensures padding is included in the element's width and height */
+    display: flex;
+    flex-direction: column;
+}
+
+#analysis-filter-container {
+    margin-bottom: 10px; /* Adds some space between the filters and insights */
+    flex-shrink: 0; /* Prevents the filter container from shrinking */
+}
+
+#insights-container {
+    overflow-y: auto; /* Enables vertical scrolling for the insights */
+    flex-grow: 1; /* Allows insights container to take up remaining space */
+    padding-right: 5px; /* Optional: Adds some padding to the right for scrollbar */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Adds space between the insight boxes */
+}
+
+.insight-box {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 95%; /* Makes the box narrower, occupying 80% of the container's width */
+    max-width: 600px; /* Sets a maximum width for the boxes */
+    margin: 0 auto; /* Centers the boxes horizontally */
+}
+
+.insight-topic {
+    margin: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+
+.insight-content {
+    margin-top: 10px;
+    font-size: 1em;
+    color: #555;
+}
+
+/* Filter Tag Styling */
+#plot-box3 .filter-tag {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 4px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+#plot-box3 .filter-tag.active {
+    background-color: #345e4d; /* Cool Mint color */
+    color: white;
+    border-color: #345e4d;
+}
+
 #unit-minutes,
 #unit-seconds {
     display: none; /* Hide the default radio buttons */

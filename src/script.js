@@ -1609,31 +1609,77 @@ function plotUserSpecificDurationBarChart() {
 }
 
 function plotLLMData(){
-	d3.json('path/to/your/data.json').then(function(data) {
-        // Select the container element
-        const container = d3.select('#plot-box-3');
-
-        // Get the top 10 insights
-        const insights = Object.keys(data).slice(0, 10).map(key => data[key]);
-
-        // Append insights to the container
-        insights.forEach((insight, index) => {
-            const insightDiv = container.append('div')
-                .attr('class', 'insight')
-                .style('margin-bottom', '10px');
-
-            // Append topic
-            insightDiv.append('h3')
-                .text(`${index + 1}. ${insight.topic}`)
-                .style('font-weight', 'bold');
-
-            // Append insight description
-            insightDiv.append('p')
-                .text(insight.insight);
-        });
+	d3.json('final_insight_data.json').then(function(data) {
+        // Initial display and filter creation
+	//const insightsData = { /* your JSON data here */ };
+	createAnalysisFilter(data);
+	displayInsights(data);
     }).catch(function(error) {
         console.error('Error loading JSON data:', error);
     });
+}
+
+function displayInsights(insightsData) {
+    const insightsContainer = document.getElementById('insights-container'); // Updated to target insights-container
+    insightsContainer.innerHTML = ''; // Clear previous insights, not filters
+
+    Object.keys(insightsData).forEach(key => {
+        const insight = insightsData[key];
+        const insightBox = document.createElement('div');
+        insightBox.className = 'insight-box';
+
+        // Create topic element
+        const topicElement = document.createElement('h4');
+        topicElement.textContent = insight.topic;
+        topicElement.className = 'insight-topic';
+
+        // Create insight element
+        const insightElement = document.createElement('p');
+        insightElement.textContent = insight.insight;
+        insightElement.className = 'insight-content';
+
+        insightBox.appendChild(topicElement);
+        insightBox.appendChild(insightElement);
+        insightsContainer.appendChild(insightBox);
+    });
+}
+
+function createAnalysisFilter(insightsData) {
+    const filterContainer = document.getElementById('analysis-filter-container'); // Now targets only the filter container
+    filterContainer.innerHTML = ''; // Clear any existing filters
+
+    const analysisSet = new Set();
+    Object.keys(insightsData).forEach(key => {
+        insightsData[key].analyses.forEach(analysis => analysisSet.add(analysis));
+    });
+
+    analysisSet.forEach(analysis => {
+        const filterTag = document.createElement('button');
+        filterTag.textContent = analysis;
+        filterTag.className = 'filter-tag active';
+        filterTag.addEventListener('click', function() {
+            this.classList.toggle('active'); // Toggle active class on click
+            applyFilter(insightsData);
+        });
+        filterContainer.appendChild(filterTag);
+    });
+}
+
+function applyFilter(insightsData) {
+    const activeFilters = Array.from(document.querySelectorAll('.filter-tag.active')).map(tag => tag.textContent);
+
+    if (activeFilters.length === 0) {
+        displayInsights(insightsData);
+    } else {
+        const filteredData = {};
+        Object.keys(insightsData).forEach(key => {
+            const insight = insightsData[key];
+            if (activeFilters.some(filter => insight.analyses.includes(filter))) {
+                filteredData[key] = insight;
+            }
+        });
+        displayInsights(filteredData);
+    }
 }
 
 function getSelectedTopics() {
@@ -1796,6 +1842,8 @@ function formatLocation(locationString) {
 }
 
 function createSpeechBox(action, subAction) {
+
+	plotLLMData();
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
 
@@ -1851,6 +1899,7 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.padding = '4px';
     intentDiv.style.borderRadius = '5px';
     intentDiv.style.fontSize = '1em';
+    intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
 
     const otherDetails = `
