@@ -519,7 +519,7 @@ function updatePointCloudBasedOnSelections() {
         if (obj && !newFilteredActions.has(key)) {
             globalState.scene.remove(obj);
             delete globalState.loadedClouds[key];
-            console.log(`Removed object: ${key}`);
+            // console.log(`Removed object: ${key}`);
         }
     });
 
@@ -530,12 +530,11 @@ function updatePointCloudBasedOnSelections() {
                 const obj = loadAvatarModel(subAction.ActionContext);
                 obj.name = subAction.ActionContext; // Ensure each object has a unique name
                 globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
-                console.log(`Loaded new object: ${subAction.ActionContext}`);
+                // console.log(`Loaded new object: ${subAction.ActionContext}`);
             }
         }
     }
 }
-
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
@@ -559,9 +558,10 @@ async function updateObjectsBasedOnSelections() {
 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
 				&& selectedActions.includes(action.Name) && selectedUsers.includes(action.User)) {
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-                if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]) {
+                if (!newFilteredActions.has(key)){ 
+					// && !globalState.loadedObjects[key]) {
                     newFilteredActions.add(key);
-                    actionsToLoad.push({ key, subAction }); // Store for loading later
+                    actionsToLoad.push({ key, subAction }); 
                 }
             }
         }
@@ -669,17 +669,19 @@ async function initializeScene() {
   globalState.finalData = finalData[0];
   updateNumUsers();
   window_onload();
-//   loadHand("RightHand.fbx");
-//   loadHand("LeftHand.fbx");
-  globalState.avatars = await Promise.all([
-    loadAvatarModel('ipad.glb'),
-	]);
-	globalState.rightControls = await Promise.all([
-	loadHand("hand_r.glb"),
-	]);
-	globalState.leftControls = await Promise.all([
-	loadHand("hand_l.glb"),
-	]);
+  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('ipad.glb'));
+
+  // Resolve all promises to load the avatars
+  globalState.avatars = await Promise.all(avatarPromises);
+  
+  // Assuming you only need one pair of right and left controls
+//   globalState.rightControls = await Promise.all([
+// 	  loadHand("hand_r.glb")
+//   ]);
+  
+//   globalState.leftControls = await Promise.all([
+// 	  loadHand("hand_l.glb")
+//   ]);
 
 	setTimes(globalState.finalData);
 
