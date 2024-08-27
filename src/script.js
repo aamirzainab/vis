@@ -834,7 +834,7 @@ function createPlotTemporal() {
 
     // Create color scale for density
     const colorScale = d3.scaleSequential(d3.interpolateBlues) //interpolateBlues //interpolateOranges //interpolatePurples //interpolateGreys //interpolateViridis //interpolateCividis
-        .domain([0, d3.max(densityData, d => d.density*0.15)]);
+        .domain([0, d3.max(densityData, d => d.density*0.6)]);
 
     // Drawing bars for each action with density-based color
     svg.selectAll(".bar")
@@ -1292,7 +1292,10 @@ function plotUserSpecificBarChart() {
 			allUsers.add(actorName);
 		});
 
-	const users = Array.from(allUsers);
+	const users = Array.from(allUsers).sort((a, b) => {
+		// Sort by user names; this will put "User1" before "User2"
+		return a.localeCompare(b);
+	});
 	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
 		actionName,
 		...counts
@@ -1467,7 +1470,9 @@ function plotUserSpecificDurationBarChart() {
             allUsers.add(actorName);
         });
 
-    const users = Array.from(allUsers);
+	const users = Array.from(allUsers).sort((a, b) => {
+		return a.localeCompare(b);
+	});
     const processedData = Object.entries(userDurationByAction).map(([actionName, durations]) => ({
         actionName,
         ...durations
