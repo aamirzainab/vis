@@ -559,7 +559,7 @@ async function updateObjectsBasedOnSelections() {
 				&& selectedActions.includes(action.Name) && selectedUsers.includes(action.User)) {
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
                 if (!newFilteredActions.has(key)){ 
-					// && !globalState.loadedObjects[key]) {
+				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){ 
                     newFilteredActions.add(key);
                     actionsToLoad.push({ key, subAction }); 
                 }
@@ -660,16 +660,16 @@ async function initializeScene() {
 
 	const gridHelper = new THREE.GridHelper(10, 10);
 	gridHelper.position.y = -1;
-	globalState.scene.add(gridHelper);
+	// globalState.scene.add(gridHelper);
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_InfoVisCollab.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
   window_onload();
-  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('ipad.glb'));
+  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('rotated.glb'));
 
   // Resolve all promises to load the avatars
   globalState.avatars = await Promise.all(avatarPromises);
