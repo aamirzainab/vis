@@ -366,17 +366,17 @@ html, body {
 }
 
 #analysis-filter-container {
-    margin-bottom: 10px; /* Adds some space between the filters and insights */
+    margin-bottom: 15px; /* Adds some space between the filters and insights */
+    padding-left: 10px;
     flex-shrink: 0; /* Prevents the filter container from shrinking */
 }
 
 #insights-container {
     overflow-y: auto; /* Enables vertical scrolling for the insights */
     flex-grow: 1; /* Allows insights container to take up remaining space */
-    padding-right: 5px; /* Optional: Adds some padding to the right for scrollbar */
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Adds space between the insight boxes */
+    gap: 5px; /* Adds space between the insight boxes */
 }
 
 .insight-box {
@@ -385,8 +385,8 @@ html, body {
     padding: 15px;
     background-color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 95%; /* Makes the box narrower, occupying 80% of the container's width */
-    max-width: 600px; /* Sets a maximum width for the boxes */
+    width: 99%; /* Makes the box narrower, occupying 80% of the container's width */
+    max-width: 680px; /* Sets a maximum width for the boxes */
     margin: 0 auto; /* Centers the boxes horizontally */
 }
 
@@ -394,6 +394,8 @@ html, body {
     margin: 0;
     font-size: 1.2em;
     color: #333;
+    border-bottom: 1px dashed #444;
+    margin: 0 auto;
 }
 
 .insight-content {
@@ -409,15 +411,17 @@ html, body {
     border-radius: 4px;
     margin: 4px;
     background-color: #f9f9f9;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.3s;
 }
 
 #plot-box3 .filter-tag.active {
-    background-color: #345e4d; /* Cool Mint color */
+    background-color: #649880; /* Cool Mint color */
     color: white;
     border-color: #345e4d;
+    border-radius: 10px;
 }
 
 #unit-minutes,

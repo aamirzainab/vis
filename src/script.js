@@ -1611,9 +1611,7 @@ function plotUserSpecificDurationBarChart() {
 }
 
 function plotLLMData(){
-	d3.json('final_insight_data.json').then(function(data) {
-        // Initial display and filter creation
-	//const insightsData = { /* your JSON data here */ };
+	d3.json('final_llm_insights.json').then(function(data) {
 	createAnalysisFilter(data);
 	displayInsights(data);
     }).catch(function(error) {
@@ -1845,7 +1843,6 @@ function formatLocation(locationString) {
 
 function createSpeechBox(action, subAction) {
 
-	plotLLMData();
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
 
@@ -2198,6 +2195,7 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
+	plotLLMData();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
