@@ -664,7 +664,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_ImmersiveAnalytics.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_InfoVisCollab.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -1247,8 +1247,8 @@ function generateUserLegends(){
 }
 
 function plotUserSpecificBarChart() {
-	const plotBox = d3.select("#plot-box1").html("");
-	const margin = { top: 30, right: 20, bottom: 40, left: 70 };
+	const plotBox = d3.select("#plot-box2").html("");
+	const margin = { top: 30, right: 20, bottom: 70, left: 70 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
 	// const height = 500 - margin.top - margin.bottom;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
@@ -1268,11 +1268,11 @@ function plotUserSpecificBarChart() {
         .style("font-size", "16px")
         .style("font-family", "Lato")
         .style("font-weight", "bold")
-        .text("User-Specific Actions Bar Chart");
+        .text("User-Specific ActionReferentName");
 
 	// Assuming globalState.finalData.action_dict exists and is structured appropriately
 	let allUsers = new Set();
-	let userDataByAction = {};
+	let userDataByActionReferentName = {};
 
 	// Get selected users and actions from checkboxes
 	const selectedUsers = Object.keys(globalState.show)
@@ -1285,93 +1285,110 @@ function plotUserSpecificBarChart() {
 		.filter(action => selectedActions.includes(action.Name) && selectedUsers.includes(action.User))
 		.forEach(action => {
 			const actorName = action.User;
-			const actionName = action.Name;
 
-			if (!userDataByAction[actionName]) {
-				userDataByAction[actionName] = {};
-			}
-
-			userDataByAction[actionName][actorName] = (userDataByAction[actionName][actorName] || 0) + 1;
-			allUsers.add(actorName);
+			action.Data
+			.filter(ob => ob.ActionReferentName != null)
+			.forEach(ob => {
+				const ActionReferentName = ob.ActionReferentName;
+				if (!userDataByActionReferentName[ActionReferentName]) {
+					userDataByActionReferentName[ActionReferentName] = {};
+				}
+	
+				userDataByActionReferentName[ActionReferentName][actorName] = (userDataByActionReferentName[ActionReferentName][actorName] || 0) + 1;
+				allUsers.add(actorName);
+			})
+			
 		});
 
 	const users = Array.from(allUsers).sort((a, b) => {
 		// Sort by user names; this will put "User1" before "User2"
 		return a.localeCompare(b);
 	});
-	const processedData = Object.entries(userDataByAction).map(([actionName, counts]) => ({
-		actionName,
+	const processedData = Object.entries(userDataByActionReferentName).map(([ActionReferentName, counts]) => ({
+		ActionReferentName,
 		...counts
 	}));
 
 	// Setup scales
-	const maxBandwidth = 120; // Example max bandwidth; adjust as needed
-	const x0 = d3.scaleBand()
-		.rangeRound([0, width])
-		.paddingInner(0.1)
-		.domain(processedData.map(d => d.actionName))
-		.paddingOuter(0.1) // Add some outer padding to visually balance the plot
-		.align(0.1); // Center-align the scale
+	// Stack data for stacked bar chart
+    const stack = d3.stack()
+        .keys(users)
+        .order(d3.stackOrderNone)
+        .offset(d3.stackOffsetNone);
 
-	const x1 = d3.scaleBand()
-		.padding(0.05)
-		.domain(users)
-		.rangeRound([0, Math.min(x0.bandwidth(), maxBandwidth)]); // Cap the bandwidth
+    const stackedData = stack(processedData);
 
-	const y = d3.scaleLinear()
-		.domain([0, d3.max(processedData, d => Math.max(...users.map(user => d[user] || 0)))])
-		.nice()
-		.range([height, 0]);
+    // Setup scales
+    const x = d3.scaleBand()
+        .rangeRound([0, width])
+        .padding(0.1)
+        .domain(processedData.map(d => d.ActionReferentName));
 
-	const color = colorScale;
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(stackedData, d => d3.max(d, d => d[1]))])
+        .nice()
+        .range([height, 0]);
 
-	// Create the grouped bars
-	const action = svg.selectAll(".action")
-		.data(processedData)
-		.enter().append("g")
-		.attr("class", "g")
-		// .attr("transform", d => `translate(${x0(d.actionName)},0)`);
-		.attr("transform", d => `translate(${x0(d.actionName) + x0.bandwidth() / 2 - x1.bandwidth() * users.length / 2},0)`);
+	// Create the bars
+    svg.append("g")
+        .selectAll("g")
+        .data(stackedData)
+        .enter().append("g")
+        .attr("fill", d => colorScale(d.key))
+        .selectAll("rect")
+        .data(d => d)
+        .enter().append("rect")
+        .attr("x", d => x(d.data.ActionReferentName))
+        .attr("y", d => y(d[1]))
+        .attr("height", d => y(d[0]) - y(d[1]))
+        .attr("width",  d => Math.min(x.bandwidth(), 40))
+        .on("mouseover", function (event, d) {
+            const userKey = d3.select(this.parentNode).datum().key;
+            d3.select(this)
+                .transition()
+                .duration(100)
+                .attr("fill", d3.rgb(colorScale(userKey)).darker(2));
 
-	action.selectAll("rect")
-		.data(d => users.map(key => ({ key, value: d[key] || 0 })))
-		.enter().append("rect")
-		.attr("width", d => Math.min(x1.bandwidth(), 40))
-		.attr("x", d => x1(d.key))
-		.attr("y", d => y(d.value))
-		.attr("height", d => height - y(d.value))
-		.attr("fill", d => colorScale(d.key))
-		.on("mouseover", function(event, d) {
-			d3.select(this)
-				.transition()
-				.duration(100)
-				.attr("fill", d3.rgb(colorScale(d.key)).darker(2)); // Darken the color on hover
+            tooltip.style("visibility", "visible")
+                .text(`${userKey}: ${d.data[userKey]}`)
+                .style("left", `${event.pageX + 5}px`)
+                .style("top", `${event.pageY - 28}px`);
+        })
+        .on("mouseout", function (event, d) {
+            const userKey = d3.select(this.parentNode).datum().key;
+            d3.select(this)
+                .transition()
+                .duration(100)
+                .attr("fill", colorScale(userKey));
 
-			tooltip.style("visibility", "visible")
-				.text(`${d.key}: ${d.value}`)
-				.style("left", `${event.pageX + 5}px`)
-				.style("top", `${event.pageY - 28}px`);
-		})
-		.on("mouseout", function(event, d) {
-			d3.select(this)
-				.transition()
-				.duration(100)
-				.attr("fill", colorScale(d.key)); // Revert to original color on mouse out
-
-			tooltip.style("visibility", "hidden");
-		});
+            tooltip.style("visibility", "hidden");
+        });
 
 	// Add the axes
 	svg.append("g")
 		.attr("class", "axis")
 		.attr("transform", `translate(0,${height})`)
-		.call(d3.axisBottom(x0))
+		.call(d3.axisBottom(x))
 		.selectAll("text")
 		.style("text-anchor", "end")
-		.attr("dx", "2em")
+		.attr("dx", "3.2em")
 		.attr("dy", ".25em")
-		// .attr("transform", "rotate(-30)")
-		.style("font-size", "1.2em");
+		.attr("transform", "rotate(0)")
+		.style("font-size", "1.2em")
+		.each(function(d) {
+            const element = d3.select(this);
+            const words = d.split(" ");  // Split label into words
+            element.text("");  // Clear the current label
+
+            words.forEach((word, i) => {
+                element.append("tspan")
+                    .text(word)
+                    .attr("x", 0)
+                    .attr("dy", ".9em")  // Offset subsequent lines
+                    .attr("dx", "-5em")  // Adjust horizontal position slightly
+                    .attr("text-anchor", "middle");
+            });
+        });
 
 	svg.append("g")
 		.call(d3.axisLeft(y).ticks(5))
@@ -1385,7 +1402,7 @@ function plotUserSpecificBarChart() {
 		.attr("x", 0 - (height / 2))
 		.attr("dy", "1em")
 		.style("text-anchor", "middle")
-		.text("Action Count")
+		.text("Count")
 		.style("font-size", "0.8em");
 
 	// Add a legend
@@ -1427,7 +1444,7 @@ function plotUserSpecificBarChart() {
 }
 
 function plotUserSpecificDurationBarChart() {
-    const plotBox = d3.select("#plot-box2").html("");
+    const plotBox = d3.select("#plot-box1").html("");
     const margin = { top: 30, right: 20, bottom: 40, left: 70 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
