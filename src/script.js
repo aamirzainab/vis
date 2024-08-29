@@ -1217,6 +1217,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 
 function generateUserLegends(){
 	const legendContainer = document.getElementById('user-legend-container');
+	document.querySelector('.user-legend').style.height = `${numUsers * 30}px`;
 
     for (let i = 1; i <= numUsers; i++) {
         const userLegendItem = document.createElement('div');

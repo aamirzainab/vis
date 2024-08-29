@@ -450,7 +450,7 @@ html, body {
     left: 5px;
     z-index: 1000;
     /* background-color: #f9f9f9; */
-    padding: 20px;
+    padding: 14px;
     display: block; /* Or flex, depending on your content */
     border-radius: 8px;
 }
@@ -458,7 +458,7 @@ html, body {
 .user-legend {
     display: flex;
     flex-direction: column;
-    height: 75px;
+    /* height: 75px; */
     width:120px;
 }
 .user-legend-item {
