@@ -669,7 +669,7 @@ async function initializeScene() {
   globalState.finalData = finalData[0];
   updateNumUsers();
   window_onload();
-  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('rotated.glb'));
+  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('ipad.glb'));
 
   // Resolve all promises to load the avatars
   globalState.avatars = await Promise.all(avatarPromises);
@@ -1900,6 +1900,8 @@ function createSpeechBox(action, subAction) {
     // Append the container to the speech box
     speechBox.appendChild(titleContainer);
 
+
+
     // Format Location as Position (X, Y, Z) and Orientation (Roll, Pitch, Yaw)
     const locationString = subAction.ActionInvokeLocation;
     const formattedLocation = formatLocation(locationString);
@@ -1918,14 +1920,28 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.fontSize = '1em';
     intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
+	let otherDetails ; 
+	if (action.TriggerSource === "Audio")
+	{
+		otherDetails = `
+        ${formattedLocation}<br>
+        <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
+        <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
+        <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
+        <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
+        <strong>Transcribed Text:</strong> ${subAction.ActionReferentBody}<br>
 
-    const otherDetails = `
+    `;
+	}
+	else{
+    	otherDetails = `
         ${formattedLocation}<br>
         <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
         <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
         <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
     `;
+	}
 	details.appendChild(intentDiv);
     details.innerHTML += otherDetails;
 
@@ -2213,7 +2229,7 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-	plotLLMData();
+	// plotLLMData();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();

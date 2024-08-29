@@ -255,10 +255,11 @@ html, body {
     max-height: 30%; /* Takes up 30% of the left pane's height */
     width: 95%; /* Uses the full width of its container */
     font-size: 1em;
-    /*border: 1px solid #ccc; /* Adds a border around the toolbar */
+    /* border: 2px solid #ccc;  */
     margin-top: 5px;
     padding-left: 15px;
     /* border-radius: 8px; */
+    /* border-bottom: 1px solid #fff;  */
 }
 
 #speech-box{
