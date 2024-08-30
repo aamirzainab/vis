@@ -664,7 +664,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_InfoVisCollab.json').then(response => response.json()),
+		fetch('Processed_Log_EXR_SceneNavigation.json').then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -1290,7 +1290,7 @@ function plotUserSpecificBarChart() {
 			.filter(ob => ob.ActionReferentName != null)
 			.forEach(ob => {
 				let ActionReferentName = ob.ActionReferentName;
-				ActionReferentName = ActionReferentName.split('_')[0];
+				ActionReferentName = ActionReferentName.split('_')[0].split(',')[0].split('(')[1].trim().replace(/['"]/g, '');;
 				if (!userDataByActionReferentName[ActionReferentName]) {
 					userDataByActionReferentName[ActionReferentName] = {};
 				}
@@ -1372,24 +1372,24 @@ function plotUserSpecificBarChart() {
 		.call(d3.axisBottom(x))
 		.selectAll("text")
 		.style("text-anchor", "end")
-		.attr("dx", "0.2em")
-		.attr("dy", ".25em")
+		.attr("dx", "1em")
+		.attr("dy", ".45em")
 		.attr("transform", "rotate(0)")
-		.style("font-size", "1.2em")
-		.each(function(d) {
-            const element = d3.select(this);
-            const words = d.split(" ");  // Split label into words
-            element.text("");  // Clear the current label
+		.style("font-size", "1.2em");
+		// .each(function(d) {
+        //     const element = d3.select(this);
+        //     const words = d.split(" ");  // Split label into words
+        //     element.text("");  // Clear the current label
 
-            words.forEach((word, i) => {
-                element.append("tspan")
-                    .text(word)
-                    .attr("x", 0)
-                    .attr("dy", ".9em")  // Offset subsequent lines
-                    .attr("dx", "-1em")  // Adjust horizontal position slightly
-                    .attr("text-anchor", "middle");
-            });
-        });
+        //     words.forEach((word, i) => {
+        //         element.append("tspan")
+        //             .text(word)
+        //             .attr("x", 0)
+        //             .attr("dy", ".9em")  // Offset subsequent lines
+        //             .attr("dx", "-1em")  // Adjust horizontal position slightly
+        //             .attr("text-anchor", "middle");
+        //     });
+        // });
 
 	svg.append("g")
 		.call(d3.axisLeft(y).ticks(5))
