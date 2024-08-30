@@ -1289,7 +1289,8 @@ function plotUserSpecificBarChart() {
 			action.Data
 			.filter(ob => ob.ActionReferentName != null)
 			.forEach(ob => {
-				const ActionReferentName = ob.ActionReferentName;
+				let ActionReferentName = ob.ActionReferentName;
+				ActionReferentName = ActionReferentName.split('_')[0];
 				if (!userDataByActionReferentName[ActionReferentName]) {
 					userDataByActionReferentName[ActionReferentName] = {};
 				}
@@ -1321,7 +1322,7 @@ function plotUserSpecificBarChart() {
     // Setup scales
     const x = d3.scaleBand()
         .rangeRound([0, width])
-        .padding(0.1)
+        .padding(0.8)
         .domain(processedData.map(d => d.ActionReferentName));
 
     const y = d3.scaleLinear()
@@ -1371,7 +1372,7 @@ function plotUserSpecificBarChart() {
 		.call(d3.axisBottom(x))
 		.selectAll("text")
 		.style("text-anchor", "end")
-		.attr("dx", "3.2em")
+		.attr("dx", "0.2em")
 		.attr("dy", ".25em")
 		.attr("transform", "rotate(0)")
 		.style("font-size", "1.2em")
@@ -1385,7 +1386,7 @@ function plotUserSpecificBarChart() {
                     .text(word)
                     .attr("x", 0)
                     .attr("dy", ".9em")  // Offset subsequent lines
-                    .attr("dx", "-5em")  // Adjust horizontal position slightly
+                    .attr("dx", "-1em")  // Adjust horizontal position slightly
                     .attr("text-anchor", "middle");
             });
         });
