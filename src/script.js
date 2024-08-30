@@ -2230,7 +2230,7 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-	// plotLLMData();
+	plotLLMData();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
