@@ -405,6 +405,11 @@ html, body {
     color: #555;
 }
 
+.highlight-insight {
+    border-color: #76C7C0;
+    box-shadow: 0 0 10px rgba(118, 199, 192, 0.8);
+}
+
 /* Filter Tag Styling */
 #plot-box3 .filter-tag {
     padding: 5px 10px;

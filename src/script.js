@@ -59,6 +59,7 @@ let globalState = {
 	lineDrawing: [],
 	loadedClouds : {},
 	loadedObjects : {},
+	llmInsightData: {},
 };
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
@@ -111,6 +112,8 @@ function changeBinSize(newBinSize) {
 	updateIntervals(newBinSize, unit);
 	createPlotTemporal();
 	window.dispatchEvent(event);
+
+	callDrawBookmarks();
   }
 
   document.getElementById('binsDropdown').addEventListener('change', function() {
@@ -859,7 +862,44 @@ function createPlotTemporal() {
         });
 }
 
+function drawBookmarks(llmTS) {
+    const svg = d3.select(`#shared-axis-container svg`); // Target the correct SVG by container ID
+	const xScale = d3.scaleTime()
+		.domain([new Date(globalState.globalStartTime), new Date(globalState.globalEndTime)])
+		.range([0, globalState.dynamicWidth]);
 
+		const bookmarkPath = "M10 2 L10 17 L5 10 L0 17 L0 2 Z";
+
+    Object.entries(llmTS).forEach(([id, times]) => {
+        times.forEach(timeStr => {
+            const timestampMs = parseTimeToMillis(timeStr);
+            const xPosition = xScale(timestampMs); // Use xScale to find the position
+			if (timestampMs >= new Date(globalState.globalStartTime).getTime()){
+				svg.append("path")
+                    .attr("d", bookmarkPath)
+                    .attr("transform", `translate(${xPosition + margin.left + margin.right}, 10)`) // Adjust position
+                    .attr("fill", "#ff9800")
+                    .attr("data-id", id)
+                    .attr("class", "bookmark-marker")
+					.on("mouseover", function(event) {
+						d3.select(this)
+							.attr("r", 7)
+							.attr("fill", "#ff5722");
+					})
+					.on("mouseout", function(event) {
+						d3.select(this)
+							.attr("r", 5)
+							.attr("fill", "#ff9800");
+						// hideTooltip();
+					})
+					.on("click", function() {
+                    	console.log(`Focusing on entry with ID: ${id}, ${new Date(timestampMs)}`);
+						highlightAndScrollToInsight(id);
+                	});
+			}
+        });
+    });
+}
 
 
 function showContextMenu(event, topic) {
@@ -1634,11 +1674,25 @@ function plotUserSpecificDurationBarChart() {
 
 function plotLLMData(){
 	d3.json('final_llm_insights.json').then(function(data) {
-	createAnalysisFilter(data);
-	displayInsights(data);
+		globalState.llmInsightData = data;
+		createAnalysisFilter(data);
+		displayInsights(data);
+		callDrawBookmarks();
     }).catch(function(error) {
         console.error('Error loading JSON data:', error);
     });
+}
+
+function callDrawBookmarks(){
+	let data = globalState.llmInsightData;
+	let entryTS = {}
+	Object.keys(data).forEach(key => {
+        const insight = data[key];
+		if(insight.timestamps.length != 0){
+			entryTS[key] = insight.timestamps;
+		}
+	});
+	drawBookmarks(entryTS);
 }
 
 function displayInsights(insightsData) {
@@ -1649,6 +1703,7 @@ function displayInsights(insightsData) {
         const insight = insightsData[key];
         const insightBox = document.createElement('div');
         insightBox.className = 'insight-box';
+        insightBox.id = `insight-${key}`; // Assign a unique ID to each insight
 
         // Create topic element
         const topicElement = document.createElement('h4');
@@ -1701,6 +1756,22 @@ function applyFilter(insightsData) {
             }
         });
         displayInsights(filteredData);
+    }
+}
+
+function highlightAndScrollToInsight(id) {
+    const insightElement = document.getElementById(`insight-${id}`);
+    if (insightElement) {
+        // Scroll into view
+        insightElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Highlight the element
+        insightElement.classList.add('highlight-insight');
+        
+        // Remove highlight after animation
+        setTimeout(() => {
+            insightElement.classList.remove('highlight-insight');
+        }, 2000); // Keep it highlighted for 2 seconds
     }
 }
 
