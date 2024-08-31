@@ -814,7 +814,7 @@ function createPlotTemporal() {
     // X scale for time
     const x = d3.scaleTime()
         .domain([d3.min(topicsData, d => d.startTime), d3.max(topicsData, d => d.endTime)])
-        .range([0, width]);
+        .range([0, globalState.dynamicWidth]);
 
     // Y scale for user actions
     const yScale = d3.scaleBand()
@@ -823,9 +823,12 @@ function createPlotTemporal() {
         .padding(0.1);
 
     // Append the Y-axis
-    svg.append("g")
-        .attr("class", "axis axis--y")
-        .call(d3.axisLeft(yScale));
+	const yAxis = svg.append("g")
+	.attr("class", "axis axis--y")
+	.call(d3.axisLeft(yScale));
+
+	yAxis.selectAll("text")
+	.style("font-size", "14px"); // Adjust the font size as needed
 
 	// Calculate density
     const densityData = topicsData.map(d => {
