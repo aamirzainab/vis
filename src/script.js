@@ -1630,7 +1630,7 @@ function plotUserSpecificDurationBarChart() {
 }
 
 function plotLLMData(){
-	d3.json('final_llm_insights.json').then(function(data) {
+	d3.json('final_llm_insight.json').then(function(data) {
 	createAnalysisFilter(data);
 	displayInsights(data);
     }).catch(function(error) {
