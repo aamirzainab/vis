@@ -339,6 +339,7 @@ html, body {
 
 #indicator-svg .shading {
     pointer-events: auto; /* Enable mouse events for specific elements */
+    cursor: move;
 }
 
 

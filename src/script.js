@@ -1746,7 +1746,7 @@ function applyFilter(insightsData) {
     const activeFilters = Array.from(document.querySelectorAll('.filter-tag.active')).map(tag => tag.textContent);
 
     if (activeFilters.length === 0) {
-        displayInsights(insightsData);
+        displayInsights({}); // If no filters are active, display nothing
     } else {
         const filteredData = {};
         Object.keys(insightsData).forEach(key => {
