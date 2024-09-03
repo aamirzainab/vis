@@ -60,6 +60,7 @@ let globalState = {
 	loadedClouds : {},
 	loadedObjects : {},
 	llmInsightData: {},
+	contextShow: false, 
 };
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
@@ -250,7 +251,6 @@ function toggleInstanceRange(selectedOption){
 			const userID = i ;
 			globalState.show[userID] = this.checked;
 			if (globalState.show[userID]) {
-				// console.log("hellooo?")
 				if (globalState.currentLineSegments[userID]) {
 					globalState.scene.add(globalState.currentLineSegments[userID]);
 				}
@@ -500,10 +500,21 @@ function updateRightControl(userId) {
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
-    // const selectedActions = getSelectedTopics();
-
     const newFilteredActions = new Set();
-    const filteredActions = data.filter(action => {
+
+    // If contextShow is not true, remove all point cloud objects and exit the function
+    if (!globalState.contextShow) {
+        Object.keys(globalState.loadedClouds).forEach(key => {
+            const obj = globalState.scene.getObjectByName(key);
+            if (obj) {
+                globalState.scene.remove(obj);
+                delete globalState.loadedClouds[key];
+                // console.log(`Removed object: ${key}`);
+            }
+        });
+        return; // Exit early if contextShow is false
+    }
+	const filteredActions = data.filter(action => {
         // selectedActions.includes(action.Name) &&
         return action.Data.some(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
@@ -515,7 +526,6 @@ function updatePointCloudBasedOnSelections() {
             return false;
         });
     });
-
     // Remove objects that are no longer relevant
     Object.keys(globalState.loadedClouds).forEach(key => {
         const obj = globalState.scene.getObjectByName(key);
@@ -538,6 +548,7 @@ function updatePointCloudBasedOnSelections() {
         }
     }
 }
+
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
