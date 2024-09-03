@@ -61,6 +61,7 @@ let globalState = {
 	loadedObjects : {},
 	llmInsightData: {},
 	contextShow: false, 
+	objectsShow: false, 
 };
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
@@ -552,17 +553,30 @@ function updatePointCloudBasedOnSelections() {
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
-
     const newFilteredActions = new Set();
     const actionsToLoad = [];
 	const selectedActions = getSelectedTopics();
-	// console.log(selectedActions);
 
     // Gather all actions that meet the time range and have not been loaded yet
 
 	const selectedUsers = Object.keys(globalState.show)
 	.filter(userID => globalState.show[userID])
 	.map(userID => `User${userID}`);
+	if (!globalState.objectsShow) {
+        for (const key of Object.keys(globalState.loadedObjects)) {
+            if (globalState.loadedObjects[key]) {
+                const obj = await globalState.loadedObjects[key];  // Ensure the object is fully loaded
+                if (obj && obj.parent) { // Check if the object is still part of the scene
+                    if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+                    if (obj.material) obj.material.dispose();
+                    globalState.scene.remove(obj);
+                    delete globalState.loadedObjects[key];
+                    // console.log(`Object removed from scene and state: ${key}`);
+                }
+            }
+        }
+        return; 
+    }
 
     for (const action of data) {
         for (const subAction of action.Data) {
