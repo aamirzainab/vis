@@ -1326,7 +1326,20 @@ function plotUserSpecificBarChart() {
 
 	// Filter and process data based on selected checkboxes
 	globalState.finalData
-		.filter(action => selectedActions.includes(action.Name) && selectedUsers.includes(action.User))
+		.filter(action => {
+			// Check if the action is in the selected actions and users
+			const isSelectedAction = selectedActions.includes(action.Name);
+			const isSelectedUser = selectedUsers.includes(action.User);
+	
+			// Check if the action's time overlaps with the selected time range
+			const hasTimeOverlap = action.Data.some(subAction => {
+				const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+				const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+				return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+			});
+	
+			return isSelectedAction && isSelectedUser && hasTimeOverlap;
+		})
 		.forEach(action => {
 			const actorName = action.User;
 
@@ -1521,7 +1534,20 @@ function plotUserSpecificDurationBarChart() {
 
     // Filter and process data based on selected checkboxes
     globalState.finalData
-        .filter(action => selectedActions.includes(action.Name) && selectedUsers.includes(action.User))
+		.filter(action => {
+			// Check if the action is in the selected actions and users
+			const isSelectedAction = selectedActions.includes(action.Name);
+			const isSelectedUser = selectedUsers.includes(action.User);
+
+			// Check if the action's time overlaps with the selected time range
+			const hasTimeOverlap = action.Data.some(subAction => {
+				const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+				const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+				return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
+			});
+
+			return isSelectedAction && isSelectedUser && hasTimeOverlap;
+		})
         .forEach(action => {
             const actorName = action.User;
             const actionName = action.Name;
@@ -1724,7 +1750,7 @@ function displayInsights(insightsData) {
         insightBox.addEventListener('click', function() {
             const bookmark = d3.select(`#bookmark-${key}`); // Use D3 to select the bookmark
             if (!bookmark.empty()) { // Check if the selection is valid
-				
+
 				const bookmarkDOM = document.getElementById(`bookmark-${key}`);
 				bookmarkDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				
