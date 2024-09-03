@@ -1195,7 +1195,7 @@ function enableCheckboxes(actionNames, shouldCheck = true) {
 			// console.log("$$$ enabled: ", actionName);
         } else {
             checkbox.disabled = true; // Disable checkboxes not in the list
-            checkbox.checked = false; // Optionally uncheck them as well
+            checkbox.checked = true; // Optionally uncheck them as well
 			// console.log("$$$ disabled : ", actionName);
         }
     });
