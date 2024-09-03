@@ -631,8 +631,7 @@ function parseLocation(locationString) {
 
 async function initializeScene() {
 	globalState.scene = new THREE.Scene();
-	// globalState.scene.background = new THREE.Color(0xffffff);
-	globalState.scene.background = new THREE.Color(0x808080);
+	globalState.scene.background = new THREE.Color(0xF5F5F5);
 	const spatialView = document.getElementById('spatial-view');
 	globalState.camera = new THREE.PerspectiveCamera(40, spatialView.innerWidth / spatialView.innerHeight, 0.1, 1000);
 	globalState.camera.position.set(1, 3, 7);
