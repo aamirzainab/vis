@@ -880,6 +880,7 @@ function drawBookmarks(llmTS) {
                     .attr("transform", `translate(${xPosition + margin.left + margin.right}, 10)`) // Adjust position
                     .attr("fill", "#ff9800")
                     .attr("data-id", id)
+					.attr("id", `bookmark-${id}`)
                     .attr("class", "bookmark-marker")
 					.on("mouseover", function(event) {
 						d3.select(this)
@@ -1718,6 +1719,20 @@ function displayInsights(insightsData) {
         insightBox.appendChild(topicElement);
         insightBox.appendChild(insightElement);
         insightsContainer.appendChild(insightBox);
+
+		// Add click event listener for highlighting corresponding bookmark
+        insightBox.addEventListener('click', function() {
+            const bookmark = d3.select(`#bookmark-${key}`); // Use D3 to select the bookmark
+            if (!bookmark.empty()) { // Check if the selection is valid
+                bookmark.transition()
+                    .duration(500)
+                    .attr("fill", "green")
+                    .transition()
+                    .delay(100)
+                    .duration(500)
+                    .attr("fill", "#ff9800"); // Return to original color
+            }
+        });
     });
 }
 
