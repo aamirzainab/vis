@@ -1724,6 +1724,10 @@ function displayInsights(insightsData) {
         insightBox.addEventListener('click', function() {
             const bookmark = d3.select(`#bookmark-${key}`); // Use D3 to select the bookmark
             if (!bookmark.empty()) { // Check if the selection is valid
+				
+				const bookmarkDOM = document.getElementById(`bookmark-${key}`);
+				bookmarkDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				
                 bookmark.transition()
                     .duration(500)
                     .attr("fill", "green")
