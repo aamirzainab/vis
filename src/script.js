@@ -2188,6 +2188,7 @@ function createSpeechBox(action, subAction) {
 	if (rangeDisplay) {
 	  rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(time1))} - ${timeFormat(new Date(time2))}`;
 	}
+	initializeShadedAreaDrag();  // Ensure that drag behavior is applied to the new shaded area
   }
 
   function initializeShadedAreaDrag() {

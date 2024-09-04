@@ -338,8 +338,9 @@ html, body {
 }
 
 #indicator-svg .shading {
-    pointer-events: auto; /* Enable mouse events for specific elements */
+    pointer-events: all; 
     cursor: move;
+    z-index: 20;
 }
 
 
