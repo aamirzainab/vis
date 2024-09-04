@@ -900,7 +900,7 @@ function drawBookmarks(llmTS) {
 		.domain([new Date(globalState.globalStartTime), new Date(globalState.globalEndTime)])
 		.range([0, globalState.dynamicWidth]);
 
-		const bookmarkPath = "M10 2 L10 17 L5 10 L0 17 L0 2 Z";
+		const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
 
     Object.entries(llmTS).forEach(([id, times]) => {
         times.forEach(timeStr => {
@@ -2318,7 +2318,9 @@ function createSharedAxis() {
 
 	svg.append("g")
 		.attr("class", "x-axis")
-		.call(xAxis);
+		.call(xAxis)
+		.selectAll("text")
+    	.style("font-size", "14px"); 
 
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
