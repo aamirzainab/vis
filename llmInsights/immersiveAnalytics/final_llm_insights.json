@@ -1,0 +1,328 @@
+{
+    "1": {
+        "topic": "Transition to Gaze-based Metaphor",
+        "insight": "The user switched to the gaze-based selection metaphor at `240821_215133_491000` and confirmed the switch by `240821_215133_536000`.",
+        "timestamps": [
+            "240821_215133_491000",
+            "240821_215133_536000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            2071,
+            2073
+        ]
+    },
+    "2": {
+        "topic": "Ray-based Selection Duration",
+        "insight": "The user performed ray-based selections from the start of the session until the switch to gaze-based selection at `240821_215133_536000`. The total duration for ray-based selection is approximately 106.536 seconds.",
+        "timestamps": [
+            "240821_215027_504000",
+            "240821_215133_536000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            0,
+            2073
+        ]
+    },
+    "3": {
+        "topic": "Gaze-based Selection Duration",
+        "insight": "The user performed gaze-based selections from `240821_215133_536000` until the end of the session. The total duration for gaze-based selection is approximately 104.789 seconds.",
+        "timestamps": [
+            "240821_215133_536000",
+            "240821_215218_325000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            2073,
+            3039
+        ]
+    },
+    "4": {
+        "topic": "Frequency of Ray-based Selections",
+        "insight": "The user performed multiple ray-based selections, including selecting nodes like \"BlueNode (7)\", \"YellowNode (1)\", \"GreenNode (28)\", etc.",
+        "timestamps": [
+            "240821_215048_792000",
+            "240821_215050_158000",
+            "240821_215050_224000",
+            "240821_215051_572000",
+            "240821_215051_624000",
+            "240821_215053_358000",
+            "240821_215053_392000",
+            "240821_215054_658000",
+            "240821_215054_724000",
+            "240821_215056_558000",
+            "240821_215056_624000",
+            "240821_215058_191000",
+            "240821_215059_658000",
+            "240821_215059_690000",
+            "240821_215101_458000",
+            "240821_215101_490000",
+            "240821_215102_558000",
+            "240821_215103_525000",
+            "240821_215103_591000",
+            "240821_215104_658000",
+            "240821_215104_758000",
+            "240821_215105_925000",
+            "240821_215107_757000",
+            "240821_215108_791000",
+            "240821_215109_858000",
+            "240821_215109_890000",
+            "240821_215111_191000",
+            "240821_215112_658000",
+            "240821_215112_703000",
+            "240821_215113_791000",
+            "240821_215113_857000",
+            "240821_215115_991000",
+            "240821_215116_024000",
+            "240821_215117_958000",
+            "240821_215117_991000",
+            "240821_215119_125000",
+            "240821_215119_157000",
+            "240821_215119_991000",
+            "240821_215120_024000",
+            "240821_215120_858000",
+            "240821_215120_924000",
+            "240821_215121_825000",
+            "240821_215121_857000",
+            "240821_215123_458000",
+            "240821_215123_491000",
+            "240821_215124_425000",
+            "240821_215125_458000",
+            "240821_215125_524000",
+            "240821_215127_324000",
+            "240821_215127_360000",
+            "240821_215129_358000",
+            "240821_215131_524000",
+            "240821_215131_535000",
+            "240821_215133_491000",
+            "240821_215133_536000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            1079,
+            1094,
+            1095,
+            1112,
+            1113,
+            1152,
+            1153,
+            1162,
+            1164,
+            1185,
+            1187,
+            1205,
+            1239,
+            1240,
+            1287,
+            1288,
+            1309,
+            1323,
+            1324,
+            1348,
+            1350,
+            1383,
+            1412,
+            1420,
+            1440,
+            1441,
+            1470,
+            1520,
+            1521,
+            1550,
+            1551,
+            1611,
+            1613,
+            1672,
+            1673,
+            1712,
+            1713,
+            1721,
+            1722,
+            1735,
+            1736,
+            1758,
+            1759,
+            1779,
+            1780,
+            1792,
+            1814,
+            1815,
+            1831,
+            1834,
+            1864,
+            1993,
+            1995,
+            2071,
+            2073
+        ]
+    },
+    "5": {
+        "topic": "Frequency of Gaze-based Selections",
+        "insight": "The user performed multiple gaze-based selections, including selecting nodes like \"GreenNode (28)\", \"BlueNode (7)\", \"BlueNode (17)\", \"GreenNode (12)\", \"RedNode (30)\", etc.",
+        "timestamps": [
+            "240821_215144_758000",
+            "240821_215146_157000",
+            "240821_215147_259000",
+            "240821_215148_259000",
+            "240821_215149_025000",
+            "240821_215150_058000",
+            "240821_215150_758000",
+            "240821_215151_492000",
+            "240821_215152_392000",
+            "240821_215153_158000",
+            "240821_215155_192000",
+            "240821_215156_025000",
+            "240821_215156_792000",
+            "240821_215157_525000",
+            "240821_215158_357000",
+            "240821_215159_024000",
+            "240821_215200_092000",
+            "240821_215201_392000",
+            "240821_215202_258000",
+            "240821_215203_124000",
+            "240821_215203_859000",
+            "240821_215204_624000",
+            "240821_215207_457000",
+            "240821_215208_224000",
+            "240821_215208_891000",
+            "240821_215209_591000",
+            "240821_215210_457000",
+            "240821_215211_202000",
+            "240821_215211_902000",
+            "240821_215212_692000",
+            "240821_215214_125000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            2518,
+            2545,
+            2558,
+            2575,
+            2580,
+            2591,
+            2595,
+            2599,
+            2608,
+            2615,
+            2663,
+            2672,
+            2677,
+            2682,
+            2695,
+            2699,
+            2702,
+            2711,
+            2715,
+            2719,
+            2724,
+            2729,
+            2772,
+            2779,
+            2784,
+            2786,
+            2790,
+            2794,
+            2797,
+            2799,
+            2805
+        ]
+    },
+    "6": {
+        "topic": "Comparison of Time Spent",
+        "insight": "The time spent on ray-based selection (106.536 seconds) is slightly longer than the time spent on gaze-based selection (104.789 seconds). The user performed a higher number of selections during the ray-based selection period compared to the gaze-based selection period.",
+        "timestamps": [
+            "240821_215027_504000",
+            "240821_215133_536000",
+            "240821_215218_325000"
+        ],
+        "analyses": [
+            "temporal_analysis",
+            "action_analysis"
+        ],
+        "action_ids": [
+            0,
+            2073,
+            3039
+        ]
+    },
+    "7": {
+        "topic": "Average Time Per Selection for Ray-Based Selection",
+        "insight": "The average time per selection is calculated by dividing the total duration by the number of selections. Average Time: 38 minutes and 28 seconds / 20 = Approximately 1 minute and 55 seconds per selection.",
+        "timestamps": [
+            "240821_215048_792000",
+            "240821_215127_360000"
+        ],
+        "analyses": [
+            "action_analysis"
+        ],
+        "action_ids": [
+            1079,
+            1834
+        ]
+    },
+    "8": {
+        "topic": "Average Time Per Selection for Gaze-Based Selection",
+        "insight": "The average time per selection is calculated by dividing the total duration by the number of selections. Average Time: 29 minutes and 27 seconds / 20 = Approximately 1 minute and 28 seconds per selection.",
+        "timestamps": [
+            "240821_215144_758000",
+            "240821_215214_125000"
+        ],
+        "analyses": [
+            "action_analysis"
+        ],
+        "action_ids": [
+            2518,
+            2805
+        ]
+    },
+    "9": {
+        "topic": "Comparison of Time Efficiency",
+        "insight": "The gaze-based selection metaphor is more time-efficient, with an average selection time of 1 minute and 28 seconds compared to 1 minute and 55 seconds for the ray-based selection metaphor.",
+        "timestamps": [
+            "240821_215048_792000",
+            "240821_215127_360000",
+            "240821_215144_758000",
+            "240821_215214_125000"
+        ],
+        "analyses": [
+            "action_analysis"
+        ],
+        "action_ids": [
+            1079,
+            1834,
+            2518,
+            2805
+        ]
+    },
+    "10": {
+        "topic": "Missed Selections",
+        "insight": "The user missed several selections using the \"MidAir Pinch\" action, which occurred more frequently during the gaze-based selection metaphor. This could indicate a learning curve or difficulty in accurately selecting objects using the gaze-based method.",
+        "timestamps": [
+            "240821_215144_758000",
+            "240821_215214_125000"
+        ],
+        "analyses": [
+            "action_analysis"
+        ],
+        "action_ids": [
+            2518,
+            2805
+        ]
+    }
+}

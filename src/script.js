@@ -61,8 +61,38 @@ let globalState = {
 	loadedObjects : {},
 	llmInsightData: {},
 	contextShow: false, 
-	objectsShow: false, 
+	objectsShow: false,
+	useCase: "",
+	logFIlePath: "",
+	llmInsightPath: ""
 };
+
+// Switch mode here, keep only one as 1 and rest 0
+let logMode = {
+	vrGame: 1,
+	immersiveAnalytics: 0,
+	infoVisCollab: 0,
+	sceneNavigation: 0,
+	maintenance: 0
+}
+
+const configData = await Promise.all([
+	fetch('config.json').then(response => response.json()),
+]);
+
+let selectedLogMode = Object.keys(logMode).find(key => logMode[key] === 1);
+globalState.useCase = selectedLogMode;
+
+if (selectedLogMode && configData[0][selectedLogMode]) {
+    globalState.logFIlePath = configData[0][selectedLogMode].logFilePath;
+    globalState.llmInsightPath = configData[0][selectedLogMode].llmInsightFilePath;
+
+    console.log("Log File Path:", globalState.logFIlePath);
+    console.log("LLM Insight File Path:", globalState.llmInsightPath);
+} else {
+    console.log("No valid mode selected or key not found in JSON.");
+}
+
 const userInterestTopic = "Error, bugs or complaints";
 // user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
 
@@ -699,7 +729,7 @@ async function initializeScene() {
 	// await Promise.all([loadRoomModel()]);
 
   	const finalData = await Promise.all([
-		fetch('Processed_Log_EXR_InfoVisCollab.json').then(response => response.json()),
+		fetch(globalState.logFIlePath).then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
@@ -1760,7 +1790,7 @@ function plotUserSpecificDurationBarChart() {
 }
 
 function plotLLMData(){
-	d3.json('final_llm_insights.json').then(function(data) {
+	d3.json(globalState.llmInsightPath).then(function(data) {
 		globalState.llmInsightData = data;
 		createAnalysisFilter(data);
 		displayInsights(data);
