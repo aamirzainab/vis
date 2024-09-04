@@ -333,6 +333,14 @@ function toggleInstanceRange(selectedOption){
 		});
 	}
 
+	document.getElementById(`toggle-Object`).addEventListener('change', function() {
+		globalState.objectsShow = this.checked;
+	});
+	
+	document.getElementById(`toggle-Context`).addEventListener('change', function() {
+		globalState.contextShow = this.checked;
+	});
+
 	const playPauseButton = document.getElementById('playPauseButton');
 	const playPauseButtonHeight = playPauseButton.offsetHeight;
 	const timeDisplay = document.getElementById('timeDisplay');
@@ -1285,7 +1293,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 
 function generateUserLegends(){
 	const legendContainer = document.getElementById('user-legend-container');
-	document.querySelector('.user-legend').style.height = `${numUsers * 30}px`;
+	document.querySelector('.user-legend').style.height = `${numUsers * 34}px`;
 
     for (let i = 1; i <= numUsers; i++) {
         const userLegendItem = document.createElement('div');
@@ -1312,6 +1320,34 @@ function generateUserLegends(){
 
         legendContainer.appendChild(userLegendItem);
 	}
+
+	generateObjectLegends();
+}
+
+function generateObjectLegends() {
+    const container = document.getElementById('objects-checklist'); 
+
+    const objs = ['Context', 'Object'];
+    objs.forEach(obj => {
+        const userLegendItem = document.createElement('div');
+        userLegendItem.className = 'user-legend-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'legend-checkbox';
+        checkbox.id = `toggle-${obj}`;
+        checkbox.name = 'objectVisibility';
+
+        const label = document.createElement('label');
+        label.htmlFor = `toggle-${obj}`;
+        label.textContent = `${obj}`;
+		label.style.marginLeft = '10px';
+
+        userLegendItem.appendChild(checkbox);
+        userLegendItem.appendChild(label);
+
+        container.appendChild(userLegendItem);
+    });
 }
 
 function plotUserSpecificBarChart() {

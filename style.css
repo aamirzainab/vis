@@ -113,7 +113,7 @@ html, body {
     bottom: 0px;
 }
 
-.toolbar, #obj-toolbar, #toolbar, #user-toolbar, #bin-selection-container {
+.toolbar, #obj-toolbar, #toolbar, #bin-selection-container {
     background-color: #f9f9f9;
     /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
     position: absolute;
@@ -451,33 +451,55 @@ html, body {
     border: 1px solid #999;
 }
 #user-toolbar {
-    margin-top:5px;
+    margin-top:8px;
     position: absolute;
     top: 0;
-    left: 5px;
+    left: 1px;
     z-index: 1000;
-    /* background-color: #f9f9f9; */
     padding: 14px;
-    display: block; /* Or flex, depending on your content */
+    display: block;
+}
+
+#user-legend-container {
+    background-color: rgba(255, 255, 255, 0.3); /* Decreased opacity */
+    /* transition: background-color 0.3s ease; */
     border-radius: 8px;
+    margin-bottom: 7px;
+}
+
+#user-legend-container:hover {
+    background-color: rgba(255, 255, 255, 1); /* Full opacity on hover */
+}
+
+#objects-checklist {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.3); /* Decreased opacity */
+    /* transition: background-color 0.3s ease; */
+    border-radius: 8px;
+}
+
+#objects-checklist:hover {
+    background-color: rgba(255, 255, 255, 1); /* Full opacity on hover */
 }
 
 .user-legend {
     display: flex;
     flex-direction: column;
-    /* height: 75px; */
-    width:120px;
+    width:125px;
 }
+
+.user-legend:hover {
+    background-color: rgba(255, 255, 255, 1); 
+}
+
 .user-legend-item {
     font-size:1.1em;
     display: flex;
     align-items: center;
-    margin-bottom: 5px;
     margin-bottom: 10px;
+    padding-left: 5px;
 }
-.user-legend-item:hover {
-    background-color: #f0f0f0; /* Change background color on hover */
-}
+
 .user-legend-item span {
     margin-left: 5px;
 }
@@ -488,12 +510,12 @@ html, body {
     margin-left:10px;
     border-radius: 3px; /* Adjust the value to make the edges rounder */
 }
+
 .legend-checkbox {
     margin-right: 15px;
-    border-radius: 3px; /* Adjust the value to make the edges rounder */
+    transform: scale(1.1);
 }
 
-
-.highlight-1 { background-color: #8dd3c7; }
-.highlight-2 { background-color: #fdcdac }
-.highlight-3 { background-color: #bebada }
+.legend-checkbox label{
+    margin-left: 20px;
+}
