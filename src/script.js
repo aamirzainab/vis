@@ -360,7 +360,7 @@ function toggleInstanceRange(selectedOption){
 			plotUserSpecificBarChart();
 			plotUserSpecificDurationBarChart();
 
-			plotHeatmap();
+			// plotHeatmap();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
 		});
@@ -1253,7 +1253,7 @@ function createLines(timestamp1, timestamp2) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	console.log("HELO");
-	plotHeatmap();
+	// plotHeatmap();
 
 
 	updatePointCloudBasedOnSelections();
@@ -1322,7 +1322,7 @@ export function dragged(event,d) {
 
     initializeOrUpdateSpeechBox();
 
-	plotHeatmap();
+	// plotHeatmap();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -1449,7 +1449,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
 
-		plotHeatmap(); 
+		// plotHeatmap(); 
 
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
@@ -2378,7 +2378,7 @@ function createSpeechBox(action, subAction) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	
-	plotHeatmap();
+	// plotHeatmap();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -2581,7 +2581,7 @@ async function initialize() {
 	initializeOrUpdateSpeechBox();
 	plotLLMData();
 
-	plotHeatmap();
+	// plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
