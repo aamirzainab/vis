@@ -60,7 +60,7 @@ let globalState = {
 	loadedClouds : {},
 	loadedObjects : {},
 	llmInsightData: {},
-	contextShow: false, 
+	contextShow: false,
 	objectsShow: false,
 	heatmaps : [],
 	useCase: "",
@@ -70,8 +70,8 @@ let globalState = {
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
-	vrGame: 1,
-	immersiveAnalytics: 0,
+	vrGame: 0,
+	immersiveAnalytics: 1,
 	infoVisCollab: 0,
 	sceneNavigation: 0,
 	maintenance: 0
@@ -95,7 +95,6 @@ if (selectedLogMode && configData[0][selectedLogMode]) {
 }
 
 const userInterestTopic = "Error, bugs or complaints";
-// user 1 avatar, user 2 avatar, user 1 rc, user 2 rc , user 1 lc, user 2 rc
 
 const margin = { top: 20, right: 30, bottom: 10, left: 160 };
 let buffer = 167;
@@ -107,7 +106,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]); 
+    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -369,7 +368,7 @@ function toggleInstanceRange(selectedOption){
 	document.getElementById(`toggle-Object`).addEventListener('change', function() {
 		globalState.objectsShow = this.checked;
 	});
-	
+
 	document.getElementById(`toggle-Context`).addEventListener('change', function() {
 		globalState.contextShow = this.checked;
 	});
@@ -388,9 +387,21 @@ function updateUserDevice(userId) {
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
 
+    let deviceType = '';
+
+    if (logMode.vrGame || logMode.immersiveAnalytics) {
+        deviceType = 'XRHMD';
+    } else if (logMode.infoVisCollab || logMode.sceneNavigation || logMode.maintenance) {
+        deviceType = 'HandheldARInputDevice';
+    } else {
+        // Default device type or return if logMode is not set correctly
+        console.warn('Unsupported log mode.');
+        return;
+    }
+
     const navigateActions = globalState.finalData.filter(action =>
         action.Name === 'Navigate' &&
-        action.TriggerSource === 'HandheldARInputDevice' &&
+        action.TriggerSource === deviceType &&
         action.User === userField
     );
     // console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
@@ -439,9 +450,22 @@ function updateLeftControl(userId) {
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
 
+    let actionName, deviceType;
+
+    if (logMode.immersiveAnalytics) {
+        actionName = 'Move Hand';
+        deviceType = 'XRHand_L';
+    } else if (logMode.vrGame) {
+        actionName = 'Move Controller';
+        deviceType = 'XRController_L';
+    } else {
+        // For other log modes, do nothing
+        return;
+    }
+
     const navigateActions = globalState.finalData.filter(action =>
-        action.Name === 'Move Hand' &&
-        action.TriggerSource === 'XRHand_L' &&
+        action.Name === actionName &&
+        action.TriggerSource === deviceType &&
         action.User === userField
     );
 
@@ -490,10 +514,23 @@ function updateRightControl(userId) {
 
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
+    let actionName, deviceType;
+
+    if (logMode.immersiveAnalytics) {
+        actionName = 'Move Hand';
+        deviceType = 'XRHand_R';
+    } else if (logMode.vrGame) {
+        actionName = 'Move Controller';
+        deviceType = 'XRController_R';
+    } else {
+        // For other log modes, do nothing
+        return;
+    }
+
 
     const navigateActions = globalState.finalData.filter(action =>
-        action.Name === 'Move Hand' &&
-        action.TriggerSource === 'XRHand_R' &&
+        action.Name === actionName &&
+        action.TriggerSource === deviceType &&
         action.User === userField
     );
     // console.log(`Filtered ${navigateActions.length} navigate right actions for user ${userField}.`);
@@ -616,21 +653,21 @@ async function updateObjectsBasedOnSelections() {
                 }
             }
         }
-        return; 
+        return;
     }
 
     for (const action of data) {
         for (const subAction of action.Data) {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2
 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
 				&& selectedActions.includes(action.Name) && selectedUsers.includes(action.User)) {
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-                if (!newFilteredActions.has(key)){ 
-				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){ 
+                if (!newFilteredActions.has(key)){
+				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){
                     newFilteredActions.add(key);
-                    actionsToLoad.push({ key, subAction }); 
+                    actionsToLoad.push({ key, subAction });
                 }
             }
         }
@@ -755,7 +792,7 @@ function plotHeatmap() {
                 }
             });
         });
-		// console.log("came up to here?"); 
+		// console.log("came up to here?");
 
         // Apply Gaussian blur for smoothing the heatmap
         // gaussianBlur3D(heatmap);
@@ -865,12 +902,12 @@ async function initializeScene() {
 
   // Resolve all promises to load the avatars
   globalState.avatars = await Promise.all(avatarPromises);
-  
+
   // Assuming you only need one pair of right and left controls
 //   globalState.rightControls = await Promise.all([
 // 	  loadHand("hand_r.glb")
 //   ]);
-  
+
 //   globalState.leftControls = await Promise.all([
 // 	  loadHand("hand_l.glb")
 //   ]);
@@ -894,9 +931,6 @@ async function initializeScene() {
 	});
 
 }
-
-
-// initializeScene(); // zainab
 
 function filterDataByType(data) {
 	const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
@@ -1252,7 +1286,6 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	console.log("HELO");
 	// plotHeatmap();
 
 
@@ -1323,7 +1356,7 @@ export function dragged(event,d) {
     initializeOrUpdateSpeechBox();
 
 	// plotHeatmap();
-	
+
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
@@ -1449,7 +1482,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
 
-		// plotHeatmap(); 
+		// plotHeatmap();
 
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
@@ -1491,7 +1524,7 @@ function generateUserLegends(){
 }
 
 function generateObjectLegends() {
-    const container = document.getElementById('objects-checklist'); 
+    const container = document.getElementById('objects-checklist');
 
     const objs = ['Context', 'Object'];
     objs.forEach(obj => {
@@ -1556,14 +1589,14 @@ function plotUserSpecificBarChart() {
 			// Check if the action is in the selected actions and users
 			const isSelectedAction = selectedActions.includes(action.Name);
 			const isSelectedUser = selectedUsers.includes(action.User);
-	
+
 			// Check if the action's time overlaps with the selected time range
 			const hasTimeOverlap = action.Data.some(subAction => {
 				const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
 				const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
 				return actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2;
 			});
-	
+
 			return isSelectedAction && isSelectedUser && hasTimeOverlap;
 		})
 		.forEach(action => {
@@ -1577,11 +1610,11 @@ function plotUserSpecificBarChart() {
 				if (!userDataByActionReferentName[ActionReferentName]) {
 					userDataByActionReferentName[ActionReferentName] = {};
 				}
-	
+
 				userDataByActionReferentName[ActionReferentName][actorName] = (userDataByActionReferentName[ActionReferentName][actorName] || 0) + 1;
 				allUsers.add(actorName);
 			})
-			
+
 		});
 
 	const users = Array.from(allUsers).sort((a, b) => {
@@ -1979,7 +2012,7 @@ function displayInsights(insightsData) {
 
 				const bookmarkDOM = document.getElementById(`bookmark-${key}`);
 				bookmarkDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				
+
                 bookmark.transition()
                     .duration(500)
                     .attr("fill", "green")
@@ -2038,7 +2071,7 @@ function highlightAndScrollToInsight(id) {
 
         // Highlight the element
         insightElement.classList.add('highlight-insight');
-        
+
         // Remove highlight after animation
         setTimeout(() => {
             insightElement.classList.remove('highlight-insight');
@@ -2266,7 +2299,7 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.fontSize = '1em';
     intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
-	let otherDetails ; 
+	let otherDetails ;
 	if (action.TriggerSource === "Audio")
 	{
 		otherDetails = `
@@ -2377,9 +2410,9 @@ function createSpeechBox(action, subAction) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	
+
 	// plotHeatmap();
-	
+
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 
@@ -2488,7 +2521,7 @@ function createSharedAxis() {
 		.attr("class", "x-axis")
 		.call(xAxis)
 		.selectAll("text")
-    	.style("font-size", "14px"); 
+    	.style("font-size", "14px");
 
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Dashboard</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>EXR Dashboard</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 
     <div id="spatial-view">
         <div id="user-toolbar" class="toolbarNOT">
-    
+
             <div class="user-legend" id="user-legend-container">
                 <!-- User legend items will be dynamically inserted here -->
             </div>
@@ -29,7 +29,7 @@
 
         <div id="right-pane">
             <div class="plot-box" id="plot-box1"></div>
-            <div class="plot-box" id="plot-box2"></div> 
+            <div class="plot-box" id="plot-box2"></div>
             <div class="plot-box" id="plot-box3">
                 <div id="analysis-filter-container"></div>
                 <div id="insights-container"></div>
@@ -77,7 +77,7 @@
             checkbox.addEventListener('change', function() {
             const subCheckboxes = subList.querySelectorAll('input[type="checkbox"]');
             subCheckboxes.forEach(subCheckbox => subCheckbox.checked = this.checked);
-            });           
+            });
         } else {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -112,7 +112,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-            fetch('folderStructure.json') 
+            fetch('folderStructure.json')
                 .then(response => response.json())
                 .then(data => {
                     generateToolbar(data);
@@ -128,8 +128,8 @@
             <div id="playPauseButton" class="play-pause-icon">
             </div>
             <div id="timeDisplay">00:00:00</div>
-            
-        </div>     
+
+        </div>
         <div id="shared-axis-container">
             <svg id="shared-axis"></svg>
         </div>
@@ -247,8 +247,8 @@
 
             function selectSize(size) {
                 var dropbtn = document.querySelector("#bin-selection-container .dropbtn");
-                dropbtn.textContent = "Sample Size - " + size; 
-                myFunction(); 
+                dropbtn.textContent = "Sample Size - " + size;
+                myFunction();
             }
             window.onclick = function(event) {
                 if (!event.target.matches('.dropbtn')) {
