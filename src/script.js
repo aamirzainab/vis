@@ -62,6 +62,7 @@ let globalState = {
 	llmInsightData: {},
 	contextShow: false, 
 	objectsShow: false,
+	heatmaps : [],
 	useCase: "",
 	logFIlePath: "",
 	llmInsightPath: ""
@@ -106,7 +107,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]); //"#B0BEC5", "#455A64" | "#87CEFA", "#005F73"
+    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]); 
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -358,6 +359,8 @@ function toggleInstanceRange(selectedOption){
 			initializeOrUpdateSpeechBox();
 			plotUserSpecificBarChart();
 			plotUserSpecificDurationBarChart();
+
+			plotHeatmap();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
 		});
@@ -673,6 +676,130 @@ async function updateObjectsBasedOnSelections() {
                 });
         }
     }
+}
+
+
+function plotHeatmap() {
+    // Clear existing heatmaps
+    if (globalState.heatmaps) {
+        globalState.heatmaps.forEach((heatmap) => {
+            if (heatmap.mesh) {
+                globalState.scene.remove(heatmap.mesh);
+                // heatmap.mesh.geometry.dispose();
+                // heatmap.mesh.material.dispose();
+            }
+        });
+    }
+    globalState.heatmaps = [];
+
+    const selectedActions = getSelectedTopics();
+    const data = globalState.finalData;
+    const gridSize = 50; // Adjust the size of the grid
+    const voxelSize = 0.2; // Size of each voxel in 3D space
+    // const colorScales = [d3.interpolateYlOrRd, d3.interpolateBlues, d3.interpolateGreens]; // Different color scales for each user
+
+    const visibleUsers = Object.keys(globalState.show)
+        .filter((userID) => globalState.show[userID])
+        .map((userID) => `User${userID}`);
+
+    visibleUsers.forEach((user, userIndex) => {
+        // Create a 3D voxel grid for this user's heatmap
+        const heatmap = new Array(gridSize)
+            .fill()
+            .map(() =>
+                new Array(gridSize)
+                    .fill()
+                    .map(() => new Array(gridSize).fill(0))
+            );
+
+        // Use selected actions and time range to filter actions for the user
+        const actionsToDisplay = data.filter((action) => {
+            return (
+                action.User === user &&
+                selectedActions.includes(action.Name) &&
+                action.Data.some((subAction) => {
+                    const actionStartTime = parseTimeToMillis(
+                        subAction.ActionInvokeTimestamp
+                    );
+                    const actionEndTime =
+                        actionStartTime + parseDurationToMillis(action.Duration);
+                    return (
+                        actionEndTime >= globalState.lineTimeStamp1 &&
+                        actionStartTime <= globalState.lineTimeStamp2
+                    );
+                })
+            );
+        });
+
+        // Populate the 3D voxel grid with densities
+        actionsToDisplay.forEach((action) => {
+            action.Data.forEach((subAction) => {
+                const location = parseLocation(subAction.ActionInvokeLocation);
+                if (location) {
+                    // Convert location to voxel grid coordinates
+                    const gx = Math.floor(location.x / voxelSize);
+                    const gy = Math.floor(location.y / voxelSize);
+                    const gz = Math.floor(location.z / voxelSize);
+
+                    // Ensure voxel is within bounds
+                    if (
+                        gx >= 0 &&
+                        gx < gridSize &&
+                        gy >= 0 &&
+                        gy < gridSize &&
+                        gz >= 0 &&
+                        gz < gridSize
+                    ) {
+                        heatmap[gx][gy][gz] += 1; // Increment density for this voxel
+                    }
+                }
+            });
+        });
+		// console.log("came up to here?"); 
+
+        // Apply Gaussian blur for smoothing the heatmap
+        // gaussianBlur3D(heatmap);
+
+        // // Render the heatmap as a 3D volumetric heatmap
+        renderHeatmap(heatmap, colorScale[userIndex], voxelSize);
+    });
+}
+
+
+// Render the heatmap as a 3D volumetric heatmap using spheres for visualization
+function renderHeatmap(heatmap, colorScale, voxelSize) {
+	const group = new THREE.Group(); // Group to hold all the heatmap points
+
+	for (let x = 0; x < heatmap.length; x++) {
+		for (let y = 0; y < heatmap[x].length; y++) {
+			for (let z = 0; z < heatmap[x][y].length; z++) {
+				const intensity = heatmap[x][y][z];
+				if (intensity > 0) {
+					const color = new THREE.Color(colorScale(intensity)); // Map intensity to color
+					const material = new THREE.MeshBasicMaterial({
+						color,
+						transparent: true,
+						opacity: Math.min(1, intensity / 10),
+					});
+					const sphere = new THREE.Mesh(
+						new THREE.SphereGeometry(voxelSize / 2),
+						material
+					); // Sphere for visualization
+					sphere.position.set(
+						x * voxelSize,
+						y * voxelSize,
+						z * voxelSize
+					);
+					group.add(sphere);
+				}
+			}
+		}
+	}
+
+	globalState.scene.add(group); // Add the heatmap to the scene
+	globalState.heatmaps.push({
+		mesh: group,
+	});
 }
 
 function parseLocation(locationString) {
@@ -1125,6 +1252,10 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
+	console.log("HELO");
+	plotHeatmap();
+
+
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 	initializeShadedAreaDrag();
@@ -1190,6 +1321,8 @@ export function dragged(event,d) {
 	// updateXRSnapshot();
 
     initializeOrUpdateSpeechBox();
+
+	plotHeatmap();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -1315,6 +1448,9 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		initializeOrUpdateSpeechBox();
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
+
+		plotHeatmap(); 
+
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
     });
@@ -2242,6 +2378,7 @@ function createSpeechBox(action, subAction) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 	
+	plotHeatmap();
 	
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -2443,7 +2580,9 @@ async function initialize() {
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
 	plotLLMData();
-	
+
+	plotHeatmap();
+
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 	plotUserSpecificBarChart();
