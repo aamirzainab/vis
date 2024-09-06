@@ -1614,6 +1614,16 @@ function plotUserSpecificBarChart() {
 			.forEach(ob => {
 				let ActionReferentName = ob.ActionReferentName;
 				ActionReferentName = ActionReferentName.split('_')[0];
+				if(globalState.useCase == "sceneNavigation"){
+					ActionReferentName = ActionReferentName.split("(")[1].trim();
+					ActionReferentName = ActionReferentName.split(",")[0].trim();
+					ActionReferentName = ActionReferentName.replace(/'/g, "");
+				}else if(globalState.useCase == "maintenance"){ //Past Inspection Log (1) Past Inspection Log (1) "('QR Code', 0.9)"
+					ActionReferentName = ActionReferentName.match(/"([^"]+)"|([a-zA-Z\s]+)/g)?.join(' ').trim();
+				}else{
+					ActionReferentName = ActionReferentName.split("(")[0].trim();
+				}
+
 				if (!userDataByActionReferentName[ActionReferentName]) {
 					userDataByActionReferentName[ActionReferentName] = {};
 				}
