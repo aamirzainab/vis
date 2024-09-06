@@ -14,6 +14,11 @@
         "llmInsightFilePath": "llmInsights/infoVisCollab/final_llm_insights.json",
         "objFilePath" : "obj/infoVisCollab/"
     },
+    "infoVisCollab1": {
+        "logFilePath": "logs/infoVisCollab/Processed_Log_EXR_InfoVisCollabModified.json",
+        "llmInsightFilePath": "llmInsights/infoVisCollab/final_llm_insights.json",
+        "objFilePath" : "obj/infoVisCollab/"
+    },
 	"sceneNavigation": {
         "logFilePath": "logs/sceneNavigation/Processed_Log_EXR_SceneNavigation.json",
         "llmInsightFilePath": "llmInsights/sceneNavigation/final_llm_insights.json",

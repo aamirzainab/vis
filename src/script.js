@@ -72,9 +72,10 @@ let globalState = {
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
-	vrGame: 1,
+	vrGame: 0,
 	immersiveAnalytics: 0,
 	infoVisCollab: 0,
+    infoVisCollab1: 1,
 	sceneNavigation: 0,
 	maintenance: 0
 }
@@ -354,7 +355,7 @@ function updateUserDevice(userId) {
 
     if (logMode.vrGame || logMode.immersiveAnalytics) {
         deviceType = 'XRHMD';
-    } else if (logMode.infoVisCollab || logMode.sceneNavigation || logMode.maintenance) {
+    } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance) {
         deviceType = 'HandheldARInputDevice';
     } else {
         // Default device type or return if logMode is not set correctly
@@ -2646,7 +2647,9 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-	plotLLMData();
+    if(!logMode.infoVisCollab1){ 
+	    plotLLMData();
+    }
 
 	plotHeatmap();
 
