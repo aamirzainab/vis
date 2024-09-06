@@ -67,15 +67,16 @@ let globalState = {
 	logFIlePath: "",
 	llmInsightPath: "",
 	objFilePath: "",
+    heatmapShow: false,
 };
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
-	vrGame: 0,
+	vrGame: 1,
 	immersiveAnalytics: 0,
 	infoVisCollab: 0,
 	sceneNavigation: 0,
-	maintenance: 1
+	maintenance: 0
 }
 
 const configData = await Promise.all([
@@ -318,14 +319,21 @@ function toggleInstanceRange(selectedOption){
 
 	document.getElementById(`toggle-Object`).addEventListener('change', function() {
 		globalState.objectsShow = this.checked;
-        updatePointCloudBasedOnSelections();
+        // updatePointCloudBasedOnSelections();
         updateObjectsBasedOnSelections();
 	});
 
 	document.getElementById(`toggle-Context`).addEventListener('change', function() {
 		globalState.contextShow = this.checked;
         updatePointCloudBasedOnSelections();
-        updateObjectsBasedOnSelections();
+        // updateObjectsBasedOnSelections();
+	});
+	document.getElementById(`toggle-Heatmap`).addEventListener('change', function() {
+		globalState.heatmapShow = this.checked;
+        console.log("hello");
+        plotHeatmap();
+        // updatePointCloudBasedOnSelections();
+        // updateObjectsBasedOnSelections();
 	});
 
 	const playPauseButton = document.getElementById('playPauseButton');
@@ -702,7 +710,17 @@ async function updateObjectsBasedOnSelections() {
 }
 
 function plotHeatmap() {
-    // Clear existing heatmaps
+    
+
+    if (!globalState.heatmapShow) {
+        globalState.heatmaps.forEach((heatmap) => {
+            if (heatmap.mesh) {
+                globalState.scene.remove(heatmap.mesh);
+            }
+        });
+        return; // Exit early if contextShow is false
+    }
+
     if (globalState.heatmaps) {
         globalState.heatmaps.forEach((heatmap) => {
             if (heatmap.mesh) {
@@ -753,17 +771,13 @@ function plotHeatmap() {
             );
         });
 
-        // Populate the 3D voxel grid with densities
         actionsToDisplay.forEach((action) => {
             action.Data.forEach((subAction) => {
                 const location = parseLocation(subAction.ActionInvokeLocation);
                 if (location) {
-                    // Convert location to voxel grid coordinates
                     const gx = Math.floor(location.x / voxelSize);
                     const gy = Math.floor(location.y / voxelSize);
                     const gz = Math.floor(location.z / voxelSize);
-
-                    // Ensure voxel is within bounds
                     if (
                         gx >= 0 &&
                         gx < gridSize &&
@@ -772,27 +786,23 @@ function plotHeatmap() {
                         gz >= 0 &&
                         gz < gridSize
                     ) {
-                        heatmap[gx][gy][gz] += 1; // Increment density for this voxel
+                        heatmap[gx][gy][gz] += 1; 
                     }
                 }
             });
         });
-
-        // Render the heatmap as a 3D volumetric heatmap
         renderHeatmap(heatmap, user, voxelSize);
     });
 }
 
-// Function to draw grid lines for visualization
 function drawGrid(gridSize, voxelSize) {
     const gridHelper = new THREE.GridHelper(gridSize * voxelSize, gridSize, 0x888888, 0x444444);
     gridHelper.position.set((gridSize * voxelSize) / 2, 0, (gridSize * voxelSize) / 2);
-    globalState.scene.add(gridHelper);
+    // globalState.scene.add(gridHelper);
 }
 
-// Render the heatmap as a 3D volumetric heatmap using spheres for visualization
 function renderHeatmap(heatmap, user, voxelSize) {
-    const group = new THREE.Group(); // Group to hold all the heatmap points
+    const group = new THREE.Group();
 
     for (let x = 0; x < heatmap.length; x++) {
         for (let y = 0; y < heatmap[x].length; y++) {
@@ -807,9 +817,9 @@ function renderHeatmap(heatmap, user, voxelSize) {
                         opacity: Math.min(1, intensity / 10),
                     });
                     const sphere = new THREE.Mesh(
-                        new THREE.SphereGeometry(voxelSize / 4), // Reduced sphere radius
+                        new THREE.SphereGeometry(voxelSize / 4), 
                         material
-                    ); // Sphere for visualization
+                    ); 
                     sphere.position.set(
                         x * voxelSize,
                         y * voxelSize,
@@ -1539,7 +1549,7 @@ function generateUserLegends(){
 function generateObjectLegends() {
     const container = document.getElementById('objects-checklist');
 
-    const objs = ['Context', 'Object'];
+    const objs = ['Context', 'Object','Heatmap'];
     objs.forEach(obj => {
         const userLegendItem = document.createElement('div');
         userLegendItem.className = 'user-legend-item';
