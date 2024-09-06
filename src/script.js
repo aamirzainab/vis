@@ -65,16 +65,17 @@ let globalState = {
 	heatmaps : [],
 	useCase: "",
 	logFIlePath: "",
-	llmInsightPath: ""
+	llmInsightPath: "",
+	objFilePath: "",
 };
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
 	vrGame: 0,
-	immersiveAnalytics: 1,
+	immersiveAnalytics: 0,
 	infoVisCollab: 0,
 	sceneNavigation: 0,
-	maintenance: 0
+	maintenance: 1
 }
 
 const configData = await Promise.all([
@@ -87,6 +88,7 @@ globalState.useCase = selectedLogMode;
 if (selectedLogMode && configData[0][selectedLogMode]) {
     globalState.logFIlePath = configData[0][selectedLogMode].logFilePath;
     globalState.llmInsightPath = configData[0][selectedLogMode].llmInsightFilePath;
+	globalState.objFilePath = configData[0][selectedLogMode].objFilePath; 
 
     console.log("Log File Path:", globalState.logFIlePath);
     console.log("LLM Insight File Path:", globalState.llmInsightPath);
@@ -192,57 +194,6 @@ async function loadHand(filename) {
 	avatarLoaded = true;
 	return avatar;
 }
-
-async function loadRoomModel() {
-	const loader = new GLTFLoader();
-	try {
-		const filename = 'VRGameScene.glb';
-		const gltf = await loader.loadAsync(filename);
-		roomMesh = gltf.scene;
-		roomMesh.name = filename;
-		roomMesh.scale.set(1, 1, 1);
-		globalState.scene.add(roomMesh);
-	} catch (error) {
-		console.error('Error loading the room model:', error);
-	}
-	roomLoaded = true;
-}
-
-async function loadVirtualObject(filePath, location) {
-    const loader = new GLTFLoader();
-    try {
-        const gltf = await loader.loadAsync(filePath);
-		const obj = gltf.scene ;
-		obj.scale.set(1,1,1);
-		obj.name = filePath;
-		// obj.position.x = location.x ;
-		// obj.position.y = location.y ;
-		// obj.position.z = location.z ;
-        // gltf.scene.position.set(location.x, location.y, location.z);
-        globalState.scene.add(obj);
-        console.log(`Model loaded and placed at: ${location.x}, ${location.y}, ${location.z}`);
-    } catch (error) {
-        console.error('Failed to load model:', error);
-    }
-}
-
-async function loadOBJModel(filename) {
-    const loader = new OBJLoader();  // Using OBJLoader for OBJ files
-    try {
-        const obj = await loader.loadAsync(filename);
-        obj.name = filename;
-        globalState.scene.add(obj);  // Add the model to the scene
-        console.log(`Model ${filename} loaded successfully.`);
-        return obj;  // Return the loaded model
-    } catch (error) {
-        console.error(`Failed to load model ${filename}:`, error);  // Log any errors
-    }
-}
-
-function parseData(dataString) {
-	return dataString ? dataString.split(',').map(Number) : [];
-}
-
 
 
 
@@ -367,10 +318,14 @@ function toggleInstanceRange(selectedOption){
 
 	document.getElementById(`toggle-Object`).addEventListener('change', function() {
 		globalState.objectsShow = this.checked;
+        updatePointCloudBasedOnSelections();
+        updateObjectsBasedOnSelections();
 	});
 
 	document.getElementById(`toggle-Context`).addEventListener('change', function() {
 		globalState.contextShow = this.checked;
+        updatePointCloudBasedOnSelections();
+        updateObjectsBasedOnSelections();
 	});
 
 	const playPauseButton = document.getElementById('playPauseButton');
@@ -386,7 +341,7 @@ function updateUserDevice(userId) {
 
     // User field mapping: Assuming User field in JSON like "User1", "User2"
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
-
+	// console.log(userField);
     let deviceType = '';
 
     if (logMode.vrGame || logMode.immersiveAnalytics) {
@@ -428,6 +383,7 @@ function updateUserDevice(userId) {
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.avatars[userId]) {
+			// console.log("came here with userId " + globalState.avatars[userId]); 
             globalState.avatars[userId].position.set(location.x, location.y, location.z);
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
@@ -580,15 +536,20 @@ function updateRightControl(userId) {
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
     const newFilteredActions = new Set();
+    
 
     // If contextShow is not true, remove all point cloud objects and exit the function
     if (!globalState.contextShow) {
         Object.keys(globalState.loadedClouds).forEach(key => {
+            // console.log("current keys " + key ); 
             const obj = globalState.scene.getObjectByName(key);
+            console.log('Current objects in scene:', globalState.scene.children.map(child => child.name));
+
+            // console.log(obj);
             if (obj) {
                 globalState.scene.remove(obj);
                 delete globalState.loadedClouds[key];
-                // console.log(`Removed object: ${key}`);
+                console.log(`Removed object: ${key}`);
             }
         });
         return; // Exit early if contextShow is false
@@ -599,7 +560,8 @@ function updatePointCloudBasedOnSelections() {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && subAction.ActionContext) {
-                newFilteredActions.add(`${subAction.ActionContext}`);
+                const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
+                newFilteredActions.add(`${globalState.objFilePath}${subAction.ActionContext}`);
                 return true;
             }
             return false;
@@ -619,13 +581,36 @@ function updatePointCloudBasedOnSelections() {
     for (const action of filteredActions) {
         for (const subAction of action.Data) {
             if (subAction.ActionContext !== null && !globalState.loadedClouds[subAction.ActionContext]) {
-                const obj = loadAvatarModel(subAction.ActionContext);
-                obj.name = subAction.ActionContext; // Ensure each object has a unique name
-                globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
+				const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
+                globalState.loadedClouds[adjustedPath] = loadAvatarModel(adjustedPath)
+                .then(obj => {
+                    obj.name = adjustedPath;
+                    const location = parseLocation(subAction.ActionReferentLocation);
+                    obj.position.set(location.x, location.y, location.z);
+                    // const euler = new THREE.Euler(
+                    //     THREE.MathUtils.degToRad(location.eulerx),
+                    //     THREE.MathUtils.degToRad(location.eulery),
+                    //     THREE.MathUtils.degToRad(location.eulerz),
+                    //     'ZXY'
+                    // );
+                    // obj.setRotationFromEuler(euler);
+                    globalState.scene.add(obj);
+                    // console.log(`Object loaded and added to scene: ${key}`);
+                    return obj; // Return the loaded object
+                })
+                .catch(error => {
+                    console.error(`Failed to load object` +  error);
+                    delete globalState.loadedClouds[adjustedPath]; // Clean up state on failure
+                });
+                // const obj = loadAvatarModel(adjustedContext);
+                // obj.name = adjustedContext; 
+                // globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
                 // console.log(`Loaded new object: ${subAction.ActionContext}`);
             }
         }
     }
+
+   
 }
 
 
@@ -691,7 +676,8 @@ async function updateObjectsBasedOnSelections() {
     for (const { key, subAction } of actionsToLoad) {
         if (!globalState.loadedObjects[key]) { // Double check to prevent race conditions
             // console.log(`Loading new object: ${key}`);
-            globalState.loadedObjects[key] = loadAvatarModel(subAction.ActionReferentBody)
+			const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
+            globalState.loadedObjects[key] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = key;
                     const location = parseLocation(subAction.ActionReferentLocation);
@@ -898,19 +884,40 @@ async function initializeScene() {
   globalState.finalData = finalData[0];
   updateNumUsers();
   window_onload();
-  const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel('ipad.glb'));
+	// Determine the avatar model to load based on log mode
+	const avatarModel = (logMode.vrGame || logMode.immersiveAnalytics) ? 'headset.glb' : 'ipad.glb';
 
-  // Resolve all promises to load the avatars
-  globalState.avatars = await Promise.all(avatarPromises);
+	// Load avatars for all users
+	const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel(avatarModel));
 
-  // Assuming you only need one pair of right and left controls
-//   globalState.rightControls = await Promise.all([
-// 	  loadHand("hand_r.glb")
-//   ]);
-
-//   globalState.leftControls = await Promise.all([
-// 	  loadHand("hand_l.glb")
-//   ]);
+	// Resolve all promises to load the avatars
+	globalState.avatars = await Promise.all(avatarPromises);
+	const controlModels = {
+		vrGame: { right: "controller_r.glb", left: "controller_l.glb" },
+		immersiveAnalytics: { right: "hand_r.glb", left: "hand_l.glb" },
+	};
+	
+	// Determine right and left control models
+	let rightControlModel, leftControlModel;
+	
+	if (logMode.vrGame) {
+		({ right: rightControlModel, left: leftControlModel } = controlModels.vrGame);
+	} else if (logMode.immersiveAnalytics) {
+		({ right: rightControlModel, left: leftControlModel } = controlModels.immersiveAnalytics);
+	} else {
+		// Other modes do not use controls
+		globalState.rightControls = [];
+		globalState.leftControls = [];
+	}
+	
+	// Load right and left controls for each user if models are defined
+	if (rightControlModel && leftControlModel) {
+		const rightControlPromises = Array.from({ length: numUsers }, () => loadHand(rightControlModel));
+		const leftControlPromises = Array.from({ length: numUsers }, () => loadHand(leftControlModel));
+		
+		globalState.rightControls = await Promise.all(rightControlPromises);
+		globalState.leftControls = await Promise.all(leftControlPromises);
+	}
 
 	setTimes(globalState.finalData);
 
