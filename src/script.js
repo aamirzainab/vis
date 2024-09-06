@@ -1094,6 +1094,8 @@ function createPlotTemporal() {
 
 function drawBookmarks(llmTS) {
     const svg = d3.select(`#shared-axis-container svg`); // Target the correct SVG by container ID
+	svg.selectAll("*").remove(); //clear if it already exists
+
 	const xScale = d3.scaleTime()
 		.domain([new Date(globalState.globalStartTime), new Date(globalState.globalEndTime)])
 		.range([0, globalState.dynamicWidth]);
@@ -1980,17 +1982,16 @@ function plotLLMData(){
 		globalState.llmInsightData = data;
 		createAnalysisFilter(data);
 		displayInsights(data);
-		callDrawBookmarks();
+		callDrawBookmarks(data);
     }).catch(function(error) {
         console.error('Error loading JSON data:', error);
     });
 }
 
-function callDrawBookmarks(){
-	let data = globalState.llmInsightData;
+function callDrawBookmarks(llmInsightData){
 	let entryTS = {}
-	Object.keys(data).forEach(key => {
-        const insight = data[key];
+	Object.keys(llmInsightData).forEach(key => {
+        const insight = llmInsightData[key];
 		if(insight.timestamps.length != 0){
 			entryTS[key] = insight.timestamps;
 		}
@@ -2068,6 +2069,7 @@ function applyFilter(insightsData) {
 
     if (activeFilters.length === 0) {
         displayInsights({}); // If no filters are active, display nothing
+		callDrawBookmarks({});
     } else {
         const filteredData = {};
         Object.keys(insightsData).forEach(key => {
@@ -2077,6 +2079,7 @@ function applyFilter(insightsData) {
             }
         });
         displayInsights(filteredData);
+		callDrawBookmarks(filteredData);
     }
 }
 
