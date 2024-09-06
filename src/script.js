@@ -88,7 +88,7 @@ globalState.useCase = selectedLogMode;
 if (selectedLogMode && configData[0][selectedLogMode]) {
     globalState.logFIlePath = configData[0][selectedLogMode].logFilePath;
     globalState.llmInsightPath = configData[0][selectedLogMode].llmInsightFilePath;
-	globalState.objFilePath = configData[0][selectedLogMode].objFilePath; 
+	globalState.objFilePath = configData[0][selectedLogMode].objFilePath;
 
     console.log("Log File Path:", globalState.logFIlePath);
     console.log("LLM Insight File Path:", globalState.llmInsightPath);
@@ -310,7 +310,7 @@ function toggleInstanceRange(selectedOption){
 			plotUserSpecificBarChart();
 			plotUserSpecificDurationBarChart();
 
-			// plotHeatmap();
+			plotHeatmap();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
 		});
@@ -383,7 +383,7 @@ function updateUserDevice(userId) {
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.avatars[userId]) {
-			// console.log("came here with userId " + globalState.avatars[userId]); 
+			// console.log("came here with userId " + globalState.avatars[userId]);
             globalState.avatars[userId].position.set(location.x, location.y, location.z);
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
@@ -536,12 +536,12 @@ function updateRightControl(userId) {
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
     const newFilteredActions = new Set();
-    
+
 
     // If contextShow is not true, remove all point cloud objects and exit the function
     if (!globalState.contextShow) {
         Object.keys(globalState.loadedClouds).forEach(key => {
-            // console.log("current keys " + key ); 
+            // console.log("current keys " + key );
             const obj = globalState.scene.getObjectByName(key);
             console.log('Current objects in scene:', globalState.scene.children.map(child => child.name));
 
@@ -603,14 +603,14 @@ function updatePointCloudBasedOnSelections() {
                     delete globalState.loadedClouds[adjustedPath]; // Clean up state on failure
                 });
                 // const obj = loadAvatarModel(adjustedContext);
-                // obj.name = adjustedContext; 
+                // obj.name = adjustedContext;
                 // globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
                 // console.log(`Loaded new object: ${subAction.ActionContext}`);
             }
         }
     }
 
-   
+
 }
 
 
@@ -701,15 +701,12 @@ async function updateObjectsBasedOnSelections() {
     }
 }
 
-
 function plotHeatmap() {
     // Clear existing heatmaps
     if (globalState.heatmaps) {
         globalState.heatmaps.forEach((heatmap) => {
             if (heatmap.mesh) {
                 globalState.scene.remove(heatmap.mesh);
-                // heatmap.mesh.geometry.dispose();
-                // heatmap.mesh.material.dispose();
             }
         });
     }
@@ -719,11 +716,13 @@ function plotHeatmap() {
     const data = globalState.finalData;
     const gridSize = 50; // Adjust the size of the grid
     const voxelSize = 0.2; // Size of each voxel in 3D space
-    // const colorScales = [d3.interpolateYlOrRd, d3.interpolateBlues, d3.interpolateGreens]; // Different color scales for each user
 
     const visibleUsers = Object.keys(globalState.show)
         .filter((userID) => globalState.show[userID])
         .map((userID) => `User${userID}`);
+
+    // Draw grid lines for visualization
+    drawGrid(gridSize, voxelSize);
 
     visibleUsers.forEach((user, userIndex) => {
         // Create a 3D voxel grid for this user's heatmap
@@ -778,52 +777,57 @@ function plotHeatmap() {
                 }
             });
         });
-		// console.log("came up to here?");
 
-        // Apply Gaussian blur for smoothing the heatmap
-        // gaussianBlur3D(heatmap);
+        // Render the heatmap as a 3D volumetric heatmap
+        renderHeatmap(heatmap, user, voxelSize);
+    });
+}
 
-        // // Render the heatmap as a 3D volumetric heatmap
-        renderHeatmap(heatmap, colorScale[userIndex], voxelSize);
+// Function to draw grid lines for visualization
+function drawGrid(gridSize, voxelSize) {
+    const gridHelper = new THREE.GridHelper(gridSize * voxelSize, gridSize, 0x888888, 0x444444);
+    gridHelper.position.set((gridSize * voxelSize) / 2, 0, (gridSize * voxelSize) / 2);
+    globalState.scene.add(gridHelper);
+}
+
+// Render the heatmap as a 3D volumetric heatmap using spheres for visualization
+function renderHeatmap(heatmap, user, voxelSize) {
+    const group = new THREE.Group(); // Group to hold all the heatmap points
+
+    for (let x = 0; x < heatmap.length; x++) {
+        for (let y = 0; y < heatmap[x].length; y++) {
+            for (let z = 0; z < heatmap[x][y].length; z++) {
+                const intensity = heatmap[x][y][z];
+                if (intensity > 0) {
+                    const userColor = colorScale(user); // Use the user-specific color from the scale
+                    const color = new THREE.Color(userColor); // Map intensity to color
+                    const material = new THREE.MeshBasicMaterial({
+                        color,
+                        transparent: true,
+                        opacity: Math.min(1, intensity / 10),
+                    });
+                    const sphere = new THREE.Mesh(
+                        new THREE.SphereGeometry(voxelSize / 4), // Reduced sphere radius
+                        material
+                    ); // Sphere for visualization
+                    sphere.position.set(
+                        x * voxelSize,
+                        y * voxelSize,
+                        z * voxelSize
+                    );
+                    group.add(sphere);
+                }
+            }
+        }
+    }
+
+    globalState.scene.add(group); // Add the heatmap to the scene
+    globalState.heatmaps.push({
+        mesh: group,
     });
 }
 
 
-// Render the heatmap as a 3D volumetric heatmap using spheres for visualization
-function renderHeatmap(heatmap, colorScale, voxelSize) {
-	const group = new THREE.Group(); // Group to hold all the heatmap points
-
-	for (let x = 0; x < heatmap.length; x++) {
-		for (let y = 0; y < heatmap[x].length; y++) {
-			for (let z = 0; z < heatmap[x][y].length; z++) {
-				const intensity = heatmap[x][y][z];
-				if (intensity > 0) {
-					const color = new THREE.Color(colorScale(intensity)); // Map intensity to color
-					const material = new THREE.MeshBasicMaterial({
-						color,
-						transparent: true,
-						opacity: Math.min(1, intensity / 10),
-					});
-					const sphere = new THREE.Mesh(
-						new THREE.SphereGeometry(voxelSize / 2),
-						material
-					); // Sphere for visualization
-					sphere.position.set(
-						x * voxelSize,
-						y * voxelSize,
-						z * voxelSize
-					);
-					group.add(sphere);
-				}
-			}
-		}
-	}
-
-	globalState.scene.add(group); // Add the heatmap to the scene
-	globalState.heatmaps.push({
-		mesh: group,
-	});
-}
 
 function parseLocation(locationString) {
     const parts = locationString.split(',');
@@ -896,10 +900,10 @@ async function initializeScene() {
 		vrGame: { right: "controller_r.glb", left: "controller_l.glb" },
 		immersiveAnalytics: { right: "hand_r.glb", left: "hand_l.glb" },
 	};
-	
+
 	// Determine right and left control models
 	let rightControlModel, leftControlModel;
-	
+
 	if (logMode.vrGame) {
 		({ right: rightControlModel, left: leftControlModel } = controlModels.vrGame);
 	} else if (logMode.immersiveAnalytics) {
@@ -909,12 +913,12 @@ async function initializeScene() {
 		globalState.rightControls = [];
 		globalState.leftControls = [];
 	}
-	
+
 	// Load right and left controls for each user if models are defined
 	if (rightControlModel && leftControlModel) {
 		const rightControlPromises = Array.from({ length: numUsers }, () => loadHand(rightControlModel));
 		const leftControlPromises = Array.from({ length: numUsers }, () => loadHand(leftControlModel));
-		
+
 		globalState.rightControls = await Promise.all(rightControlPromises);
 		globalState.leftControls = await Promise.all(leftControlPromises);
 	}
@@ -1295,7 +1299,7 @@ function createLines(timestamp1, timestamp2) {
 	// createRayCastSegment(1);
 	// createLineDrawing(0);
 	// createLineDrawing(1);
-	// plotHeatmap();
+	plotHeatmap();
 
 
 	updatePointCloudBasedOnSelections();
@@ -1364,7 +1368,7 @@ export function dragged(event,d) {
 
     initializeOrUpdateSpeechBox();
 
-	// plotHeatmap();
+	plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -1491,7 +1495,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
 
-		// plotHeatmap();
+		plotHeatmap();
 
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
@@ -2431,7 +2435,7 @@ function createSpeechBox(action, subAction) {
 	// createLineDrawing(0);
 	// createLineDrawing(1);
 
-	// plotHeatmap();
+	plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -2634,7 +2638,7 @@ async function initialize() {
 	initializeOrUpdateSpeechBox();
 	plotLLMData();
 
-	// plotHeatmap();
+	plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
