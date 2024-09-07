@@ -1212,6 +1212,28 @@ function drawBookmarks(llmTS) {
     });
 }
 
+let currentZoomLevel = 100; // Assuming 100% is the default zoom level
+
+// Function to update the zoom level display
+function updateZoomLevelDisplay(zoomLevel) {
+    const zoomDisplay = document.getElementById('zoom-level-display');
+    zoomDisplay.textContent = `Zoom: ${zoomLevel}%`;
+}
+
+// Example scroll/zoom event listener
+document.getElementById('spatial-view').addEventListener('wheel', function(event) {
+    // Assuming that scrolling up zooms in and scrolling down zooms out
+    if (event.deltaY < 0) {
+        currentZoomLevel = Math.min(currentZoomLevel + 10, 200); // Max zoom 200%
+    } else {
+        currentZoomLevel = Math.max(currentZoomLevel - 10, 10); // Min zoom 10%
+    }
+
+    updateZoomLevelDisplay(currentZoomLevel);
+
+    // Prevent default scrolling behavior
+    event.preventDefault();
+});
 
 function showContextMenu(event, topic) {
     console.log(`Context menu for ${topic}`);
