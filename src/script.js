@@ -60,22 +60,20 @@ let globalState = {
 	loadedClouds : {},
 	loadedObjects : {},
 	llmInsightData: {},
-	contextShow: false,
-	objectsShow: false,
 	heatmaps : [],
 	useCase: "",
 	logFIlePath: "",
 	llmInsightPath: "",
 	objFilePath: "",
-    heatmapShow: false,
+	viewProps: {},
+	obContext: []
 };
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
 	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 0,
-    infoVisCollab1: 1,
+	infoVisCollab: 1,
 	sceneNavigation: 0,
 	maintenance: 0
 }
@@ -91,12 +89,20 @@ if (selectedLogMode && configData[0][selectedLogMode]) {
     globalState.logFIlePath = configData[0][selectedLogMode].logFilePath;
     globalState.llmInsightPath = configData[0][selectedLogMode].llmInsightFilePath;
 	globalState.objFilePath = configData[0][selectedLogMode].objFilePath;
+	globalState.obContext = configData[0][selectedLogMode].obContext;
 
-    console.log("Log File Path:", globalState.logFIlePath);
-    console.log("LLM Insight File Path:", globalState.llmInsightPath);
 } else {
     console.log("No valid mode selected or key not found in JSON.");
 }
+
+function initializeViewProps() {
+	globalState.viewProps = Object.fromEntries(
+	  Array.from({ length: numUsers+1 }, (_, i) => [
+		`User${i}`,
+		Object.fromEntries(globalState.obContext.map(context => [context, false]))
+	  ])
+	);
+  }
 
 const userInterestTopic = "Error, bugs or complaints";
 
@@ -318,24 +324,24 @@ function toggleInstanceRange(selectedOption){
 		});
 	}
 
-	document.getElementById(`toggle-Object`).addEventListener('change', function() {
-		globalState.objectsShow = this.checked;
-        // updatePointCloudBasedOnSelections();
-        updateObjectsBasedOnSelections();
-	});
+	// document.getElementById(`toggle-Object`).addEventListener('change', function() {
+	// 	globalState.objectsShow = this.checked;
+    //     // updatePointCloudBasedOnSelections();
+    //     updateObjectsBasedOnSelections();
+	// });
 
-	document.getElementById(`toggle-Context`).addEventListener('change', function() {
-		globalState.contextShow = this.checked;
-        updatePointCloudBasedOnSelections();
-        // updateObjectsBasedOnSelections();
-	});
-	document.getElementById(`toggle-Heatmap`).addEventListener('change', function() {
-		globalState.heatmapShow = this.checked;
-        console.log("hello");
-        plotHeatmap();
-        // updatePointCloudBasedOnSelections();
-        // updateObjectsBasedOnSelections();
-	});
+	// document.getElementById(`toggle-Context`).addEventListener('change', function() {
+	// 	globalState.contextShow = this.checked;
+    //     updatePointCloudBasedOnSelections();
+    //     // updateObjectsBasedOnSelections();
+	// });
+	// document.getElementById(`toggle-Heatmap`).addEventListener('change', function() {
+	// 	globalState.heatmapShow = this.checked;
+    //     console.log("hello");
+    //     plotHeatmap();
+    //     // updatePointCloudBasedOnSelections();
+    //     // updateObjectsBasedOnSelections();
+	// });
 
 	const playPauseButton = document.getElementById('playPauseButton');
 	const playPauseButtonHeight = playPauseButton.offsetHeight;
@@ -544,54 +550,77 @@ function updateRightControl(userId) {
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
-    const newFilteredActions = new Set();
+    const newFilteredActions = {};
+	const hasVisibleUserID = Object.keys(globalState.show)
+        .filter((userID) => globalState.show[userID])
+        .map((userID) => `User${userID}`);
+	
+	const visibleContextUsers = hasVisibleUserID.filter(userId => {
+		return userId in globalState.viewProps && globalState.viewProps[userId]["Context"] === true;
+	});
 
+	const nonVisibleContextUsers = hasVisibleUserID.filter(userId => {
+		return userId in globalState.viewProps && globalState.viewProps[userId]["Context"] === false;
+	});
 
-    // If contextShow is not true, remove all point cloud objects and exit the function
-    if (!globalState.contextShow) {
-        Object.keys(globalState.loadedClouds).forEach(key => {
-            // console.log("current keys " + key );
-            const obj = globalState.scene.getObjectByName(key);
-            console.log('Current objects in scene:', globalState.scene.children.map(child => child.name));
+	//remove loadedClouds for selected user not selected context
+	nonVisibleContextUsers.forEach((nvcUser) => {
+		if(nvcUser in globalState.loadedClouds){
+			Object.keys(globalState.loadedClouds[nvcUser]).forEach(key => {
+				const obj = globalState.scene.getObjectByName(key);
+				console.log('Current objects in scene:', globalState.scene.children.map(child => child.name));
 
-            // console.log(obj);
-            if (obj) {
-                globalState.scene.remove(obj);
-                delete globalState.loadedClouds[key];
-                console.log(`Removed object: ${key}`);
-            }
-        });
-        return; // Exit early if contextShow is false
-    }
+				if (obj) {
+					globalState.scene.remove(obj);
+					delete globalState.loadedClouds[nvcUser][key];
+					console.log(`Removed object: ${key}`);
+				}
+			});
+		}
+	});
+	
+
+	if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
+		return;
+	}
+
+	visibleContextUsers.forEach((vcUser) => {
+		newFilteredActions[vcUser] = new Set();
+	});
+
 	const filteredActions = data.filter(action => {
-        // selectedActions.includes(action.Name) &&
-        return action.Data.some(subAction => {
+		const hasVisibleUserID = visibleContextUsers.some(userID => action.User.includes(userID));
+        return hasVisibleUserID && action.Data.some(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+			
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && subAction.ActionContext) {
-                const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
-                newFilteredActions.add(`${globalState.objFilePath}${subAction.ActionContext}`);
+                //const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
+                newFilteredActions[action.User].add(`${globalState.objFilePath}${subAction.ActionContext}`);
                 return true;
             }
             return false;
         });
     });
+
     // Remove objects that are no longer relevant
-    Object.keys(globalState.loadedClouds).forEach(key => {
-        const obj = globalState.scene.getObjectByName(key);
-        if (obj && !newFilteredActions.has(key)) {
-            globalState.scene.remove(obj);
-            delete globalState.loadedClouds[key];
-            // console.log(`Removed object: ${key}`);
-        }
+    Object.keys(globalState.loadedClouds).forEach(userId => {
+		Object.keys(globalState.loadedClouds[userId]).forEach(key => {
+			const obj = globalState.scene.getObjectByName(key);
+			if (obj && !newFilteredActions[userId].has(key)) {
+				globalState.scene.remove(obj);
+				delete globalState.loadedClouds[userId][key];
+				// console.log(`Removed object: ${key}`);
+			}
+		});
     });
 
     // Load new and keep existing relevant objects
     for (const action of filteredActions) {
         for (const subAction of action.Data) {
-            if (subAction.ActionContext !== null && !globalState.loadedClouds[subAction.ActionContext]) {
+            if (subAction.ActionContext !== null && globalState.loadedClouds?.[action.User]?.[subAction.ActionContext] === undefined) {
 				const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
-                globalState.loadedClouds[adjustedPath] = loadAvatarModel(adjustedPath)
+                globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
                     const location = parseLocation(subAction.ActionReferentLocation);
@@ -609,7 +638,7 @@ function updatePointCloudBasedOnSelections() {
                 })
                 .catch(error => {
                     console.error(`Failed to load object` +  error);
-                    delete globalState.loadedClouds[adjustedPath]; // Clean up state on failure
+                    delete globalState.loadedClouds[action.User][adjustedPath]; // Clean up state on failure
                 });
                 // const obj = loadAvatarModel(adjustedContext);
                 // obj.name = adjustedContext;
@@ -625,8 +654,8 @@ function updatePointCloudBasedOnSelections() {
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
-    const newFilteredActions = new Set();
-    const actionsToLoad = [];
+	const newFilteredActions = {};
+    const actionsToLoad = {};
 	const selectedActions = getSelectedTopics();
 
     // Gather all actions that meet the time range and have not been loaded yet
@@ -634,21 +663,41 @@ async function updateObjectsBasedOnSelections() {
 	const selectedUsers = Object.keys(globalState.show)
 	.filter(userID => globalState.show[userID])
 	.map(userID => `User${userID}`);
-	if (!globalState.objectsShow) {
-        for (const key of Object.keys(globalState.loadedObjects)) {
-            if (globalState.loadedObjects[key]) {
-                const obj = await globalState.loadedObjects[key];  // Ensure the object is fully loaded
-                if (obj && obj.parent) { // Check if the object is still part of the scene
-                    if (obj.geometry) obj.geometry.dispose(); // Dispose resources
-                    if (obj.material) obj.material.dispose();
-                    globalState.scene.remove(obj);
-                    delete globalState.loadedObjects[key];
-                    // console.log(`Object removed from scene and state: ${key}`);
-                }
-            }
-        }
-        return;
-    }
+
+	const visibleObjectUsers = selectedUsers.filter(userId => {
+		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
+	});
+
+	const nonVisibleObjectUsers = selectedUsers.filter(userId => {
+		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === false;
+	});
+
+	//remove loadedObjects for selected user not selected object
+	for (const nvoUser of nonVisibleObjectUsers) {
+		if(nvoUser in globalState.loadedObjects){
+			for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
+				if (globalState.loadedObjects[nvoUser][key]) {
+					const obj = await globalState.loadedObjects[nvoUser][key];  // Ensure the object is fully loaded
+					if (obj && obj.parent) { // Check if the object is still part of the scene
+						if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+						if (obj.material) obj.material.dispose();
+						globalState.scene.remove(obj);
+						delete globalState.loadedObjects[nvoUser][key];
+						// console.log(`Object removed from scene and state: ${key}`);
+					}
+				}
+			}
+		}
+	}
+
+	if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
+		return;
+	}
+
+	visibleObjectUsers.forEach((vcUser) => {
+		newFilteredActions[vcUser] = new Set();
+		actionsToLoad[vcUser] = [];
+	});
 
     for (const action of data) {
         for (const subAction of action.Data) {
@@ -656,94 +705,106 @@ async function updateObjectsBasedOnSelections() {
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2
 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
-				&& selectedActions.includes(action.Name) && selectedUsers.includes(action.User)) {
+				&& selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-                if (!newFilteredActions.has(key)){
+                if (!newFilteredActions[action.User].has(key)){
 				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){
-                    newFilteredActions.add(key);
-                    actionsToLoad.push({ key, subAction });
+                    newFilteredActions[action.User].add(key);
+                    actionsToLoad[action.User].push({ key, subAction });
                 }
             }
         }
     }
 
     // Unload objects that are no longer needed
-    for (const key of Object.keys(globalState.loadedObjects)) {
-        if (!newFilteredActions.has(key) && globalState.loadedObjects[key]) {
-            const obj = await globalState.loadedObjects[key];  // Ensure the object is fully loaded
-            if (obj && obj.parent) { // Check if the object is still part of the scene
-                if (obj.geometry) obj.geometry.dispose(); // Dispose resources
-                if (obj.material) obj.material.dispose();
-                globalState.scene.remove(obj);
-                delete globalState.loadedObjects[key];
-                // console.log(`Object removed from scene and state: ${key}`);
-            }
-        }
+    for (const userID of Object.keys(globalState.loadedObjects)) {
+		for (const key of Object.keys(globalState.loadedObjects[userID])){
+			if (!newFilteredActions[userID].has(key) && globalState.loadedObjects[userID][key]) {
+				const obj = await globalState.loadedObjects[userID][key];  // Ensure the object is fully loaded
+				if (obj && obj.parent) { // Check if the object is still part of the scene
+					if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+					if (obj.material) obj.material.dispose();
+					globalState.scene.remove(obj);
+					delete globalState.loadedObjects[userID][key];
+					// console.log(`Object removed from scene and state: ${key}`);
+				}
+			}
+		}
     }
 
     // Load new objects that are required
-    for (const { key, subAction } of actionsToLoad) {
-        if (!globalState.loadedObjects[key]) { // Double check to prevent race conditions
-            // console.log(`Loading new object: ${key}`);
-			const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
-            globalState.loadedObjects[key] = loadAvatarModel(adjustedPath)
-                .then(obj => {
-                    obj.name = key;
-                    const location = parseLocation(subAction.ActionReferentLocation);
-                    obj.position.set(location.x, location.y, location.z);
-                    // const euler = new THREE.Euler(
-                    //     THREE.MathUtils.degToRad(location.eulerx),
-                    //     THREE.MathUtils.degToRad(location.eulery),
-                    //     THREE.MathUtils.degToRad(location.eulerz),
-                    //     'ZXY'
-                    // );
-                    // obj.setRotationFromEuler(euler);
-                    globalState.scene.add(obj);
-                    // console.log(`Object loaded and added to scene: ${key}`);
-                    return obj; // Return the loaded object
-                })
-                .catch(error => {
-                    // console.error(`Failed to load object ${key}:`, error);
-                    delete globalState.loadedObjects[key]; // Clean up state on failure
-                });
-        }
+    for (const userID of Object.keys(actionsToLoad)) {
+		for (const { key, subAction } of actionsToLoad[userID]) {
+			if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
+				// console.log(`Loading new object: ${key}`);
+				const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
+				globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
+					.then(obj => {
+						obj.name = key;
+						const location = parseLocation(subAction.ActionReferentLocation);
+						obj.position.set(location.x, location.y, location.z);
+						// const euler = new THREE.Euler(
+						//     THREE.MathUtils.degToRad(location.eulerx),
+						//     THREE.MathUtils.degToRad(location.eulery),
+						//     THREE.MathUtils.degToRad(location.eulerz),
+						//     'ZXY'
+						// );
+						// obj.setRotationFromEuler(euler);
+						globalState.scene.add(obj);
+						// console.log(`Object loaded and added to scene: ${key}`);
+						return obj; // Return the loaded object
+					})
+					.catch(error => {
+						// console.error(`Failed to load object ${key}:`, error);
+						delete globalState.loadedObjects[userID][key]; // Clean up state on failure
+					});
+			}
+		}
     }
 }
 
 function plotHeatmap() {
-    
 
-    if (!globalState.heatmapShow) {
-        globalState.heatmaps.forEach((heatmap) => {
-            if (heatmap.mesh) {
-                globalState.scene.remove(heatmap.mesh);
-            }
-        });
-        return; // Exit early if contextShow is false
-    }
+    const hasVisibleUserID = Object.keys(globalState.show)
+        .filter((userID) => globalState.show[userID])
+        .map((userID) => `User${userID}`);
+	
+	const visibleHeatmapUsers = hasVisibleUserID.filter(userId => {
+		return userId in globalState.viewProps && globalState.viewProps[userId]["Heatmap"] === true;
+	});
 
-    if (globalState.heatmaps) {
-        globalState.heatmaps.forEach((heatmap) => {
-            if (heatmap.mesh) {
-                globalState.scene.remove(heatmap.mesh);
-            }
-        });
-    }
-    globalState.heatmaps = [];
+	// const nonVisibleHeatmapUsers = hasVisibleUserID.filter(userId => {
+	// 	return globalState.viewProps[userId]["Heatmap"] === false;
+	// });
+
+	//remove evrything, TODO: Not optimal, IDEA: keep the old selected heatmap
+	Object.keys(globalState.heatmaps).forEach(userId => {
+		const userHeatmap = globalState.heatmaps[userId];
+		
+		if (userHeatmap && userHeatmap.mesh) {
+			globalState.scene.remove(userHeatmap.mesh);
+		}
+	});
+
+	if (hasVisibleUserID.length === 0 || visibleHeatmapUsers.length === 0) {
+		return;
+	}
+
+	globalState.heatmaps = {}
+	visibleHeatmapUsers.forEach((vhi) => {
+		globalState.heatmaps[vhi] = [];
+	})
 
     const selectedActions = getSelectedTopics();
     const data = globalState.finalData;
     const gridSize = 50; // Adjust the size of the grid
     const voxelSize = 0.2; // Size of each voxel in 3D space
 
-    const visibleUsers = Object.keys(globalState.show)
-        .filter((userID) => globalState.show[userID])
-        .map((userID) => `User${userID}`);
 
     // Draw grid lines for visualization
     drawGrid(gridSize, voxelSize);
 
-    visibleUsers.forEach((user, userIndex) => {
+    visibleHeatmapUsers.forEach((user, userIndex) => {
         // Create a 3D voxel grid for this user's heatmap
         const heatmap = new Array(gridSize)
             .fill()
@@ -833,7 +894,7 @@ function renderHeatmap(heatmap, user, voxelSize) {
     }
 
     globalState.scene.add(group); // Add the heatmap to the scene
-    globalState.heatmaps.push({
+    globalState.heatmaps[user].push({
         mesh: group,
     });
 }
@@ -898,6 +959,7 @@ async function initializeScene() {
 		  ]);
   globalState.finalData = finalData[0];
   updateNumUsers();
+  initializeViewProps();
   window_onload();
 	// Determine the avatar model to load based on log mode
 	const avatarModel = (logMode.vrGame || logMode.immersiveAnalytics) ? 'headset.glb' : 'ipad.glb';
@@ -1515,63 +1577,128 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 }
 
 function generateUserLegends(){
-	const legendContainer = document.getElementById('user-legend-container');
-	document.querySelector('.user-legend').style.height = `${numUsers * 34}px`;
+	const legendContainer = document.getElementById('user-toolbar-container');
+	legendContainer.style.height = `${numUsers * globalState.obContext.length *38}px`;
 
     for (let i = 1; i <= numUsers; i++) {
-        const userLegendItem = document.createElement('div');
-        userLegendItem.className = 'user-legend-item';
+        // Create the main user checkbox
+      const userDiv = document.createElement('div');
+      userDiv.classList.add('checkbox-container', 'collapsed'); // Start as collapsed
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'legend-checkbox';
-        checkbox.id = `toggle-user${i}`;
-        checkbox.name = 'userVisibility';
-        checkbox.checked = true;
+      const userCheckboxLabel = document.createElement('label');
+      userCheckboxLabel.classList.add('user-checkbox');
+      
+      const userCheckbox = document.createElement('input');
+      userCheckbox.type = 'checkbox';
+      userCheckbox.id = `toggle-user${i}`;
+      userCheckbox.checked = true;
+      userCheckboxLabel.appendChild(userCheckbox);
 
-        const legendSquare = document.createElement('div');
-        legendSquare.className = 'legend-square';
-        legendSquare.style.backgroundColor = colorScale(`User${i}`);
+      const legendSquare = document.createElement('div');
+      legendSquare.className = 'legend-square';
+      legendSquare.style.backgroundColor = colorScale(`User${i}`);
+      userCheckboxLabel.appendChild(legendSquare);
 
-        const label = document.createElement('label');
-        label.htmlFor = `toggle-user${i}`;
-        label.textContent = `User ${i}`;
+      userCheckboxLabel.appendChild(document.createTextNode(` User ${i}`));
 
-        userLegendItem.appendChild(checkbox);
-        userLegendItem.appendChild(legendSquare);
-        userLegendItem.appendChild(label);
+      // Create the nested checkboxes container
+      const nestedDiv = document.createElement('div');
+      nestedDiv.classList.add('nested-checkboxes');
 
-        legendContainer.appendChild(userLegendItem);
+		globalState.obContext.forEach(context => {
+			const contextLabel = document.createElement('label');
+			const contextCheckbox = document.createElement('input');
+			contextCheckbox.type = 'checkbox';
+			contextCheckbox.id = `toggle-user${i}-${context}`;
+
+			contextLabel.appendChild(contextCheckbox);
+			contextLabel.appendChild(document.createTextNode(` ${context}`));
+			nestedDiv.appendChild(contextLabel);
+			nestedDiv.appendChild(document.createElement('br'));
+
+			contextCheckbox.addEventListener('change', function () {
+				handleContextChange(context, `User${i}`, this.checked);
+			});
+		});
+
+		// Create horizontal dotted line
+		const horizontalLine = document.createElement('div');
+		horizontalLine.classList.add('horizontal-line');
+
+		// Append elements
+		userDiv.appendChild(userCheckboxLabel);
+		userDiv.appendChild(nestedDiv);
+		userDiv.appendChild(horizontalLine);
+		legendContainer.appendChild(userDiv);
+
+		if (userCheckbox.checked) {
+			nestedDiv.classList.add('show');
+			userDiv.classList.add('expanded'); // Set to expanded by default
+		} else {
+			userDiv.classList.add('collapsed');
+		}
+
+		// Event to handle expansion/collapse of nested checkboxes
+		userCheckbox.addEventListener('change', function () {
+			// Get visible users by filtering the globalState.show
+			const hasVisibleUserID = Object.keys(globalState.show)
+			.filter((userID) => globalState.show[userID])
+			.map((userID) => `User${userID}`);
+	
+		// Calculate the height dynamically based on the number of visible users and obContext length
+		const baseHeightPerUser = 49; // Base height for each expanded user (adjust based on your UI)
+		const obContextHeightPerItem = 28; // Height of each obContext item
+	
+		if (this.checked) {
+			// Expand the user checkbox, show the nested content
+			nestedDiv.classList.add('show');
+			userDiv.classList.remove('collapsed');
+			userDiv.classList.add('expanded');
+	
+			// Set the height dynamically based on visible users and obContext length
+			const expandHeight = 58;
+			legendContainer.style.height = `${expandHeight + (numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 1) * globalState.obContext.length * obContextHeightPerItem)}px`;
+		} else {
+			// Collapse the user checkbox, hide the nested content
+			nestedDiv.classList.remove('show');
+			userDiv.classList.remove('expanded');
+			userDiv.classList.add('collapsed');
+	
+			// Handle collapsed state: Adjust height dynamically based on the remaining visible users
+			const collapsedHeight = 0; // Adjust this based on your collapsed state height
+			legendContainer.style.height = `${(numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 2) * globalState.obContext.length * obContextHeightPerItem)}px`;
+		}
+
+		});
 	}
-
-	generateObjectLegends();
 }
 
-function generateObjectLegends() {
-    const container = document.getElementById('objects-checklist');
 
-    const objs = ['Context', 'Object','Heatmap'];
-    objs.forEach(obj => {
-        const userLegendItem = document.createElement('div');
-        userLegendItem.className = 'user-legend-item';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'legend-checkbox';
-        checkbox.id = `toggle-${obj}`;
-        checkbox.name = 'objectVisibility';
-
-        const label = document.createElement('label');
-        label.htmlFor = `toggle-${obj}`;
-        label.textContent = `${obj}`;
-		label.style.marginLeft = '10px';
-
-        userLegendItem.appendChild(checkbox);
-        userLegendItem.appendChild(label);
-
-        container.appendChild(userLegendItem);
-    });
-}
+function handleContextChange(context, userId, isChecked) {
+	console.log(`Context ${context} for User ${userId} changed: ${isChecked}`);
+  
+	// Apply logic based on the context
+	switch (context) {
+	  case 'Object':
+		globalState.viewProps[userId]["Object"] = isChecked;
+		updateObjectsBasedOnSelections();
+		break;
+  
+	  case 'Context':
+		globalState.viewProps[userId]["Context"] = isChecked;
+		updatePointCloudBasedOnSelections();
+		break;
+  
+	  case 'Heatmap':
+		globalState.viewProps[userId]["Heatmap"] = isChecked;
+		plotHeatmap();
+		break;
+  
+	  default:
+		console.log("Handle other obContext here!");
+		break;
+	}
+  }
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box2").html("");

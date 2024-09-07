@@ -451,72 +451,74 @@ html, body {
     font-size: 1em;
     border: 1px solid #999;
 }
-#user-toolbar {
-    margin-top:8px;
-    position: absolute;
-    top: 0;
-    left: 1px;
-    z-index: 1000;
-    padding: 14px;
-    display: block;
-}
 
-#user-legend-container {
-    background-color: rgba(255, 255, 255, 0.3); /* Decreased opacity */
-    /* transition: background-color 0.3s ease; */
+#user-toolbar-container {
+    width: 180px; /* Set your desired width */
+    /*height: 290px; /* Set your desired height */
+    /* border: 1px solid #ccc; */
+    padding: 5px;
+    overflow-y: auto; /* Enable scrolling if content exceeds height */
+    /* box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); */
+    background-color: rgba(255,255,255, 0.1);
+    position:absolute;
+    margin-top: 8px;
+    margin-left: 5px;
     border-radius: 8px;
-    margin-bottom: 7px;
-}
+  }
 
-#user-legend-container:hover {
-    background-color: rgba(255, 255, 255, 1); /* Full opacity on hover */
-}
+  #user-toolbar-container:hover{
+    background-color: rgba(255,255,255, 0.4);
+  }
 
-#objects-checklist {
-    display: flex;
-    background-color: rgba(255, 255, 255, 0.3); /* Decreased opacity */
-    /* transition: background-color 0.3s ease; */
-    border-radius: 8px;
-}
-
-#objects-checklist:hover {
-    background-color: rgba(255, 255, 255, 1); /* Full opacity on hover */
-}
-
-.user-legend {
-    display: flex;
-    flex-direction: column;
-    width:125px;
-}
-
-.user-legend:hover {
-    background-color: rgba(255, 255, 255, 1); 
-}
-
-.user-legend-item {
-    font-size:1.1em;
+  .user-checkbox {
+    cursor: pointer;
+    padding: 1px;
+    font-weight: bold;
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
-    padding-left: 5px;
-}
+    margin-bottom: 2px;
+  }
 
-.user-legend-item span {
-    margin-left: 5px;
-}
-.legend-square {
+  .legend-square {
     width: 20px;
     height: 20px;
     margin-right: 5px;
     margin-left:10px;
     border-radius: 3px; /* Adjust the value to make the edges rounder */
+    display: inline-block;
 }
 
-.legend-checkbox {
-    margin-right: 15px;
-    transform: scale(1.1);
-}
+  .nested-checkboxes {
+    margin-left: 28px;
+    padding-top: 5px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
 
-.legend-checkbox label{
-    margin-left: 20px;
-}
+  .nested-checkboxes.show {
+    max-height: 100px; /* Adjust this to control the maximum expansion */
+  }
+
+  .checkbox-container {
+    margin-bottom: 1px;
+    position: relative;
+  }
+
+  /* Dotted line */
+  .horizontal-line {
+    border-top: 1px dotted #999;
+    margin-top: 10px;
+    transition: all 0.4s ease;
+  }
+
+  /* Initially, place the line below the user checkbox */
+  .checkbox-container.collapsed .horizontal-line {
+    display: block;
+    margin-top: 10px;
+  }
+
+  /* On expand, move the line below the nested block */
+  .checkbox-container.expanded .horizontal-line {
+    margin-top: 10px;
+  }
