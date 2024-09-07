@@ -1171,7 +1171,8 @@ function createPlotTemporal() {
 
 function drawBookmarks(llmTS) {
     const svg = d3.select(`#shared-axis-container svg`); // Target the correct SVG by container ID
-	svg.selectAll("*").remove(); //clear if it already exists
+	//svg.selectAll("*").remove(); //clear if it already exists
+	svg.selectAll(".bookmark-marker").remove();
 
 	const xScale = d3.scaleTime()
 		.domain([new Date(globalState.globalStartTime), new Date(globalState.globalEndTime)])
