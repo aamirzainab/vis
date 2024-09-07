@@ -2396,6 +2396,13 @@ function initializeOrUpdateSpeechBox() {
 		});
 	});
 
+	// **Add this block to display the total number of results**
+    const totalResults = actionsToDisplay.reduce((count, action) => count + action.Data.length, 0);
+    let totalResultsDisplay = document.createElement('div');
+    totalResultsDisplay.className = 'total-results-display';
+    totalResultsDisplay.innerHTML = `<strong>About ${totalResults} results...</strong>`;
+    speechBoxesContainer.appendChild(totalResultsDisplay); // Add the total results before speech boxes
+
     // Display each action in the speech box
     actionsToDisplay.forEach(action => {
         action.Data.forEach(subAction => {
