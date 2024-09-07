@@ -457,7 +457,7 @@ html, body {
     /*height: 290px; /* Set your desired height */
     /* border: 1px solid #ccc; */
     padding: 5px;
-    overflow-y: auto; /* Enable scrolling if content exceeds height */
+    /*overflow-y: auto; /* Enable scrolling if content exceeds height */
     /* box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); */
     background-color: rgba(255,255,255, 0.1);
     position:absolute;
@@ -510,6 +510,7 @@ html, body {
     border-top: 1px dotted #999;
     margin-top: 10px;
     transition: all 0.4s ease;
+    width: 100%;
   }
 
   /* Initially, place the line below the user checkbox */
