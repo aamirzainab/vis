@@ -1901,7 +1901,7 @@ function plotUserSpecificBarChart() {
 		.attr("transform", "rotate(-90)")
 		.attr("y", 0 - margin.left)
 		.attr("x", 0 - (height / 2))
-		.attr("dy", "1em")
+		.attr("dy", "2em")
 		.style("text-anchor", "middle")
 		.text("Count")
 		.style("font-size", "0.8em");
@@ -2099,7 +2099,7 @@ function plotUserSpecificDurationBarChart() {
         .attr("transform", "rotate(-90)")
         .attr("y", 0 - margin.left)
         .attr("x", 0 - (height / 2))
-        .attr("dy", "1em")
+        .attr("dy", "2em")
         .style("text-anchor", "middle")
         .text(yLabel)
         .style("font-size", "0.8em");
