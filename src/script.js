@@ -155,7 +155,7 @@ function changeBinSize(newBinSize) {
 	createPlotTemporal();
 	window.dispatchEvent(event);
 
-	callDrawBookmarks();
+	callDrawBookmarks(globalState.llmInsightData);
   }
 
   document.getElementById('binsDropdown').addEventListener('change', function() {
