@@ -580,9 +580,9 @@ function updatePointCloudBasedOnSelections() {
 	});
 	
 
-	if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
-		return;
-	}
+	// if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
+	// 	return;
+	// }
 
 	visibleContextUsers.forEach((vcUser) => {
 		newFilteredActions[vcUser] = new Set();
@@ -614,12 +614,21 @@ function updatePointCloudBasedOnSelections() {
 			}
 		});
     });
+    if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
+		return;
+	}
 
     // Load new and keep existing relevant objects
     for (const action of filteredActions) {
         for (const subAction of action.Data) {
-            if (subAction.ActionContext !== null && globalState.loadedClouds?.[action.User]?.[subAction.ActionContext] === undefined) {
+            if (subAction.ActionContext !== null && globalState.loadedClouds?.[action.User]?.[subAction.ActionContext] === undefined
+                && subAction.ActionReferentLocation !== null )  {
 				const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
+                if (globalState.loadedClouds[action.User] === undefined) {
+                    globalState.loadedClouds[action.User] = {};
+                }
+                if (!globalState.loadedClouds[action.User].hasOwnProperty(adjustedPath))
+               {         
                 globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
@@ -644,6 +653,7 @@ function updatePointCloudBasedOnSelections() {
                 // obj.name = adjustedContext;
                 // globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
                 // console.log(`Loaded new object: ${subAction.ActionContext}`);
+            }
             }
         }
     }
