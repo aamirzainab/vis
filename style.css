@@ -400,6 +400,15 @@ html, body {
     border-bottom: 1px dashed #444;
     margin: 0 auto;
 }
+.insight-key {
+    font-size: 0.9em;
+    color: #666;
+    margin-right: 10px;
+    padding: 3px 6px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    font-weight: bold;
+}
 
 .insight-content {
     margin-top: 10px;

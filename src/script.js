@@ -1171,43 +1171,54 @@ function createPlotTemporal() {
 
 function drawBookmarks(llmTS) {
     const svg = d3.select(`#shared-axis-container svg`); // Target the correct SVG by container ID
-	//svg.selectAll("*").remove(); //clear if it already exists
-	svg.selectAll(".bookmark-marker").remove();
+	svg.selectAll(".bookmark-marker").remove(); // Clear existing bookmarks
 
 	const xScale = d3.scaleTime()
 		.domain([new Date(globalState.globalStartTime), new Date(globalState.globalEndTime)])
 		.range([0, globalState.dynamicWidth]);
 
-		const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
+	// Updated bookmark path with appropriate size
+	const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
 
     Object.entries(llmTS).forEach(([id, times]) => {
         times.forEach(timeStr => {
             const timestampMs = parseTimeToMillis(timeStr);
             const xPosition = xScale(timestampMs); // Use xScale to find the position
-			if (timestampMs >= new Date(globalState.globalStartTime).getTime()){
-				svg.append("path")
-                    .attr("d", bookmarkPath)
-                    .attr("transform", `translate(${xPosition + margin.left + margin.right}, 10)`) // Adjust position
-                    .attr("fill", "#ff9800")
-                    .attr("data-id", id)
-					.attr("id", `bookmark-${id}`)
+
+            if (timestampMs >= new Date(globalState.globalStartTime).getTime()) {
+                // Append the bookmark icon (path)
+				const bookmarkGroup = svg.append("g") // Group to keep path and text together
+                    .attr("transform", `translate(${xPosition + margin.left + margin.right}, 10)`)
                     .attr("class", "bookmark-marker")
-					.on("mouseover", function(event) {
-						d3.select(this)
-							.attr("r", 7)
-							.attr("fill", "#ff5722");
-					})
-					.on("mouseout", function(event) {
-						d3.select(this)
-							.attr("r", 5)
-							.attr("fill", "#ff9800");
-						// hideTooltip();
-					})
-					.on("click", function() {
-                    	console.log(`Focusing on entry with ID: ${id}, ${new Date(timestampMs)}`);
+                    .attr("id", `bookmark-${id}`)
+                    .on("mouseover", function() {
+                        d3.select(this).select("path")
+                            .attr("fill", "#ff5722");
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).select("path")
+                            .attr("fill", "#ff9800");
+                    })
+                    .on("click", function() {
+                        console.log(`Focusing on entry with ID: ${id}, ${new Date(timestampMs)}`);
 						highlightAndScrollToInsight(id);
-                	});
-			}
+                    });
+
+                // Append bookmark path
+                bookmarkGroup.append("path")
+                    .attr("d", bookmarkPath)
+                    .attr("fill", "#ff9800");
+
+                // Append the key (number) inside the bookmark icon
+                bookmarkGroup.append("text")
+                    .attr("x", 7.5)  // Centered horizontally in the bookmark
+                    .attr("y", 14)   // Vertically aligned in the bookmark
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "#000") // White color for contrast
+                    .attr("font-size", "12px") // Adjust the font size to fit inside the bookmark
+                    .attr("font-weight", "bold")
+                    .text(id); // Use the key as the text
+            }
         });
     });
 }
@@ -2176,8 +2187,20 @@ function displayInsights(insightsData) {
 
         // Create topic element
         const topicElement = document.createElement('h4');
-        topicElement.textContent = insight.topic;
         topicElement.className = 'insight-topic';
+
+        // Create a key span (the number)
+        const keySpan = document.createElement('span');
+        keySpan.className = 'insight-key';
+        keySpan.textContent = `#${key}`; // The insight number
+        
+        // Create the topic text
+        const topicText = document.createElement('span');
+        topicText.textContent = insight.topic;
+        
+        // Append key and topic to the topicElement
+        topicElement.appendChild(keySpan);
+        topicElement.appendChild(topicText);
 
         // Create insight element
         const insightElement = document.createElement('p');
@@ -2190,21 +2213,20 @@ function displayInsights(insightsData) {
 
 		// Add click event listener for highlighting corresponding bookmark
         insightBox.addEventListener('click', function() {
-            const bookmark = d3.select(`#bookmark-${key}`); // Use D3 to select the bookmark
-            if (!bookmark.empty()) { // Check if the selection is valid
-
+			const bookmark = d3.selectAll(`#bookmark-${key} path`); // Target the path inside the bookmark group
+			if (!bookmark.empty()) {
 				const bookmarkDOM = document.getElementById(`bookmark-${key}`);
 				bookmarkDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                bookmark.transition()
-                    .duration(500)
-                    .attr("fill", "green")
-                    .transition()
-                    .delay(100)
-                    .duration(500)
-                    .attr("fill", "#ff9800"); // Return to original color
-            }
-        });
+		
+				bookmark.transition()
+					.duration(500)
+					.attr("fill", "green")
+					.transition()
+					.delay(1000)  // Increased delay to show the color change for a while
+					.duration(500)
+					.attr("fill", "#ff9800"); // Return to original color
+			}
+		});
     });
 }
 
