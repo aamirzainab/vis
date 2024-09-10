@@ -1347,6 +1347,10 @@ function createLines(timestamp1, timestamp2) {
 
 	function dragended(event, d) {
 		d3.select(this).classed("active", false);
+		generateHierToolBar();
+		createPlotTemporal();
+		plotUserSpecificBarChart();
+		plotUserSpecificDurationBarChart();
 	}
 	var drag = d3.drag()
 	.on("start", dragstarted)
