@@ -1971,7 +1971,7 @@ function plotUserSpecificBarChart() {
 
 function plotUserSpecificDurationBarChart() {
     const plotBox = d3.select("#plot-box1").html("");
-    const margin = { top: 30, right: 20, bottom: 40, left: 70 };
+    const margin = { top: 30, right: 20, bottom: 60, left: 70 };
     const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
     const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
@@ -2112,7 +2112,21 @@ function plotUserSpecificDurationBarChart() {
         .style("text-anchor", "end")
         .attr("dx", "2em")
         .attr("dy", ".25em")
-        .style("font-size", "1.2em");
+        .style("font-size", "1.2em")
+		.each(function(d) {
+            const element = d3.select(this);
+            const words = d.split(" ");  // Split label into words
+            element.text("");  // Clear the current label
+
+            words.forEach((word, i) => {
+                element.append("tspan")
+                    .text(word)
+                    .attr("x", 0)
+                    .attr("dy", "1em")  // Offset subsequent lines
+                    .attr("dx", "0.1em")  // Adjust horizontal position slightly
+                    .attr("text-anchor", "middle");
+            });
+        });
 
     svg.append("g")
         .call(d3.axisLeft(y).ticks(5))
