@@ -700,9 +700,9 @@ async function updateObjectsBasedOnSelections() {
 		}
 	}
 
-	if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
-		return;
-	}
+	// if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
+	// 	return;
+	// }
 
 	visibleObjectUsers.forEach((vcUser) => {
 		newFilteredActions[vcUser] = new Set();
@@ -741,33 +741,41 @@ async function updateObjectsBasedOnSelections() {
 			}
 		}
     }
+    if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
+		return;
+	}
 
     // Load new objects that are required
     for (const userID of Object.keys(actionsToLoad)) {
 		for (const { key, subAction } of actionsToLoad[userID]) {
+            if (globalState.loadedObjects[userID] === undefined) {
+                globalState.loadedObjects[userID] = {};
+            }
 			if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
 				// console.log(`Loading new object: ${key}`);
-				const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
-				globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
-					.then(obj => {
-						obj.name = key;
-						const location = parseLocation(subAction.ActionReferentLocation);
-						obj.position.set(location.x, location.y, location.z);
-						// const euler = new THREE.Euler(
-						//     THREE.MathUtils.degToRad(location.eulerx),
-						//     THREE.MathUtils.degToRad(location.eulery),
-						//     THREE.MathUtils.degToRad(location.eulerz),
-						//     'ZXY'
-						// );
-						// obj.setRotationFromEuler(euler);
-						globalState.scene.add(obj);
-						// console.log(`Object loaded and added to scene: ${key}`);
-						return obj; // Return the loaded object
-					})
-					.catch(error => {
-						// console.error(`Failed to load object ${key}:`, error);
-						delete globalState.loadedObjects[userID][key]; // Clean up state on failure
-					});
+                if (!globalState.loadedObjects[userID].hasOwnProperty(key)){
+                    const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
+                    globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
+                        .then(obj => {
+                            obj.name = key;
+                            const location = parseLocation(subAction.ActionReferentLocation);
+                            obj.position.set(location.x, location.y, location.z);
+                            // const euler = new THREE.Euler(
+                            //     THREE.MathUtils.degToRad(location.eulerx),
+                            //     THREE.MathUtils.degToRad(location.eulery),
+                            //     THREE.MathUtils.degToRad(location.eulerz),
+                            //     'ZXY'
+                            // );
+                            // obj.setRotationFromEuler(euler);
+                            globalState.scene.add(obj);
+                            // console.log(`Object loaded and added to scene: ${key}`);
+                            return obj; // Return the loaded object
+                        })
+                        .catch(error => {
+                            console.error(`Failed to load object ${key}:`, error);
+                            delete globalState.loadedObjects[userID][key]; // Clean up state on failure
+                        });
+                    }
 			}
 		}
     }
@@ -791,8 +799,12 @@ function plotHeatmap() {
 	Object.keys(globalState.heatmaps).forEach(userId => {
 		const userHeatmap = globalState.heatmaps[userId];
 		
-		if (userHeatmap && userHeatmap.mesh) {
-			globalState.scene.remove(userHeatmap.mesh);
+		if (userHeatmap) {
+            userHeatmap.forEach(heatmap => {
+                if (heatmap.mesh){
+                    globalState.scene.remove(heatmap.mesh);
+                }
+            });
 		}
 	});
 
@@ -808,11 +820,10 @@ function plotHeatmap() {
     const selectedActions = getSelectedTopics();
     const data = globalState.finalData;
     const gridSize = 50; // Adjust the size of the grid
-    const voxelSize = 0.2; // Size of each voxel in 3D space
+    const voxelSize = 0.1; // was 0.1 earlier 
 
-
-    // Draw grid lines for visualization
-    drawGrid(gridSize, voxelSize);
+    const gridHelper = new THREE.GridHelper(gridSize * voxelSize, gridSize, 0x888888, 0x444444);
+    gridHelper.position.set((gridSize * voxelSize) / 2, 0, (gridSize * voxelSize) / 2);
 
     visibleHeatmapUsers.forEach((user, userIndex) => {
         // Create a 3D voxel grid for this user's heatmap
@@ -863,19 +874,14 @@ function plotHeatmap() {
                 }
             });
         });
+        const smoothedHeatmap = applyGaussianBlur3D(heatmap);
         renderHeatmap(heatmap, user, voxelSize);
+        // console.log("here?"); 
     });
-}
-
-function drawGrid(gridSize, voxelSize) {
-    const gridHelper = new THREE.GridHelper(gridSize * voxelSize, gridSize, 0x888888, 0x444444);
-    gridHelper.position.set((gridSize * voxelSize) / 2, 0, (gridSize * voxelSize) / 2);
-    // globalState.scene.add(gridHelper);
 }
 
 function renderHeatmap(heatmap, user, voxelSize) {
     const group = new THREE.Group();
-
     for (let x = 0; x < heatmap.length; x++) {
         for (let y = 0; y < heatmap[x].length; y++) {
             for (let z = 0; z < heatmap[x][y].length; z++) {
@@ -886,29 +892,104 @@ function renderHeatmap(heatmap, user, voxelSize) {
                     const material = new THREE.MeshBasicMaterial({
                         color,
                         transparent: true,
-                        opacity: Math.min(1, intensity / 10),
+                        opacity: Math.min(1, intensity / 5),
+                        // opacity: Math.min(1, intensity / 20),
                     });
-                    const sphere = new THREE.Mesh(
-                        new THREE.SphereGeometry(voxelSize / 4), 
+                    // const cubeSizeFactor = 0.5; // Change this value to control the size reduction
+                    // const cube = new THREE.Mesh(
+                    //     new THREE.BoxGeometry(voxelSize * cubeSizeFactor, voxelSize * cubeSizeFactor, voxelSize * cubeSizeFactor),
+                    //     material
+                    // );
+                    // const cube = new THREE.Mesh(
+                    //     new THREE.PlaneGeometry(voxelSize, voxelSize), // 2D square for visualization
+                    //     material
+                    // );
+                    const cube = new THREE.Mesh(
+                        new THREE.SphereGeometry(voxelSize / 2),
                         material
-                    ); 
-                    sphere.position.set(
+                    );
+                    // const cube = new THREE.Mesh(
+                    //     new THREE.CylinderGeometry(voxelSize / 2, voxelSize / 2, voxelSize/2, 6), // Hexagonal prism
+                    //     material
+                    // );
+                    cube.position.set(
                         x * voxelSize,
                         y * voxelSize,
                         z * voxelSize
                     );
-                    group.add(sphere);
+                    group.add(cube);
                 }
             }
         }
     }
-
     globalState.scene.add(group); // Add the heatmap to the scene
     globalState.heatmaps[user].push({
         mesh: group,
     });
 }
-
+function applyGaussianBlur3D(heatmap) {
+    const kernelSize = 5;
+    const sigma = 2.0;
+    const kernel = createGaussianKernel(kernelSize, sigma);
+    const smoothedHeatmap = JSON.parse(JSON.stringify(heatmap));
+    for (let x = 0; x < heatmap.length; x++) {
+        for (let y = 0; y < heatmap[x].length; y++) {
+            for (let z = 0; z < heatmap[x][y].length; z++) {
+                let sum = 0;
+                let weightSum = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        for (let k = -1; k <= 1; k++) {
+                            const nx = x + i;
+                            const ny = y + j;
+                            const nz = z + k;
+                            if (
+                                nx >= 0 &&
+                                nx < heatmap.length &&
+                                ny >= 0 &&
+                                ny < heatmap[x].length &&
+                                nz >= 0 &&
+                                nz < heatmap[x][y].length
+                            ) {
+                                const weight = kernel[i + 1][j + 1][k + 1];
+                                sum += heatmap[nx][ny][nz] * weight;
+                                weightSum += weight;
+                            }
+                        }
+                    }
+                }
+                smoothedHeatmap[x][y][z] = sum / weightSum;
+            }
+        }
+    }
+    return smoothedHeatmap;
+}
+function createGaussianKernel(size, sigma) {
+    const kernel = new Array(size).fill().map(() => new Array(size).fill().map(() => new Array(size).fill(0)));
+    const mean = Math.floor(size / 2);
+    let sum = 0.0;
+    for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+            for (let z = 0; z < size; z++) {
+                const exponent = -(
+                    ((x - mean) ** 2 + (y - mean) ** 2 + (z - mean) ** 2) /
+                    (2 * sigma ** 2)
+                );
+                kernel[x][y][z] = Math.exp(exponent);
+                sum += kernel[x][y][z];
+            }
+        }
+    }
+    // Normalize the kernel
+    for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+            for (let z = 0; z < size; z++) {
+                kernel[x][y][z] /= sum;
+            }
+        }
+    }
+    return kernel;
+}
 
 
 function parseLocation(locationString) {
@@ -1035,70 +1116,6 @@ function filterDataByType(data) {
 		validDataInteraction,
 		validDataSpeech
 	};
-}
-
-function findClosestDataEntry(data, targetTimestamp) {
-    if (data.length === 0) return null;
-    return data.reduce((prev, curr) => {
-        const currTimestamp = parseTimeToMillis(curr.Timestamp);
-        const prevTimestamp = parseTimeToMillis(prev.Timestamp);
-        const targetTime = parseTimeToMillis(targetTimestamp);
-        return (Math.abs(currTimestamp - targetTime) < Math.abs(prevTimestamp - targetTime) ? curr : prev);
-    });
-}
-
-
-
-function clearPreviousObjects(userID) {
-	if (Array.isArray(globalState.meshes[userID])) {
-		globalState.meshes[userID].forEach(mesh => {
-			if (mesh !== null) {
-				scene.remove(mesh);
-			}
-		});
-		globalState.meshes[userID] = [];
-	}
-
-	if (globalState.interactionMeshes[userID]) {
-		globalState.interactionMeshes[userID].forEach(sphere => {
-			if (sphere) scene.remove(sphere);
-		});
-		globalState.interactionMeshes[userID] = [];
-	}
-
-	if (globalState.speechMeshes[userID]) {
-		scene.remove(globalState.speechMeshes[userID]);
-		globalState.speechMeshes[userID] = null;
-	}
-}
-
-
-
-function formatTime(timestamp) {
-	const date = new Date(timestamp);
-	return date.toLocaleTimeString();
-}
-
-
-function updateLineThickness() {
-
-	globalState.meshes.forEach((userMeshArray, userID) => {
-		if (Array.isArray(userMeshArray)) {
-			userMeshArray.forEach(lineSegment => {
-				if (lineSegment !== null) {
-					let newLineWidth = 2;
-					if (speechEnabled && lineSegment.hasSpeech) {
-						newLineWidth = 5;
-					}
-					if (xrInteractionEnabled && lineSegment.hasInteraction) {
-						newLineWidth = 5;
-					}
-					lineSegment.material.linewidth = newLineWidth;
-					lineSegment.material.needsUpdate = true;
-				}
-			});
-		}
-	});
 }
 
 function createPlotTemporal() {
