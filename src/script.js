@@ -349,8 +349,8 @@ function updateVisualization(nextTimestamp) {
     // Update elements based on the current timestamp
     for (let i = 0; i < numUsers; i++) {
         updateUserDevice(i, nextTimestamp);
-        updateLeftControl1(i, nextTimestamp);
-        updateRightControl1(i, nextTimestamp);
+        updateLeftControl(i, nextTimestamp);
+        updateRightControl(i, nextTimestamp);
     }
 }
 function updateUserDevice1(userId, timestamp) {
@@ -505,54 +505,66 @@ function updateRightControl1(userId, timestamp) {
 
 
 
-function updateUserDevice(userId) {
-    // console.log("Update process initiated for user", userId);
-
-    // User field mapping: Assuming User field in JSON like "User1", "User2"
+function updateUserDevice(userId, timestamp = null) {
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
-	// console.log(userField);
     let deviceType = '';
 
+    // Determine the device type based on the log mode
     if (logMode.vrGame || logMode.immersiveAnalytics) {
         deviceType = 'XRHMD';
     } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance) {
         deviceType = 'HandheldARInputDevice';
     } else {
-        // Default device type or return if logMode is not set correctly
         console.warn('Unsupported log mode.');
         return;
     }
 
+    // Filter actions based on device type and user field
     const navigateActions = globalState.finalData.filter(action =>
         action.Name === 'Navigate' &&
         action.TriggerSource === deviceType &&
         action.User === userField
     );
-    // console.log(`Filtered ${navigateActions.length} navigate actions for user ${userField}.`);
-
 
     const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime // Converted to milliseconds
-                });
-            }
+
+    // If animating, filter actions by a specific timestamp
+    if (globalState.isAnimating && timestamp !== null) {
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime === timestamp) {  // Match the subAction timestamp with the provided timestamp
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime
+                    });
+                }
+            });
         });
-    });
+    } else {
+        // Otherwise, filter actions within a range of timestamps
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime
+                    });
+                }
+            });
+        });
+    }
 
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-    // console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    // Update avatars based on subActions
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.avatars[userId]) {
-			// console.log("came here with userId " + globalState.avatars[userId]);
             globalState.avatars[userId].position.set(location.x, location.y, location.z);
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
@@ -561,22 +573,20 @@ function updateUserDevice(userId) {
                 'ZXY'
             );
             globalState.avatars[userId].setRotationFromEuler(euler);
-            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
         }
     });
 
-    if (allSubActions.length === 0) {
-        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-    }
+    // if (allSubActions.length === 0) {
+    //     console.log('No suitable navigation actions found for user', userField, 'within the time range or at the specified timestamp.');
+    // }
 }
 
-function updateLeftControl(userId) {
 
-    // User field mapping: Assuming User field in JSON like "User1", "User2"
+function updateLeftControl(userId, timestamp = null) {
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
-
     let actionName, deviceType;
 
+    // Determine actionName and deviceType based on the log mode
     if (logMode.immersiveAnalytics) {
         actionName = 'Move Hand';
         deviceType = 'XRHand_L';
@@ -584,8 +594,7 @@ function updateLeftControl(userId) {
         actionName = 'Move Controller';
         deviceType = 'XRController_L';
     } else {
-        // For other log modes, do nothing
-        return;
+        return; // For other log modes, do nothing
     }
 
     const navigateActions = globalState.finalData.filter(action =>
@@ -594,30 +603,46 @@ function updateLeftControl(userId) {
         action.User === userField
     );
 
-    // Filter subActions that fall within the specified time range
     const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime // Converted to milliseconds
-                });
-            }
+
+    // If animating, filter actions by a specific timestamp
+    if (globalState.isAnimating && timestamp !== null) {
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime === timestamp) {  // Match the subAction timestamp with the provided timestamp
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime
+                    });
+                }
+            });
         });
-    });
+    } else {
+        // Otherwise, filter actions within a range of timestamps
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime // Converted to milliseconds
+                    });
+                }
+            });
+        });
+    }
 
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-
+    // Update left controls based on subActions
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.leftControls[userId]) {
             globalState.leftControls[userId].position.set(location.x, location.y, location.z);
-
             const euler = new THREE.Euler(
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
@@ -625,22 +650,19 @@ function updateLeftControl(userId) {
                 'ZXY'
             );
             globalState.leftControls[userId].setRotationFromEuler(euler);
-            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
         }
     });
 
     if (allSubActions.length === 0) {
-        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+        console.log('No suitable navigation actions found for user', userField, 'within the time range or at the specified timestamp.');
     }
 }
 
-function updateRightControl(userId) {
-    // console.log("Update right process initiated for user", userId);
-
-    // User field mapping: Assuming User field in JSON like "User1", "User2"
+function updateRightControl(userId, timestamp = null) {
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
     let actionName, deviceType;
 
+    // Determine actionName and deviceType based on the log mode
     if (logMode.immersiveAnalytics) {
         actionName = 'Move Hand';
         deviceType = 'XRHand_R';
@@ -648,37 +670,51 @@ function updateRightControl(userId) {
         actionName = 'Move Controller';
         deviceType = 'XRController_R';
     } else {
-        // For other log modes, do nothing
-        return;
+        return; // For other log modes, do nothing
     }
-
 
     const navigateActions = globalState.finalData.filter(action =>
         action.Name === actionName &&
         action.TriggerSource === deviceType &&
         action.User === userField
     );
-    // console.log(`Filtered ${navigateActions.length} navigate right actions for user ${userField}.`);
 
-    // Filter subActions that fall within the specified time range
     const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime // Converted to milliseconds
-                });
-            }
+
+    // If animating, filter actions by a specific timestamp
+    if (globalState.isAnimating && timestamp !== null) {
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime === timestamp) {  // Match the subAction timestamp with the provided timestamp
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime
+                    });
+                }
+            });
         });
-    });
+    } else {
+        // Otherwise, filter actions within a range of timestamps
+        navigateActions.forEach(action => {
+            action.Data.forEach(subAction => {
+                const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+                if (invokeTime >= globalState.lineTimeStamp1 && invokeTime <= globalState.lineTimeStamp2) {
+                    allSubActions.push({
+                        parentAction: action,
+                        ...subAction,
+                        Timestamp: invokeTime // Converted to milliseconds
+                    });
+                }
+            });
+        });
+    }
 
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-    // console.log(`Processing ${allSubActions.length} sub-actions within range for user ${userField}.`);
+    // Update right controls based on subActions
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.rightControls[userId]) {
@@ -690,14 +726,14 @@ function updateRightControl(userId) {
                 'ZXY'
             );
             globalState.rightControls[userId].setRotationFromEuler(euler);
-            // console.log(`Avatar updated for user ${userId + 1} at timestamp ${subAction.Timestamp}: Position(${location.x}, ${location.y}, ${location.z})`);
         }
     });
 
     if (allSubActions.length === 0) {
-        // console.log('No suitable navigation actions found for user', userField, 'within the time range:', globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+        console.log('No suitable navigation actions found for user', userField, 'within the time range or at the specified timestamp.');
     }
 }
+
 
 
 
@@ -1907,6 +1943,8 @@ function handleContextChange(context, userId, isChecked) {
 
 	  case 'Context':
 		globalState.viewProps[userId]["Context"] = isChecked;
+        // globalState.isAnimating = isChecked;
+        // toggleAnimation();
 		updatePointCloudBasedOnSelections();
 		break;
 
@@ -2774,79 +2812,80 @@ function createSpeechBox(action, subAction) {
   }
 
   function initializeShadedAreaDrag() {
-	const indicatorSVG = d3.select("#indicator-svg");
-	const shadedArea = indicatorSVG.select(".shading"); // Assuming .shading is the class for your shaded area
-	let dragStartX = null;
-	const dragstarted = (event) => {
-	  dragStartX = event.x;
-	};
+    const indicatorSVG = d3.select("#indicator-svg");
+    const shadedArea = indicatorSVG.select(".shading"); // Assuming .shading is the class for your shaded area
+    let dragStartX = null;
 
-	const dragged = (event) => {
-		const dx = event.x - dragStartX;
-		const line1 = indicatorSVG.select("#time-indicator-line1");
-		const line2 = indicatorSVG.select("#time-indicator-line2");
-		const circle1 = indicatorSVG.select("#time-indicator-circle1");
-		const circle2 = indicatorSVG.select("#time-indicator-circle2");
+    const dragstarted = (event) => {
+        dragStartX = event.x;
+    };
 
+    const dragged = (event) => {
+        const dx = event.x - dragStartX;
+        const line1 = indicatorSVG.select("#time-indicator-line1");
+        const line2 = indicatorSVG.select("#time-indicator-line2");
+        const circle1 = indicatorSVG.select("#time-indicator-circle1");
+        const circle2 = indicatorSVG.select("#time-indicator-circle2");
 
-		let line1X = parseFloat(line1.attr("x1")) + dx;
-		let line2X = parseFloat(line2.attr("x1")) + dx;
+        // Update positions of line1 and line2
+        let line1X = parseFloat(line1.attr("x1")) + dx;
+        let line2X = parseFloat(line2.attr("x1")) + dx;
 
-		line1.attr("x1", line1X).attr("x2", line1X);
-		line2.attr("x1", line2X).attr("x2", line2X);
-		circle1.attr("cx", line1X);
-		circle2.attr("cx", line2X);
+        line1.attr("x1", line1X).attr("x2", line1X);
+        line2.attr("x1", line2X).attr("x2", line2X);
+        circle1.attr("cx", line1X);
+        circle2.attr("cx", line2X);
 
-	  const newLine1Timestamp = x.invert(line1X - buffer).getTime();
-	  const newLine2Timestamp = x.invert(line2X - buffer).getTime();
-	  globalState.lineTimeStamp1 = newLine1Timestamp;
-	  globalState.lineTimeStamp2 = newLine2Timestamp;
+        // Update shaded area between line1 and line2
+        updateShadedArea(line1X, line2X);
 
-	  updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
-	//   updateXRSnapshot();
-	//   createLineSegment(0);
-	//   createLineSegment(1);
+        // Update timestamps
+        const newLine1Timestamp = x.invert(line1X - buffer).getTime();
+        const newLine2Timestamp = x.invert(line2X - buffer).getTime();
+        globalState.lineTimeStamp1 = newLine1Timestamp;
+        globalState.lineTimeStamp2 = newLine2Timestamp;
 
-	//   createDeviceSegment(0);
+        updateRangeDisplay(newLine1Timestamp, newLine2Timestamp);
 
-	for (let i = 0; i < numUsers; i++) {
-        updateUserDevice(i);
-        updateLeftControl(i);
-        updateRightControl(i);
-    }
-	//   createControllerSegment(0, 'right');
-	//   createControllerSegment(0, 'left');
-	//   createControllerSegment(1, 'right');
-	//   createControllerSegment(1, 'left');
+        // Update visual elements based on new positions
+        for (let i = 0; i < numUsers; i++) {
+            updateUserDevice(i);
+            updateLeftControl(i);
+            updateRightControl(i);
+        }
 
-	// createRayCastSegment(0);
-	// createRayCastSegment(1);
-	// createLineDrawing(0);
-	// createLineDrawing(1);
+        plotHeatmap();
+        updatePointCloudBasedOnSelections();
+        updateObjectsBasedOnSelections();
 
-	plotHeatmap();
+        dragStartX = event.x;
+    };
 
-	updatePointCloudBasedOnSelections();
-	updateObjectsBasedOnSelections();
+    const dragended = () => {
+        generateHierToolBar();
+        plotUserSpecificBarChart();
+        plotUserSpecificDurationBarChart();
+        updateObjectsBasedOnSelections();
+    };
 
+    const drag = d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended);
 
-	  dragStartX = event.x;
-	};
+    shadedArea.call(drag);
+}
 
-	const dragended = () => {
-		generateHierToolBar();
-		plotUserSpecificBarChart();
-		plotUserSpecificDurationBarChart();
-		updateObjectsBasedOnSelections();
-	};
+function updateShadedArea(line1X, line2X) {
+    const indicatorSVG = d3.select("#indicator-svg");
+    const shadedArea = indicatorSVG.select(".shading");
 
-	const drag = d3.drag()
-	  .on("start", dragstarted)
-	  .on("drag", dragged)
-	  .on("end", dragended);
+    // Set the shaded area's position and width based on line1 and line2 positions
+    const startX = Math.min(line1X, line2X);
+    const endX = Math.max(line1X, line2X);
+    shadedArea.attr("x", startX).attr("width", endX - startX);
+}
 
-	shadedArea.call(drag);
-  }
 
 
 function updateTimeDisplay(timestamp, startTime) {
@@ -2939,7 +2978,9 @@ function createSharedAxis() {
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
   }
-function animateTemporalView(timestamp) {
+
+
+  function animateTemporalView(timestamp) {
     const svg = d3.select("#temporal-view");
     if (!svg.empty()) {
         let line1 = svg.select('#time-indicator-line1');
@@ -2947,26 +2988,61 @@ function animateTemporalView(timestamp) {
         let line2 = svg.select('#time-indicator-line2');
         let circle2 = svg.select('#time-indicator-circle2');
         const indicatorSVG = d3.select("#indicator-svg"); // Select the SVG containing the shaded area
-        const shadedArea = indicatorSVG.select(".shading")
-        if (!line1.empty() && !circle1.empty()) {
-            const margin = { left: 40 };
-            const alignX = 10;
-            let xPosition1 = Math.max(0, x(new Date(timestamp))) + margin.left + alignX;
-            line1.attr('x1', xPosition1)
-                .attr('x2', xPosition1);
-            circle1.attr('cx', xPosition1);
-        }
-        if (!line2.empty()) {
-            line2.style('display', 'none');
-        }
-        if (!circle2.empty()) {
-            circle2.style('display', 'none');
-        }
-        if (!shadedArea.empty()) {
-            shadedArea.style('display', 'none');
+        const shadedArea = indicatorSVG.select(".shading");
+
+        // Adjust this to align with the shared axis starting point
+        const sharedAxisStart = d3.select("#shared-axis-container svg g");  // Select the shared axis container
+        const marginLeft = parseInt(sharedAxisStart.attr("transform").match(/translate\((\d+),/)[1]); // Extract margin.left from the transform attribute
+        const alignX = 10; // Additional offset if needed
+
+        // Update line1 and circle1 based on the timestamp
+
+
+        if (globalState.isAnimating) {
+            if (!line1.empty() && !circle1.empty()) {
+                let xPosition1 = Math.max(0, x(new Date(timestamp))) + marginLeft + alignX;
+                line1.attr('x1', xPosition1)
+                    .attr('x2', xPosition1);
+                circle1.attr('cx', xPosition1);
+            }
+            // During animation, hide line2, circle2, and shaded area
+            if (!line2.empty()) {
+                line2.style('display', 'none');
+            }
+            if (!circle2.empty()) {
+                circle2.style('display', 'none');
+            }
+            if (!shadedArea.empty()) {
+                shadedArea.style('display', 'none');
+            }
+        } else {
+            if (!line1.empty() && !circle1.empty()) {
+                let xPosition1 = Math.max(0, x(new Date(timestamp))) + marginLeft + alignX;
+                line1.attr('x1', xPosition1)
+                    .attr('x2', xPosition1);
+                circle1.attr('cx', xPosition1);
+            }
+            // When animation is stopped
+            console.log("hey did u cme here?");
+            if (!line2.empty()) {
+                line2.style('display', 'block');  // Make line2 visible again
+                let xPosition2 = Math.max(0, x(new Date(timestamp + 5000))) + marginLeft + alignX; // Position 5 seconds ahead of line1
+                line2.attr('x1', xPosition2)
+                    .attr('x2', xPosition2);
+            }
+            if (!circle2.empty()) {
+                circle2.style('display', 'block');  // Make circle2 visible again
+                let xPosition2 = Math.max(0, x(new Date(timestamp + 5000))) + marginLeft + alignX; // Position 5 seconds ahead of circle1
+                circle2.attr('cx', xPosition2);
+            }
+            if (!shadedArea.empty()) {
+                shadedArea.style('display', 'block');  // Make shaded area visible again
+            }
         }
     }
 }
+
+
 function updateAnimation(nextTimestamp) {
     // Perform all the necessary updates in one function
     animateTemporalView(nextTimestamp);
@@ -2976,7 +3052,25 @@ function updateAnimation(nextTimestamp) {
 
 function animateVisualization() {
     const dataToVisualize = globalState.finalData;
-    if (!globalState.isAnimating || dataToVisualize.length === 0) return;
+
+    // Check if there's data to visualize
+    if (dataToVisualize.length === 0) return;
+
+    // If animation is paused
+    if (!globalState.isAnimating) {
+        // Position line2 and circle2 5 seconds ahead of line1
+        const currentTimestamp = globalState.globalStartTime + globalState.currentTimestamp;
+        animateTemporalView(currentTimestamp + 5000); // Update line2 with a timestamp 5 seconds ahead
+
+        // Update shaded area between line1 and line2
+        const line1X = parseFloat(d3.select("#time-indicator-line1").attr("x1"));
+        const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
+        updateShadedArea(line1X, line2X);
+
+        return; // Exit as we do not want to continue animating
+    }
+
+    // Continue animation if isAnimating is true
     const globalStartTime = globalState.globalStartTime;
     const globalEndTime = globalState.globalEndTime;
     const totalTime = globalEndTime - globalStartTime;
@@ -2988,9 +3082,10 @@ function animateVisualization() {
         globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
         globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
 
-        // Call consolidated function
+        // Update visualization, time display, and temporal view
         updateAnimation(nextTimestamp);
 
+        // Update slider position
         const slider = document.querySelector('#slider-container input[type=range]');
         if (slider) {
             slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
@@ -2999,11 +3094,27 @@ function animateVisualization() {
         globalState.currentTimestamp += animationStep; // Maintain the animation step for continuity
         requestAnimationFrame(animateVisualization);
     } else {
+        // When animation ends
         globalState.isAnimating = false;
-        globalState.currentTimestamp = 0; // Reset for restart
+
+        // Position line2 and circle2 5 seconds ahead of line1
+        const line2Timestamp = globalState.globalStartTime + globalState.currentTimestamp;
+        animateTemporalView(line2Timestamp + 5000);  // Update with line2 positioned 5 seconds ahead
+
+        // Update shaded area between line1 and line2
+        const line1X = parseFloat(d3.select("#time-indicator-line1").attr("x1"));
+        const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
+        updateShadedArea(line1X, line2X);
+
+        // Reset current timestamp for a fresh start on next play
+        globalState.currentTimestamp = 0;
+
+        // Toggle animation state or handle any UI updates
         toggleAnimation(); // Ensure this is still the correct function to handle the animation toggle
     }
 }
+
+
 
 
 
