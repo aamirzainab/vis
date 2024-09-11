@@ -19,6 +19,11 @@ import {
 import {
 	Line2
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
+
+let video = true ;
+
+
+
 let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
@@ -69,6 +74,7 @@ let globalState = {
 	obContext: [],
     isAnimating: false
 };
+
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
@@ -136,10 +142,12 @@ let movementPointsMesh;
 
 
 function toggleAnimation() {
-    globalState.isAnimating = !globalState.isAnimating;
-    updatePlayPauseButton();
-    if (globalState.isAnimating) {
-        animateVisualization();
+    if (video) {
+        globalState.isAnimating = !globalState.isAnimating;
+        updatePlayPauseButton();
+        if (globalState.isAnimating) {
+            animateVisualization();
+        }
     }
 }
 function updatePlayPauseButton() {
@@ -827,13 +835,13 @@ function updatePointCloudBasedOnSelections() {
                     globalState.loadedClouds[action.User] = {};
                 }
                 if (!globalState.loadedClouds[action.User].hasOwnProperty(adjustedPath))
-               {   
-    
+               {
+
                 globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
                     globalState.scene.add(obj);
-                    return obj; 
+                    return obj;
                 })
                 .catch(error => {
                     console.error(`Failed to load object` +  error);
@@ -1285,10 +1293,12 @@ async function initializeScene() {
 
     const playPauseButton = document.getElementById('playPauseButton');
     // animateVisualization();
-    // playPauseButton.addEventListener('click', function() {
-    //     console.log("did ya come here?");
-    //     toggleAnimation();
-    // });
+    if (video){
+    playPauseButton.addEventListener('click', function() {
+        console.log("did ya come here?");
+        toggleAnimation();
+    });
+    }
 
 }
 
@@ -1936,7 +1946,6 @@ function handleContextChange(context, userId, isChecked) {
 
 	  case 'Context':
 		globalState.viewProps[userId]["Context"] = isChecked;
-        globalState.isAnimating = isChecked;
         toggleAnimation();
 		updatePointCloudBasedOnSelections();
 		break;
