@@ -832,27 +832,13 @@ function updatePointCloudBasedOnSelections() {
                 globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
-                    const location = parseLocation(subAction.ActionInvokeLocation);
-                    obj.position.set(location.x, location.y, location.z);
-                    // const euler = new THREE.Euler(
-                    //     THREE.MathUtils.degToRad(location.eulerx),
-                    //     THREE.MathUtils.degToRad(location.eulery),
-                    //     THREE.MathUtils.degToRad(location.eulerz),
-                    //     'ZXY'
-                    // );
-                    // obj.setRotationFromEuler(euler);
                     globalState.scene.add(obj);
-                    // console.log(`Object loaded and added to scene: ${key}`);
-                    return obj; // Return the loaded object
+                    return obj; 
                 })
                 .catch(error => {
                     console.error(`Failed to load object` +  error);
-                    delete globalState.loadedClouds[action.User][adjustedPath]; // Clean up state on failure
+                    delete globalState.loadedClouds[action.User][adjustedPath];
                 });
-                // const obj = loadAvatarModel(adjustedContext);
-                // obj.name = adjustedContext;
-                // globalState.loadedClouds[subAction.ActionContext] = obj; // Track the loaded object
-                // console.log(`Loaded new object: ${subAction.ActionContext}`);
             }
             }
         }
@@ -1258,16 +1244,15 @@ async function initializeScene() {
 		  ]);
   globalState.finalData = finalData[0];
 
-  updateNumUsers();
-  initializeViewProps();
-  window_onload();
-	// Determine the avatar model to load based on log mode
-	const avatarModel = (logMode.vrGame || logMode.immersiveAnalytics) ? 'headset.glb' : 'ipad.glb';
+    updateNumUsers();
+    initializeViewProps();
+    window_onload();
+    const isHeadsetMode = logMode.vrGame || logMode.immersiveAnalytics;
+    const avatarModel = isHeadsetMode ? 'headset.glb' : 'ipad.glb';
+    const loadModel = isHeadsetMode ? loadAvatarModel : loadIpadModel;
+    const avatarPromises = Array.from({ length: numUsers }, () => loadModel(avatarModel));
 
-	// Load avatars for all users
-	const avatarPromises = Array.from({ length: numUsers }, () => loadIpadModel(avatarModel));
 
-	// Resolve all promises to load the avatars
 	globalState.avatars = await Promise.all(avatarPromises);
 	const controlModels = {
 		vrGame: { right: "controller_r.glb", left: "controller_l.glb" },
@@ -1951,8 +1936,8 @@ function handleContextChange(context, userId, isChecked) {
 
 	  case 'Context':
 		globalState.viewProps[userId]["Context"] = isChecked;
-        // globalState.isAnimating = isChecked;
-        // toggleAnimation();
+        globalState.isAnimating = isChecked;
+        toggleAnimation();
 		updatePointCloudBasedOnSelections();
 		break;
 
