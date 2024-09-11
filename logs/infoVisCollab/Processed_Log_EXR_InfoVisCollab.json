@@ -214,7 +214,7 @@
                 "ActionInvokeTimestamp":"240909_180119_268000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" So for our planning purposes, I think it is important to look at the trees and the grain reindices.",
+                "ActionReferentBody":" So for our greenery infrastucture planning purposes, I think it is important to look at the trees and the grain reindices.",
                 "ActionContext":null
             }
         ]
@@ -236,7 +236,7 @@
                 "ActionInvokeTimestamp":"240909_180127_341000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Yeah sure, you're right. Do you have any particular area in mind?",
+                "ActionReferentBody":" Yeah sure, you're right. Do you have any particular area in mind, for tree planting?",
                 "ActionContext":"user3\/240909_180056\/Context\/2.glb"
             }
         ]
@@ -258,7 +258,7 @@
                 "ActionInvokeTimestamp":"240909_180134_827000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" So I am looking at this street.",
+                "ActionReferentBody":" So I am looking at this street, where the vegitation numbers are high",
                 "ActionContext":null
             }
         ]
@@ -324,7 +324,7 @@
                 "ActionInvokeTimestamp":"240909_180142_433000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" So yeah, let me just look at the numbers.",
+                "ActionReferentBody":" So yeah, let me just look at the numbers, how much trees need to be planted for city planning",
                 "ActionContext":"user3\/240909_180056\/Context\/4.glb"
             }
         ]
@@ -368,30 +368,8 @@
                 "ActionInvokeTimestamp":"240909_180150_069000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Yeah, I can see that the numbers over there are quite low, so maybe they don't work.",
+                "ActionReferentBody":" Yeah, I can see that the numbers of vegitations over there are quite low, there must be a soil degradation or something. so I'm not sure spending more budget on that area would work",
                 "ActionContext":"user3\/240909_180056\/Context\/5.glb"
-            }
-        ]
-    },
-    {
-        "Name":"Discuss",
-        "Type":"NoneType",
-        "User":"User3",
-        "Intent":"Expressing doubt about the effectiveness due to low numbers.",
-        "StartTime":"240909_180150_670000",
-        "Duration":"000000_000005_019999",
-        "TriggerSource":"Audio",
-        "ReferentType":"Physical",
-        "ContextType":"Physical",
-        "ActionContextDescription":null,
-        "Data":[
-            {
-                "ActionInvokeLocation":"-0.09196687,0.1141173,0.03992113,25.17266,0.1667363,359.4854",
-                "ActionInvokeTimestamp":"240909_180150_670000",
-                "ActionReferentLocation":null,
-                "ActionReferentName":null,
-                "ActionReferentBody":" Yeah, I can see that the numbers over there are quite low, so maybe they don't work.",
-                "ActionContext":"user3\/240909_180056\/Context\/6.glb"
             }
         ]
     },
@@ -412,7 +390,7 @@
                 "ActionInvokeTimestamp":"240909_180202_205000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Okay, that's interesting. Let's look at the areas where the numbers are.",
+                "ActionReferentBody":" Okay, that's interesting, I'll verify on the soil issue too. Let me look at the areas where you pointed out.",
                 "ActionContext":null
             }
         ]
@@ -478,7 +456,7 @@
                 "ActionInvokeTimestamp":"240909_180209_274000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" I'm looking at this tree and I can see that oh yeah significantly higher number of trees",
+                "ActionReferentBody":" Now, I'm looking at this area, and I see a significantly higher number of trees",
                 "ActionContext":null
             }
         ]
@@ -500,7 +478,7 @@
                 "ActionInvokeTimestamp":"240909_180224_643000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Are you talking about the trees on the east of the center park?",
+                "ActionReferentBody":" Are you talking about the trees on the east of the central park?",
                 "ActionContext":"user3\/240909_180056\/Context\/8.glb"
             }
         ]
@@ -544,7 +522,7 @@
                 "ActionInvokeTimestamp":"240909_180239_459000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Yeah, actually let me put a marker so that we have that.",
+                "ActionReferentBody":" Yes exactly, the east of the park. Let's mark both the bad locations and the good locations for tree planting, with markers for future reference",
                 "ActionContext":null
             }
         ]
@@ -610,7 +588,7 @@
                 "ActionInvokeTimestamp":"240909_180249_058000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Now guys, let's actually move on to the other data. Let's see the total population.",
+                "ActionReferentBody":" Now guys, let's actually move on to the other data. Let's see the total population of the city, besides the vegitation statistics",
                 "ActionContext":null
             }
         ]
@@ -764,7 +742,7 @@
                 "ActionInvokeTimestamp":"240909_180330_218000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Okay, this is quite interesting. Why don't we take a look to the population that we have on the other side of the park?",
+                "ActionReferentBody":" Okay, this is quite interesting. Why don't we take a look to the total population on the other side of the park?",
                 "ActionContext":"user3\/240909_180056\/Context\/10.glb"
             }
         ]
@@ -852,7 +830,7 @@
                 "ActionInvokeTimestamp":"240909_180339_983000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Yeah, looks like the Westside has more population than the East.",
+                "ActionReferentBody":"It seems the Westside of the park, has more population than the East. I wonder if it has to do with the vegitation, again.",
                 "ActionContext":null
             }
         ]
@@ -874,7 +852,7 @@
                 "ActionInvokeTimestamp":"240909_180348_711000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Do we think there is a type of correlation over there?",
+                "ActionReferentBody":" Do you think there is some sort of correlation between the population and the vegitation, over there?",
                 "ActionContext":"user3\/240909_180056\/Context\/11.glb"
             }
         ]
@@ -896,7 +874,7 @@
                 "ActionInvokeTimestamp":"240909_180358_823000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Maybe the lesser vegetation the more the area to build dollars.",
+                "ActionReferentBody":"Maybe the lesser vegetation means more areas to build houses, thus, more population.",
                 "ActionContext":null
             }
         ]
@@ -918,7 +896,7 @@
                 "ActionInvokeTimestamp":"240909_180405_116000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Also, what's interesting is you can see more consistent data across the West Side.",
+                "ActionReferentBody":" Also, what I find interesting is that there is a consistent total population across the West Side of the park.",
                 "ActionContext":null
             }
         ]
@@ -962,7 +940,7 @@
                 "ActionInvokeTimestamp":"240909_180415_775000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Okay guys, it both sounds really interesting. I'll leave markers on all the areas you guys point",
+                "ActionReferentBody":"I find the perspectives of you two, intriguing. I'll leave amarkers on all the areas you guys pointed out so that we can come back to this later again",
                 "ActionContext":null
             }
         ]
@@ -1006,7 +984,7 @@
                 "ActionInvokeTimestamp":"240909_180424_314000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" And everywhere. Alright, cool. Let's move on to the next data.",
+                "ActionReferentBody":"Alright, cool. Let's move on to the next data. Now, the commuting population.",
                 "ActionContext":null
             }
         ]
@@ -1094,7 +1072,7 @@
                 "ActionInvokeTimestamp":"240909_180435_174000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Now the next data is actually about commuting population.",
+                "ActionReferentBody":"Let's discuss on the data on commuting population in this area.",
                 "ActionContext":null
             }
         ]
@@ -1116,7 +1094,7 @@
                 "ActionInvokeTimestamp":"240909_180441_584000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" populated at the Central Park and as well as West and East.",
+                "ActionReferentBody":"I see that there are a lot of commuting populations around the central park and as well as West and East.",
                 "ActionContext":null
             }
         ]
@@ -1138,7 +1116,7 @@
                 "ActionInvokeTimestamp":"240909_180449_033000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Consistently, you know",
+                "ActionReferentBody":"And especially consistently in the population numbers, also",
                 "ActionContext":null
             }
         ]
@@ -1182,7 +1160,7 @@
                 "ActionInvokeTimestamp":"240909_180525_667000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" It is possible that, so you can see that the commute is lower near the",
+                "ActionReferentBody":" It is possible that, the commute time less around that area making them highly populated",
                 "ActionContext":null
             }
         ]
@@ -1292,7 +1270,7 @@
                 "ActionInvokeTimestamp":"240909_180532_493000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Probably they're richer and that means",
+                "ActionReferentBody":"And probably because it's so close to workplaces, the areas must be expensive and people are richer there",
                 "ActionContext":null
             }
         ]
@@ -1402,7 +1380,7 @@
                 "ActionInvokeTimestamp":"240909_180542_247000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Oh, that's interesting. I'll take a look at that area as well. You're talking about the west of",
+                "ActionReferentBody":" Oh, that's interesting. I'll take a look at the income level of that area. You're talking about the west of the park, right?",
                 "ActionContext":null
             }
         ]
@@ -1446,7 +1424,7 @@
                 "ActionInvokeTimestamp":"240909_180550_833000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" No, I'm speaking of around the park so I'm",
+                "ActionReferentBody":" No, I'm speaking of, around the park, not the West.",
                 "ActionContext":null
             }
         ]
@@ -1490,7 +1468,7 @@
                 "ActionInvokeTimestamp":"240909_180557_270000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Oh, now I see it. Okay. Oh, you're talking about around the pipe. Okay. Yeah, I'll take a look at that commuting population around there",
+                "ActionReferentBody":" Oh, now I see it. Okay. Oh, you're talking about around the park. Okay. Yeah, I'll verify the commuting population of those regions",
                 "ActionContext":null
             }
         ]
@@ -1534,7 +1512,7 @@
                 "ActionInvokeTimestamp":"240909_180607_920000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" I mean, I'm not that sure about that because we also have like a lot of",
+                "ActionReferentBody":"I actually am hesistant to claim that they are wealthier, because I see that the income is actually pretty low in those regions",
                 "ActionContext":"user3\/240909_180056\/Context\/13.glb"
             }
         ]
@@ -1609,7 +1587,7 @@
         "Name":"Discuss",
         "Type":"NoneType",
         "User":"User3",
-        "Intent":"Describing the location of a leaf.",
+        "Intent":"Describing the location of a river.",
         "StartTime":"240909_180615_379000",
         "Duration":"000000_000002_209999",
         "TriggerSource":"Audio",
@@ -1622,7 +1600,7 @@
                 "ActionInvokeTimestamp":"240909_180615_379000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" The leaf near the water.",
+                "ActionReferentBody":" Maybe it's the river, people might use the ferries to commute from remote places",
                 "ActionContext":"user3\/240909_180056\/Context\/14.glb"
             }
         ]
@@ -1644,7 +1622,7 @@
                 "ActionInvokeTimestamp":"240909_180622_718000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" Yeah, these are all really important",
+                "ActionReferentBody":"Possible. Good point. I'll think from the point-of-view of Public transportation accessibility",
                 "ActionContext":null
             }
         ]
@@ -1666,7 +1644,7 @@
                 "ActionInvokeTimestamp":"240909_180627_877000",
                 "ActionReferentLocation":null,
                 "ActionReferentName":null,
-                "ActionReferentBody":" offline and then think more about it.",
+                "ActionReferentBody":"Guys, let's actually take this offline, and then think more about it. I see many interesting opinions. Let's make sure to leave a marker for each location you were referring to.",
                 "ActionContext":null
             }
         ]

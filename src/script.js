@@ -72,10 +72,10 @@ let globalState = {
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
-	vrGame: 0,
+	vrGame: 1,
 	immersiveAnalytics: 0,
 	infoVisCollab: 0,
-	sceneNavigation: 1,
+	sceneNavigation: 0,
 	maintenance: 0
 }
 
@@ -209,7 +209,17 @@ async function loadAvatarModel(filename) {
 	avatarLoaded = true;
 	return avatar;
 }
-
+async function loadIpadModel(filename) {
+	const loader = new GLTFLoader();
+	const gltf = await loader.loadAsync(filename);
+	const avatar = gltf.scene;
+	avatar.rotation.set(0, 0, 0);
+	avatar.scale.set(2, 2, 2);
+	avatar.name = filename;
+	globalState.scene.add(avatar);
+	avatarLoaded = true;
+	return avatar;
+}
 async function loadHand(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
@@ -751,7 +761,6 @@ function updatePointCloudBasedOnSelections() {
 	const nonVisibleContextUsers = hasVisibleUserID.filter(userId => {
 		return userId in globalState.viewProps && globalState.viewProps[userId]["Context"] === false;
 	});
-
 	//remove loadedClouds for selected user not selected context
 	nonVisibleContextUsers.forEach((nvcUser) => {
 		if(nvcUser in globalState.loadedClouds){
@@ -812,13 +821,14 @@ function updatePointCloudBasedOnSelections() {
         for (const subAction of action.Data) {
             if (subAction.ActionContext !== null && globalState.loadedClouds?.[action.User]?.[subAction.ActionContext] === undefined
                 && subAction.ActionInvokeLocation !== null )  {
-                    // ubAction.ActionInvokeLocation !== null )
 				const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
+
                 if (globalState.loadedClouds[action.User] === undefined) {
                     globalState.loadedClouds[action.User] = {};
                 }
                 if (!globalState.loadedClouds[action.User].hasOwnProperty(adjustedPath))
-               {
+               {   
+    
                 globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
@@ -847,8 +857,6 @@ function updatePointCloudBasedOnSelections() {
             }
         }
     }
-
-
 }
 
 
@@ -1257,7 +1265,7 @@ async function initializeScene() {
 	const avatarModel = (logMode.vrGame || logMode.immersiveAnalytics) ? 'headset.glb' : 'ipad.glb';
 
 	// Load avatars for all users
-	const avatarPromises = Array.from({ length: numUsers }, () => loadAvatarModel(avatarModel));
+	const avatarPromises = Array.from({ length: numUsers }, () => loadIpadModel(avatarModel));
 
 	// Resolve all promises to load the avatars
 	globalState.avatars = await Promise.all(avatarPromises);
