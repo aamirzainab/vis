@@ -146,13 +146,15 @@
                     <input type="radio" id="unit-seconds" name="unit" value="seconds">
                     <label for="unit-seconds">Seconds</label>
                 </div>
-                </div>
-            <div id="time-extent-toggle">
-                <input type="radio" id="range" name="time-extent" value="Range" checked>
-                <label for="range">Range</label>
-
-                <input type="radio" id="instance" name="time-extent" value="Instance">
-                <label for="instance">Instance</label>
+            </div>
+            <div id="playPauseButton" class="play-pause-icon">
+                <svg id="playIcon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <svg id="pauseIcon" style="display:none;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pause">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
             </div>
         </div>
         <div id="speech-plot-container">

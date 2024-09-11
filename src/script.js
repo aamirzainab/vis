@@ -66,15 +66,16 @@ let globalState = {
 	llmInsightPath: "",
 	objFilePath: "",
 	viewProps: {},
-	obContext: []
+	obContext: [],
+    isAnimating: false
 };
 
 // Switch mode here, keep only one as 1 and rest 0
 let logMode = {
 	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 1,
-	sceneNavigation: 0,
+	infoVisCollab: 0,
+	sceneNavigation: 1,
 	maintenance: 0
 }
 
@@ -120,7 +121,6 @@ const colorScale = d3.scaleOrdinal()
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
-let isAnimating = true;
 const animationStep = 100;
 let roomMesh;
 let meshes = [];
@@ -135,6 +135,25 @@ let movementPointsMesh;
 
 
 
+function toggleAnimation() {
+    globalState.isAnimating = !globalState.isAnimating;
+    updatePlayPauseButton();
+    if (globalState.isAnimating) {
+        animateVisualization();
+    }
+}
+function updatePlayPauseButton() {
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+
+    if (globalState.isAnimating) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+    }
+}
 export function updateIntervals() {
   createSharedAxis();
   createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
@@ -324,31 +343,166 @@ function toggleInstanceRange(selectedOption){
 		});
 	}
 
-	// document.getElementById(`toggle-Object`).addEventListener('change', function() {
-	// 	globalState.objectsShow = this.checked;
-    //     // updatePointCloudBasedOnSelections();
-    //     updateObjectsBasedOnSelections();
-	// });
-
-	// document.getElementById(`toggle-Context`).addEventListener('change', function() {
-	// 	globalState.contextShow = this.checked;
-    //     updatePointCloudBasedOnSelections();
-    //     // updateObjectsBasedOnSelections();
-	// });
-	// document.getElementById(`toggle-Heatmap`).addEventListener('change', function() {
-	// 	globalState.heatmapShow = this.checked;
-    //     console.log("hello");
-    //     plotHeatmap();
-    //     // updatePointCloudBasedOnSelections();
-    //     // updateObjectsBasedOnSelections();
-	// });
-
-	const playPauseButton = document.getElementById('playPauseButton');
-	const playPauseButtonHeight = playPauseButton.offsetHeight;
-	const timeDisplay = document.getElementById('timeDisplay');
-	timeDisplay.style.top = (playPauseButton.offsetTop - playPauseButtonHeight) + 'px';
 
 };
+function updateVisualization(nextTimestamp) {
+    // Update elements based on the current timestamp
+    for (let i = 0; i < numUsers; i++) {
+        updateUserDevice(i, nextTimestamp);
+        updateLeftControl1(i, nextTimestamp);
+        updateRightControl1(i, nextTimestamp);
+    }
+}
+function updateUserDevice1(userId, timestamp) {
+    const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
+    let deviceType = '';
+
+    if (logMode.vrGame || logMode.immersiveAnalytics) {
+        deviceType = 'XRHMD';
+    } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance) {
+        deviceType = 'HandheldARInputDevice';
+    } else {
+        console.warn('Unsupported log mode.');
+        return;
+    }
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === 'Navigate' &&
+        action.TriggerSource === deviceType &&
+        action.User === userField
+    );
+
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime === timestamp) {  // Check if the subAction timestamp matches the given timestamp
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime
+                });
+            }
+        });
+    });
+
+    // Update avatars
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.avatars[userId]) {
+            globalState.avatars[userId].position.set(location.x, location.y, location.z);
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'ZXY'
+            );
+            globalState.avatars[userId].setRotationFromEuler(euler);
+        }
+    });
+}
+function updateLeftControl1(userId, timestamp) {
+    const userField = `User${userId + 1}`;
+    let actionName, deviceType;
+
+    if (logMode.immersiveAnalytics) {
+        actionName = 'Move Hand';
+        deviceType = 'XRHand_L';
+    } else if (logMode.vrGame) {
+        actionName = 'Move Controller';
+        deviceType = 'XRController_L';
+    } else {
+        return;
+    }
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === actionName &&
+        action.TriggerSource === deviceType &&
+        action.User === userField
+    );
+
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime === timestamp) {
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime
+                });
+            }
+        });
+    });
+
+    // Update left controls
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.leftControls[userId]) {
+            globalState.leftControls[userId].position.set(location.x, location.y, location.z);
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'ZXY'
+            );
+            globalState.leftControls[userId].setRotationFromEuler(euler);
+        }
+    });
+}
+
+function updateRightControl1(userId, timestamp) {
+    const userField = `User${userId + 1}`;
+    let actionName, deviceType;
+
+    if (logMode.immersiveAnalytics) {
+        actionName = 'Move Hand';
+        deviceType = 'XRHand_R';
+    } else if (logMode.vrGame) {
+        actionName = 'Move Controller';
+        deviceType = 'XRController_R';
+    } else {
+        return;
+    }
+
+    const navigateActions = globalState.finalData.filter(action =>
+        action.Name === actionName &&
+        action.TriggerSource === deviceType &&
+        action.User === userField
+    );
+
+    const allSubActions = [];
+    navigateActions.forEach(action => {
+        action.Data.forEach(subAction => {
+            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            if (invokeTime === timestamp) {
+                allSubActions.push({
+                    parentAction: action,
+                    ...subAction,
+                    Timestamp: invokeTime
+                });
+            }
+        });
+    });
+    console.log(allSubActions);
+
+    // Update right controls
+    allSubActions.forEach(subAction => {
+        const location = parseLocation(subAction.ActionInvokeLocation);
+        if (globalState.rightControls[userId]) {
+            globalState.rightControls[userId].position.set(location.x, location.y, location.z);
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(location.pitch),
+                THREE.MathUtils.degToRad(location.yaw),
+                THREE.MathUtils.degToRad(location.roll),
+                'ZXY'
+            );
+            globalState.rightControls[userId].setRotationFromEuler(euler);
+        }
+    });
+}
+
+
 
 
 function updateUserDevice(userId) {
@@ -554,7 +708,6 @@ function updatePointCloudBasedOnSelections() {
 	const hasVisibleUserID = Object.keys(globalState.show)
         .filter((userID) => globalState.show[userID])
         .map((userID) => `User${userID}`);
-	
 	const visibleContextUsers = hasVisibleUserID.filter(userId => {
 		return userId in globalState.viewProps && globalState.viewProps[userId]["Context"] === true;
 	});
@@ -578,7 +731,7 @@ function updatePointCloudBasedOnSelections() {
 			});
 		}
 	});
-	
+
 
 	// if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
 	// 	return;
@@ -593,7 +746,7 @@ function updatePointCloudBasedOnSelections() {
         return hasVisibleUserID && action.Data.some(subAction => {
             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-			
+
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 && subAction.ActionContext) {
                 //const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
                 newFilteredActions[action.User].add(`${globalState.objFilePath}${subAction.ActionContext}`);
@@ -622,17 +775,18 @@ function updatePointCloudBasedOnSelections() {
     for (const action of filteredActions) {
         for (const subAction of action.Data) {
             if (subAction.ActionContext !== null && globalState.loadedClouds?.[action.User]?.[subAction.ActionContext] === undefined
-                && subAction.ActionReferentLocation !== null )  {
+                && subAction.ActionInvokeLocation !== null )  {
+                    // ubAction.ActionInvokeLocation !== null )
 				const adjustedPath = `${globalState.objFilePath}${subAction.ActionContext}`;
                 if (globalState.loadedClouds[action.User] === undefined) {
                     globalState.loadedClouds[action.User] = {};
                 }
                 if (!globalState.loadedClouds[action.User].hasOwnProperty(adjustedPath))
-               {         
+               {
                 globalState.loadedClouds[action.User][adjustedPath] = loadAvatarModel(adjustedPath)
                 .then(obj => {
                     obj.name = adjustedPath;
-                    const location = parseLocation(subAction.ActionReferentLocation);
+                    const location = parseLocation(subAction.ActionInvokeLocation);
                     obj.position.set(location.x, location.y, location.z);
                     // const euler = new THREE.Euler(
                     //     THREE.MathUtils.degToRad(location.eulerx),
@@ -687,14 +841,25 @@ async function updateObjectsBasedOnSelections() {
 		if(nvoUser in globalState.loadedObjects){
 			for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
 				if (globalState.loadedObjects[nvoUser][key]) {
-					const obj = await globalState.loadedObjects[nvoUser][key];  // Ensure the object is fully loaded
-					if (obj && obj.parent) { // Check if the object is still part of the scene
-						if (obj.geometry) obj.geometry.dispose(); // Dispose resources
-						if (obj.material) obj.material.dispose();
-						globalState.scene.remove(obj);
-						delete globalState.loadedObjects[nvoUser][key];
-						// console.log(`Object removed from scene and state: ${key}`);
-					}
+                    try {
+                        const obj = await globalState.loadedObjects[nvoUser][key]; // Ensure the object is fully loaded
+
+                        // Iteratively remove all instances of the object from the scene
+                        while (obj && obj.parent) { // Check if the object is still part of the scene
+                            if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+                            if (obj.material) obj.material.dispose();
+                            globalState.scene.remove(obj);
+
+                            // After removing, check if the object still has a parent (i.e., still in the scene)
+                            // If yes, continue removing it
+                        }
+
+                        // Once all instances are removed, delete from loaded objects
+                        delete globalState.loadedObjects[nvoUser][key];
+                        // console.log(`All instances of object removed from scene and state: ${key}`);
+                    } catch (error) {
+                        console.error(`Error removing object ${key}:`, error);
+                    }
 				}
 			}
 		}
@@ -786,7 +951,7 @@ function plotHeatmap() {
     const hasVisibleUserID = Object.keys(globalState.show)
         .filter((userID) => globalState.show[userID])
         .map((userID) => `User${userID}`);
-	
+
 	const visibleHeatmapUsers = hasVisibleUserID.filter(userId => {
 		return userId in globalState.viewProps && globalState.viewProps[userId]["Heatmap"] === true;
 	});
@@ -798,7 +963,6 @@ function plotHeatmap() {
 	//remove evrything, TODO: Not optimal, IDEA: keep the old selected heatmap
 	Object.keys(globalState.heatmaps).forEach(userId => {
 		const userHeatmap = globalState.heatmaps[userId];
-		
 		if (userHeatmap) {
             userHeatmap.forEach(heatmap => {
                 if (heatmap.mesh){
@@ -820,7 +984,7 @@ function plotHeatmap() {
     const selectedActions = getSelectedTopics();
     const data = globalState.finalData;
     const gridSize = 50; // Adjust the size of the grid
-    const voxelSize = 0.1; // was 0.1 earlier 
+    const voxelSize = 0.1; // was 0.1 earlier
 
     const gridHelper = new THREE.GridHelper(gridSize * voxelSize, gridSize, 0x888888, 0x444444);
     gridHelper.position.set((gridSize * voxelSize) / 2, 0, (gridSize * voxelSize) / 2);
@@ -869,14 +1033,14 @@ function plotHeatmap() {
                         gz >= 0 &&
                         gz < gridSize
                     ) {
-                        heatmap[gx][gy][gz] += 1; 
+                        heatmap[gx][gy][gz] += 1;
                     }
                 }
             });
         });
         const smoothedHeatmap = applyGaussianBlur3D(heatmap);
         renderHeatmap(heatmap, user, voxelSize);
-        // console.log("here?"); 
+        // console.log("here?");
     });
 }
 
@@ -1049,6 +1213,7 @@ async function initializeScene() {
 		fetch(globalState.logFIlePath).then(response => response.json()),
 		  ]);
   globalState.finalData = finalData[0];
+
   updateNumUsers();
   initializeViewProps();
   window_onload();
@@ -1089,21 +1254,12 @@ async function initializeScene() {
 
 	setTimes(globalState.finalData);
 
-	const playPauseButton = document.createElement('div');
-	playPauseButton.id = 'playPauseButton';
-	playPauseButton.innerHTML = `
-<svg id="playIcon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play">
-  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-</svg>
-<svg id="pauseIcon" style="display:none;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pause">
-  <rect x="6" y="4" width="4" height="16"></rect>
-  <rect x="14" y="4" width="4" height="16"></rect>
-</svg>
-`;
-	document.getElementById('slider-container').appendChild(playPauseButton);
-	playPauseButton.addEventListener('click', function() {
-		toggleAnimation();
-	});
+    const playPauseButton = document.getElementById('playPauseButton');
+    // animateVisualization();
+    // playPauseButton.addEventListener('click', function() {
+    //     console.log("did ya come here?");
+    //     toggleAnimation();
+    // });
 
 }
 
@@ -1652,7 +1808,7 @@ function generateUserLegends(){
 
       const userCheckboxLabel = document.createElement('label');
       userCheckboxLabel.classList.add('user-checkbox');
-      
+
       const userCheckbox = document.createElement('input');
       userCheckbox.type = 'checkbox';
       userCheckbox.id = `toggle-user${i}`;
@@ -1709,17 +1865,17 @@ function generateUserLegends(){
 			const hasVisibleUserID = Object.keys(globalState.show)
 			.filter((userID) => globalState.show[userID])
 			.map((userID) => `User${userID}`);
-	
+
 		// Calculate the height dynamically based on the number of visible users and obContext length
 		const baseHeightPerUser = 49; // Base height for each expanded user (adjust based on your UI)
 		const obContextHeightPerItem = 28; // Height of each obContext item
-	
+
 		if (this.checked) {
 			// Expand the user checkbox, show the nested content
 			nestedDiv.classList.add('show');
 			userDiv.classList.remove('collapsed');
 			userDiv.classList.add('expanded');
-	
+
 			// Set the height dynamically based on visible users and obContext length
 			const expandHeight = 58;
 			legendContainer.style.height = `${expandHeight + (numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 1) * globalState.obContext.length * obContextHeightPerItem)}px`;
@@ -1728,7 +1884,7 @@ function generateUserLegends(){
 			nestedDiv.classList.remove('show');
 			userDiv.classList.remove('expanded');
 			userDiv.classList.add('collapsed');
-	
+
 			// Handle collapsed state: Adjust height dynamically based on the remaining visible users
 			const collapsedHeight = 0; // Adjust this based on your collapsed state height
 			legendContainer.style.height = `${(numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 2) * globalState.obContext.length * obContextHeightPerItem)}px`;
@@ -1741,24 +1897,24 @@ function generateUserLegends(){
 
 function handleContextChange(context, userId, isChecked) {
 	console.log(`Context ${context} for User ${userId} changed: ${isChecked}`);
-  
+
 	// Apply logic based on the context
 	switch (context) {
 	  case 'Object':
 		globalState.viewProps[userId]["Object"] = isChecked;
 		updateObjectsBasedOnSelections();
 		break;
-  
+
 	  case 'Context':
 		globalState.viewProps[userId]["Context"] = isChecked;
 		updatePointCloudBasedOnSelections();
 		break;
-  
+
 	  case 'Heatmap':
 		globalState.viewProps[userId]["Heatmap"] = isChecked;
 		plotHeatmap();
 		break;
-  
+
 	  default:
 		console.log("Handle other obContext here!");
 		break;
@@ -2238,11 +2394,11 @@ function displayInsights(insightsData) {
         const keySpan = document.createElement('span');
         keySpan.className = 'insight-key';
         keySpan.textContent = `#${key}`; // The insight number
-        
+
         // Create the topic text
         const topicText = document.createElement('span');
         topicText.textContent = insight.topic;
-        
+
         // Append key and topic to the topicElement
         topicElement.appendChild(keySpan);
         topicElement.appendChild(topicText);
@@ -2262,7 +2418,7 @@ function displayInsights(insightsData) {
 			if (!bookmark.empty()) {
 				const bookmarkDOM = document.getElementById(`bookmark-${key}`);
 				bookmarkDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		
+
 				bookmark.transition()
 					.duration(500)
 					.attr("fill", "green")
@@ -2344,8 +2500,6 @@ function getSelectedTopics() {
 
     return selectedActions;
 }
-
-
 
 function getCoordinates(spatial_extent){
 	const x = spatial_extent[0][2]; // UNITY Z
@@ -2596,7 +2750,7 @@ function createSpeechBox(action, subAction) {
 
 	const line1X = parseFloat(d3.select('#time-indicator-line1').attr('x1'));
 	const line2X = parseFloat(d3.select('#time-indicator-line2').attr('x1'));
-	const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1')); // Assuming both lines have the same y1
+	const yStart = parseFloat(d3.select('#time-indicator-line1').attr('y1'));
 	const yEnd = parseFloat(d3.select('#time-indicator-line1').attr('y2'));
 	const height = yEnd - yStart;
 	const xStart = Math.min(line1X, line2X);
@@ -2785,8 +2939,71 @@ function createSharedAxis() {
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
   }
+function animateTemporalView(timestamp) {
+    const svg = d3.select("#temporal-view");
+    if (!svg.empty()) {
+        let line1 = svg.select('#time-indicator-line1');
+        let circle1 = svg.select('#time-indicator-circle1');
+        let line2 = svg.select('#time-indicator-line2');
+        let circle2 = svg.select('#time-indicator-circle2');
+        const indicatorSVG = d3.select("#indicator-svg"); // Select the SVG containing the shaded area
+        const shadedArea = indicatorSVG.select(".shading")
+        if (!line1.empty() && !circle1.empty()) {
+            const margin = { left: 40 };
+            const alignX = 10;
+            let xPosition1 = Math.max(0, x(new Date(timestamp))) + margin.left + alignX;
+            line1.attr('x1', xPosition1)
+                .attr('x2', xPosition1);
+            circle1.attr('cx', xPosition1);
+        }
+        if (!line2.empty()) {
+            line2.style('display', 'none');
+        }
+        if (!circle2.empty()) {
+            circle2.style('display', 'none');
+        }
+        if (!shadedArea.empty()) {
+            shadedArea.style('display', 'none');
+        }
+    }
+}
+function updateAnimation(nextTimestamp) {
+    // Perform all the necessary updates in one function
+    animateTemporalView(nextTimestamp);
+    updateTimeDisplay(nextTimestamp, globalState.globalStartTime);
+    updateVisualization(nextTimestamp); // This will call updateUserDevice, updateLeftControl, and updateRightControl
+}
 
+function animateVisualization() {
+    const dataToVisualize = globalState.finalData;
+    if (!globalState.isAnimating || dataToVisualize.length === 0) return;
+    const globalStartTime = globalState.globalStartTime;
+    const globalEndTime = globalState.globalEndTime;
+    const totalTime = globalEndTime - globalStartTime;
+    const nextTimestamp = globalStartTime + globalState.currentTimestamp;
 
+    if (globalState.currentTimestamp < totalTime) {
+        const elapsedTime = globalState.currentTimestamp;
+        const binIndex = Math.floor(elapsedTime / globalState.intervalDuration);
+        globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
+        globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
+
+        // Call consolidated function
+        updateAnimation(nextTimestamp);
+
+        const slider = document.querySelector('#slider-container input[type=range]');
+        if (slider) {
+            slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
+        }
+
+        globalState.currentTimestamp += animationStep; // Maintain the animation step for continuity
+        requestAnimationFrame(animateVisualization);
+    } else {
+        globalState.isAnimating = false;
+        globalState.currentTimestamp = 0; // Reset for restart
+        toggleAnimation(); // Ensure this is still the correct function to handle the animation toggle
+    }
+}
 
 
 
@@ -2799,49 +3016,6 @@ function createSharedAxis() {
 
 	svg.select(".x-axis").call(xAxis); // Re-call the axis to update ticks
   }
-
-  function initializeInteraction() {
-    var raycaster = new THREE.Raycaster();
-    var mouse = new THREE.Vector2();
-    var isDragging = false;
-
-    // Set up event listeners on the renderer's DOM element
-    globalState.renderer.domElement.addEventListener('mousedown', function() {
-        isDragging = false;
-    }, false);
-
-    globalState.renderer.domElement.addEventListener('mousemove', function() {
-        isDragging = true;
-    }, false);
-
-    globalState.renderer.domElement.addEventListener('mouseup', function(event) {
-        if (!isDragging) {
-            // Normalize mouse position on click
-            mouse.x = (event.clientX / globalState.renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / globalState.renderer.domElement.clientHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, globalState.camera);
-
-            // Ensure globalState.triangleMesh arrays are initialized and iterable
-            // let interactiveObjects = (globalState.triangleMesh[0] || []).concat(globalState.triangleMesh[1] || []);
-			if (globalState.triangleMesh[0] && globalState.triangleMesh[1])
-			{
-
-				let interactiveObjects = [...globalState.triangleMesh[0], ...globalState.triangleMesh[1]];
-				var intersects = raycaster.intersectObjects(interactiveObjects, true);
-				console.log(intersects);
-				var clickableIntersects = intersects.filter(intersect => intersect.object.userData.type === 'clickableTriangle');
-
-				if (clickableIntersects.length > 0) {
-					console.log('Clicked on triangle:', clickableIntersects[0].object.userData.actorName);
-					// Handle the click event here
-					}
-			}
-		}
-
-        isDragging = false; // Reset the flag
-    }, false);
-}
 
 
 // camera.updateProjectionMatrix();
@@ -2856,6 +3030,8 @@ async function initialize() {
 	await initializeScene();
 	const binsDropdown = document.getElementById('binsDropdown');
 	globalState.bins = binsDropdown.value;
+    // const playPauseButton = document.getElementById('playPauseButton');
+	// const playPauseButtonHeight = playPauseButton.offsetHeight;
 
 	createSharedAxis();
 	createPlotTemporal();
@@ -2863,6 +3039,7 @@ async function initialize() {
 	generateHierToolBar();
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+    animateVisualization();
 
 
 	document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
@@ -2871,7 +3048,7 @@ async function initialize() {
 	});
 	// updateInterestBox();
 	initializeOrUpdateSpeechBox();
-    if(!logMode.infoVisCollab1){ 
+    if(!logMode.infoVisCollab1){
 	    plotLLMData();
     }
 
@@ -2882,22 +3059,19 @@ async function initialize() {
 	plotUserSpecificBarChart();
 	plotUserSpecificDurationBarChart();
 }
+
 initialize();
 globalState.camera.updateProjectionMatrix();
-initializeInteraction();
+// initializeInteraction();
 
 onWindowResize();
 // window.addEventListener('resize', onWindowResize, false);
 
 
 function animate() {
-	// console.log("hello?");
-	initializeInteraction();
-	// console.log("Hello again");
+	// initializeInteraction();
 	requestAnimationFrame(animate);
-	// console.log("BAZINGA");
 	globalState.controls.update();
-	// console.log(globalState.camera.position);
 	globalState.renderer.render(globalState.scene, globalState.camera);
 }
 export function getScene() {
