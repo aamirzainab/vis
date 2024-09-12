@@ -20,6 +20,16 @@ import {
 	Line2
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
 
+
+
+let logMode = {
+	vrGame: 1,
+	immersiveAnalytics: 0,
+	infoVisCollab: 0,
+	sceneNavigation: 0,
+	maintenance: 0
+}
+
 let video = false ;
 
 
@@ -27,7 +37,9 @@ let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 0;
+let uniqueUsers ;
 let uniqueActions ;
+let dynamicColorMapping ; 
 let x ;
 let yScale ;
 let intervals;
@@ -77,13 +89,7 @@ let globalState = {
 };
 
 
-let logMode = {
-	vrGame: 0,
-	immersiveAnalytics: 0,
-	infoVisCollab: 0,
-	sceneNavigation: 1,
-	maintenance: 0
-}
+
 
 const configData = await Promise.all([
 	fetch('config.json').then(response => response.json()),
@@ -736,6 +742,29 @@ function calculateDistance(point1, point2) {
     );
 }
 const distanceThreshold = 0.1;
+
+function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
+    const dynamicColorMapping = {};
+
+    // Iterate through each unique user
+    uniqueUsers.forEach(user => {
+        dynamicColorMapping[user] = {};
+        uniqueActions.forEach((action, index) => {
+            const actionKey = `Action${index + 1}`;  // Generate keys like Action1, Action2, etc.
+            if (userActionColors[user] && userActionColors[user][actionKey]) {
+                dynamicColorMapping[user][action] = userActionColors[user][actionKey];  // Assign color from predefined set
+            }
+        });
+    });
+
+    return dynamicColorMapping;
+}
+// const dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
+function getColorForUserAction(userID, actionName) {
+    console.log(userID,actionName);
+    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  // Default to white if not found
+}
+
 async function updateMarkersBasedOnSelections() {
     const data = globalState.finalData;  // The source data containing all actions
     const newFilteredActions = {};  // Object to keep track of filtered actions for each user
@@ -839,7 +868,8 @@ async function updateMarkersBasedOnSelections() {
                 if (!tooClose) {  // Only add the marker if it's not too close to existing markers (or not "Navigate")
                     // Create a sphere marker
                     const actionIndex = uniqueActions.indexOf(action.Name);
-                    const marker = createSphereMarker(actionIndex);  // Create a sphere marker with color
+                    // const marker = createSphereMarker(actionIndex);  // Create a sphere marker with color
+                    const marker = createSphereMarker(userID, action.Name); 
                     marker.position.set(location.x, location.y, location.z);
                     marker.name = `Marker_${key}`;
                     globalState.scene.add(marker);  // Add marker to the scene
@@ -851,28 +881,55 @@ async function updateMarkersBasedOnSelections() {
         });
     }
 }
-const colorScheme = ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6'];
+const userActionColors = {
+    "User1": {
+        "Action1": "#A8E6CF", // Light Green
+        "Action2": "#88DBC2", // Mint Green
+        "Action3": "#66CFAE", // Medium Green
+        "Action4": "#44C39A", // Green-Teal
+        "Action5": "#22B787", // Teal
+        "Action6": "#1EA175"  // Dark Teal
+    },
+    "User2": {
+        "Action1": "#4DD0E1", // Light Teal
+        "Action2": "#42BACE", // Teal
+        "Action3": "#36A1B8", // Deeper Teal
+        "Action4": "#2A87A0", // Medium Cyan
+        "Action5": "#1F6E88", // Dark Cyan
+        "Action6": "#155571"  // Dark Blue-Teal
+    },
+    "User3": {
+        "Action1": "#1E88E5", // Light Blue
+        "Action2": "#1876CD", // Medium Blue
+        "Action3": "#1462B4", // Darker Blue
+        "Action4": "#104F9B", // Navy Blue
+        "Action5": "#0D3C82", // Dark Navy
+        "Action6": "#09296A"  // Deep Navy
+    }
+};
 
-function createSphereMarker(actionIndex) {
+function createSphereMarker(userID, actionName) {
     const radius = 0.03;  // Reduced size for better visualization
     const widthSegments = 32;
     const heightSegments = 32;
 
+    // Get color based on user ID and action name
+    const color = getColorForUserAction(userID, actionName);
+
     // Create sphere geometry
     const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
 
-    // Material with color based on action index
-    const markerMaterial = new THREE.MeshBasicMaterial({
-        color: colorScheme[actionIndex % colorScheme.length],  // Use color from scheme
-        transparent: false,
-        opacity: 0.5
+    // Material with color based on user ID and action
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: color,  // Use color from dynamicColorMapping
+        transparent: false, 
+        opacity: 0.8  // Set opacity to 80%
     });
-
+    
     const sphereMesh = new THREE.Mesh(sphereGeometry, markerMaterial);
 
     return sphereMesh;
 }
-
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
@@ -1754,9 +1811,11 @@ export function dragged(event,d) {
 
 
 function updateNumUsers(){
-	const uniqueUsers = new Set(globalState.finalData.map(action => action.User));
+	uniqueUsers = new Set(globalState.finalData.map(action => action.User));
 	numUsers = uniqueUsers.size;
     uniqueActions = Array.from(new Set(globalState.finalData.map(action => action.Name)));
+    dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
+    console.log(dynamicColorMapping);
 	updateGlobalShow();
 }
 
