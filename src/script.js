@@ -123,10 +123,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]);
-
-    // 264653
-    // FF0000
+    .range(["#a8e6cf", "#4dd0e1", "#1e88e5", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -1658,7 +1655,7 @@ function createLines(timestamp1, timestamp2) {
 	circle1.call(drag);
 	circle2.call(drag);
 	updateRangeDisplay(timestamp1,timestamp2);
-	// updateXRSnapshot();
+	updateXRSnapshot();
 	for (let i = 0; i < numUsers; i++) {
         updateUserDevice(i);
         updateLeftControl(i);
@@ -1728,7 +1725,7 @@ export function dragged(event,d) {
     const timeStamp1 = new Date(globalState.lineTimeStamp1);
     const timeStamp2 = globalState.lineTimeStamp2;
     updateRangeDisplay(timeStamp1, timeStamp2);
-	// updateXRSnapshot();
+	updateXRSnapshot();
 
     initializeOrUpdateSpeechBox();
 
@@ -2717,6 +2714,126 @@ function initializeOrUpdateSpeechBox() {
     });
 }
 
+function updateXRSnapshot(){
+	const container = document.getElementById('user-xr-snapshot');
+	container.innerHTML = ''; // Clear previous content
+
+	// Create a title element
+	const titleElement = document.createElement('div');
+	titleElement.style.textAlign = 'center';
+	titleElement.style.marginBottom = '8px';
+	titleElement.id = 'imageTitle';
+	container.appendChild(titleElement);
+
+	const data = globalState.finalData;
+	const visibleUserIDs = Object.keys(globalState.show).filter(userID => globalState.show[userID]);
+	const selectedActions = getSelectedTopics();
+	let imgPaths = [];
+
+	let actionsToDisplay = data.filter(action => {
+		const hasVisibleUserID = visibleUserIDs.some(userID => action.User.includes(userID));
+		const filteredSubActions = action.Data.filter(subAction => {
+			const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+			const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+	
+			const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && 
+				actionStartTime <= globalState.lineTimeStamp2;
+
+			const containsPng = subAction.ActionReferentBody && subAction.ActionReferentBody.includes("png");
+	
+			if (isInTimeRange && containsPng) {
+				imgPaths.push(subAction.ActionReferentBody); // Add to imgPaths if it contains 'png'
+			}
+	
+			return isInTimeRange && containsPng;
+		});
+	
+		return hasVisibleUserID && selectedActions.includes(action.Name) && filteredSubActions.length > 0;
+	});
+
+	if (imgPaths.length >= 1) {
+		container.style.display = 'block';
+		const imageWrapper = document.createElement('div');
+		imageWrapper.style.position = 'relative';
+		// imageWrapper.style.maxWidth = '500px'; // Limit the max width
+		imageWrapper.style.maxWidth = '99%';  // Set max width to 100% of the container
+        imageWrapper.style.maxHeight = '95%';  // Set max height to 100% of the container
+		imageWrapper.style.margin = 'auto';
+		imageWrapper.style.overflow = 'hidden'; // Ensures the content doesn't overflow
+		imageWrapper.style.textAlign = 'center'; // Center the arrows relative to the image
+	
+		imgPaths.forEach((imagePath, index) => {
+			imagePath = globalState.objFilePath + '\\' + imagePath;
+			const img = document.createElement('img');
+			img.src = imagePath;
+			img.alt = "Raw Capture Image";
+			img.style.maxWidth = '99%';
+			img.style.maxHeight = '100%'; // Ensure it fits vertically too
+			img.style.objectFit = 'contain';
+			img.style.borderRadius = '8px';
+			img.style.display = index === 0 ? 'block' : 'none';
+			imageWrapper.appendChild(img);
+		});
+	
+		container.appendChild(imageWrapper);
+	
+		addNavigationArrows(imageWrapper, imgPaths);
+	} else {
+		// titleElement.innerHTML = 'No images available!';
+		container.style.display = 'none';
+	}
+}
+
+function addNavigationArrows(imageWrapper, imgPaths) {
+	const prevArrow = document.createElement('button');
+	prevArrow.innerHTML = '&#10094;';
+	prevArrow.style.position = 'absolute';
+	prevArrow.style.top = '50%';
+	prevArrow.style.left = '1px';
+	prevArrow.style.transform = 'translateY(-50%)'; // Center vertically
+	prevArrow.style.fontSize = '2em'; // Adjust size relative to image
+	prevArrow.style.background = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent background
+	prevArrow.style.color = 'white'; // Arrow color
+	prevArrow.style.border = 'none'; // Remove border
+	prevArrow.style.padding = '1px';
+	prevArrow.style.cursor = 'pointer';
+	prevArrow.style.zIndex = '10';
+
+	const nextArrow = document.createElement('button');
+	nextArrow.innerHTML = '&#10095;';
+	nextArrow.style.position = 'absolute';
+	nextArrow.style.top = '50%';
+	nextArrow.style.right = '1px';
+	nextArrow.style.transform = 'translateY(-50%)';
+	nextArrow.style.fontSize = '2em';
+	nextArrow.style.background = 'rgba(0, 0, 0, 0.5)';
+	nextArrow.style.color = 'white';
+	nextArrow.style.border = 'none';
+	nextArrow.style.padding = '5px';
+	nextArrow.style.cursor = 'pointer';
+	nextArrow.style.zIndex = '10';
+
+	let currentIndex = 0;
+	prevArrow.onclick = () => {
+	  currentIndex = (currentIndex - 1 + imgPaths.length) % imgPaths.length;
+	  changeImage(currentIndex, imageWrapper, imgPaths);
+	};
+
+	nextArrow.onclick = () => {
+	  currentIndex = (currentIndex + 1) % imgPaths.length;
+	  changeImage(currentIndex, imageWrapper, imgPaths);
+	};
+
+	imageWrapper.appendChild(prevArrow);
+	imageWrapper.appendChild(nextArrow);
+}
+
+function changeImage(index, imageWrapper, imgPaths) {
+	Array.from(imageWrapper.getElementsByTagName('img')).forEach((img, imgIndex) => {
+		img.style.display = imgIndex === index ? 'block' : 'none';
+	});
+}
+
 function formatLocation(locationString) {
     const location = parseLocation(locationString);
 
@@ -2922,6 +3039,7 @@ function createSpeechBox(action, subAction) {
         updatePointCloudBasedOnSelections();
         updateMarkersBasedOnSelections();
 		initializeOrUpdateSpeechBox();
+		updateXRSnapshot();
     };
 
     const drag = d3.drag()

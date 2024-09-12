@@ -341,12 +341,13 @@ html, body {
     left: 1518px;
     width: 400px;
     height: 250px;
-    background-color: #fff;
+    background-color: rgba(255,255,255,0.1);
     border: 1px solid #ccc;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 5px;
+    border-radius: 8px;
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    /* padding: 5px; */
     z-index: 101;
-    display: none;
+    display: block;
 }
 
 #plot-box3 {
