@@ -394,9 +394,10 @@ html, body {
     color: #666;
     margin-right: 10px;
     padding: 3px 6px;
-    background-color: #f0f0f0;
+    background-color: rgba(255, 152, 0, 0.7);
     border-radius: 4px;
     font-weight: bold;
+    cursor: pointer;
 }
 
 .insight-content {
