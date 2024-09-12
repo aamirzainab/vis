@@ -2856,6 +2856,7 @@ function createSpeechBox(action, subAction) {
         updateObjectsBasedOnSelections();
         updatePointCloudBasedOnSelections();
         updateMarkersBasedOnSelections();
+		initializeOrUpdateSpeechBox();
     };
 
     const drag = d3.drag()
