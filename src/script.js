@@ -27,6 +27,7 @@ let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 0;
+let uniqueActions ; 
 let x ;
 let yScale ;
 let intervals;
@@ -72,15 +73,15 @@ let globalState = {
 	viewProps: {},
 	obContext: [],
     markers:{},
-    isAnimating: false
+    isAnimating: video
 };
 
 
 let logMode = {
 	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 0,
-	sceneNavigation: 1,
+	infoVisCollab: 1,
+	sceneNavigation: 0,
 	maintenance: 0
 }
 
@@ -122,7 +123,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]);
+    .range(["#76C7C0", "#3B6978", "#FF0000", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -169,7 +170,7 @@ export function updateIntervals() {
   plotUserSpecificBarChart();
   plotUserSpecificDurationBarChart();
   updateObjectsBasedOnSelections();
-  plotHeatmap();
+//   plotHeatmap();
   updateMarkersBasedOnSelections();
 }
 
@@ -353,7 +354,7 @@ function toggleInstanceRange(selectedOption){
 			plotUserSpecificBarChart();
 			plotUserSpecificDurationBarChart();
 
-			plotHeatmap();
+			// plotHeatmap();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
             updateMarkersBasedOnSelections();
@@ -738,7 +739,7 @@ async function updateMarkersBasedOnSelections() {
         .map(userID => `User${userID}`);
 
     const visibleObjectUsers = selectedUsers.filter(userId => {
-        return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
+        return userId in globalState.viewProps && globalState.viewProps[userId]["Tracemap"] === true;
     });
 
     // Initialize filtered actions for visible users
@@ -764,26 +765,41 @@ async function updateMarkersBasedOnSelections() {
         }
     }
 
-    // Unload markers that are no longer needed
-    for (const userID of Object.keys(globalState.markers || {})) {
-        for (const key of Object.keys(globalState.markers[userID] || {})) {
-            const markerExists = newFilteredActions[userID]?.some(filteredAction => {
-                const { subAction } = filteredAction;
-                const keyForCheck = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
-                return keyForCheck === key;
-            });
+// Unload markers that are no longer needed
+for (const userID of Object.keys(globalState.markers || {})) {
+    for (const key of Object.keys(globalState.markers[userID] || {})) {
+        const markerExists = newFilteredActions[userID]?.some(filteredAction => {
+            const { subAction } = filteredAction;
+            const keyForCheck = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
+            return keyForCheck === key;
+        });
 
-            if (!markerExists) {
-                const marker = globalState.markers[userID][key];
-                if (marker) {
-                    globalState.scene.remove(marker);  // Remove the marker from the scene
-                    marker.geometry.dispose();  // Dispose of the geometry
-                    marker.material.dispose();  // Dispose of the material
-                    delete globalState.markers[userID][key];  // Remove from global state
-                }
+        if (!markerExists) {
+            const markerGroup = globalState.markers[userID][key];  // This is a THREE.Group containing the shape and border
+
+            if (markerGroup) {
+                // Remove the marker group from the scene
+                globalState.scene.remove(markerGroup);
+
+                // Dispose of each child in the group (shape mesh and border mesh)
+                markerGroup.children.forEach(child => {
+                    if (child.geometry) {
+                        child.geometry.dispose();  // Dispose of the geometry
+                    }
+                    if (child.material) {
+                        child.material.dispose();  // Dispose of the material
+                    }
+                });
+
+                // Clear the group from memory
+                markerGroup.clear();
+                
+                // Remove reference from global state
+                delete globalState.markers[userID][key];
             }
         }
     }
+}
 
     // Place new markers for filtered actions
     for (const userID of Object.keys(newFilteredActions)) {
@@ -797,7 +813,8 @@ async function updateMarkersBasedOnSelections() {
                 const location = parseLocation(subAction.ActionInvokeLocation);  // Use the actual data to find location
 
                 // Create a triangular marker
-                const marker = createTriangleMarker(userID);
+                const actionIndex = uniqueActions.indexOf(action.Name);  
+                const marker = createShapeMarker(userID, actionIndex); 
                 marker.position.set(location.x, location.y, location.z);
                 marker.name = `Marker_${key}`;
                 globalState.scene.add(marker);  // Add marker to the scene
@@ -808,23 +825,181 @@ async function updateMarkersBasedOnSelections() {
         });
     }
 }
+function createShapeMarker(userID, actionIndex) {
+    const shapes = [createTriangleMarker, createSquareMarker, createCircleMarker, createHexagonMarker, createStarMarker];  // Define shape functions
+    const shapeFunction = shapes[actionIndex % shapes.length];  // Cycle through shapes
+    return shapeFunction(userID);
+}
 
 function createTriangleMarker(userID) {
     const triangleShape = new THREE.Shape();
-    triangleShape.moveTo(0, -0.05);  // Bottom vertex (now pointing downwards)
-    triangleShape.lineTo(-0.05, 0.05);  // Top left vertex
-    triangleShape.lineTo(0.05, 0.05);  // Top right vertex
-    triangleShape.lineTo(0, -0.05);  // Close the triangle
-    const extrudeSettings = { depth: 0.01, bevelEnabled: false };
-    const triangleGeometry = new THREE.ExtrudeGeometry(triangleShape, extrudeSettings);
+    triangleShape.moveTo(0, -0.035);  // Bottom vertex (reduced by ~30%)
+    triangleShape.lineTo(-0.035, 0.035);  // Top left vertex (reduced by ~30%)
+    triangleShape.lineTo(0.035, 0.035);  // Top right vertex (reduced by ~30%)
+    triangleShape.lineTo(0, -0.035);  // Close the triangle
+    const triangleGeometry = new THREE.ShapeBufferGeometry(triangleShape);
 
-    // Material for the triangle marker
-    const markerMaterial = new THREE.MeshBasicMaterial({ color: colorScale(userID) });  // Customize marker color here
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: colorScale(userID), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.7  // Set opacity to 70%
+    });
+    
+    const triangleMesh = new THREE.Mesh(triangleGeometry, markerMaterial);
 
-    return new THREE.Mesh(triangleGeometry, markerMaterial);
+    // Create border using EdgesGeometry
+    const triangleBorder = new THREE.EdgesGeometry(triangleGeometry);
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
+    const borderMesh = new THREE.LineSegments(triangleBorder, borderMaterial);
+
+    // Combine triangle and border
+    const group = new THREE.Group();
+    group.add(triangleMesh);
+    // group.add(borderMesh);
+
+    return group;
 }
 
+// Helper function to create a 2D square marker with a border
+function createSquareMarker(userID) {
+    const squareShape = new THREE.Shape();
+    squareShape.moveTo(-0.035, 0.035);  // Top left vertex (reduced by ~30%)
+    squareShape.lineTo(0.035, 0.035);  // Top right vertex (reduced by ~30%)
+    squareShape.lineTo(0.035, -0.035);  // Bottom right vertex (reduced by ~30%)
+    squareShape.lineTo(-0.035, -0.035);  // Bottom left vertex (reduced by ~30%)
+    squareShape.lineTo(-0.035, 0.035);  // Close the square
+    const squareGeometry = new THREE.ShapeBufferGeometry(squareShape);
 
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: colorScale(userID), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.7  // Set opacity to 70%
+    });
+    const squareMesh = new THREE.Mesh(squareGeometry, markerMaterial);
+
+    // Create border using EdgesGeometry
+    const squareBorder = new THREE.EdgesGeometry(squareGeometry);
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
+    const borderMesh = new THREE.LineSegments(squareBorder, borderMaterial);
+
+    // Combine square and border
+    const group = new THREE.Group();
+    group.add(squareMesh);
+    // group.add(borderMesh);
+
+    return group;
+}
+
+// Helper function to create a 2D circle marker with a border
+function createCircleMarker(userID) {
+    const circleShape = new THREE.Shape();
+    circleShape.absarc(0, 0, 0.035, 0, Math.PI * 2, false);
+    const circleGeometry = new THREE.ShapeBufferGeometry(circleShape);
+
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: colorScale(userID), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.7  // Set opacity to 70%
+    });
+    const circleMesh = new THREE.Mesh(circleGeometry, markerMaterial);
+
+    // Create border using EdgesGeometry
+    const circleBorder = new THREE.EdgesGeometry(circleGeometry);
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
+    const borderMesh = new THREE.LineSegments(circleBorder, borderMaterial);
+
+    // Combine circle and border
+    const group = new THREE.Group();
+    group.add(circleMesh);
+    // group.add(borderMesh);
+
+    return group;
+}
+
+// Helper function to create a 2D hexagon marker with a border
+function createHexagonMarker(userID) {
+    const hexagonShape = new THREE.Shape();
+    const radius = 0.035; 
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) {
+            hexagonShape.moveTo(x, y);
+        } else {
+            hexagonShape.lineTo(x, y);
+        }
+    }
+    hexagonShape.closePath();
+
+    const hexagonGeometry = new THREE.ShapeBufferGeometry(hexagonShape);
+
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: colorScale(userID), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.7  // Set opacity to 70%
+    });
+    const hexagonMesh = new THREE.Mesh(hexagonGeometry, markerMaterial);
+
+    // Create border using EdgesGeometry
+    const hexagonBorder = new THREE.EdgesGeometry(hexagonGeometry);
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
+    const borderMesh = new THREE.LineSegments(hexagonBorder, borderMaterial);
+
+    // Combine hexagon and border
+    const group = new THREE.Group();
+    group.add(hexagonMesh);
+    // group.add(borderMesh);
+
+    return group;
+}
+
+// Helper function to create a 2D star marker with a border
+function createStarMarker(userID) {
+    const starShape = new THREE.Shape();
+    const outerRadius = 0.035;  // Reduced by ~30%
+    const innerRadius = 0.018;  // Reduced by ~30%
+    const spikes = 5;
+
+    for (let i = 0; i < spikes * 2; i++) {
+        const angle = (i / (spikes * 2)) * Math.PI * 2;
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) {
+            starShape.moveTo(x, y);
+        } else {
+            starShape.lineTo(x, y);
+        }
+    }
+    starShape.closePath();
+
+    const starGeometry = new THREE.ShapeBufferGeometry(starShape);
+
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: colorScale(userID), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.7  // Set opacity to 70%
+    });
+    const starMesh = new THREE.Mesh(starGeometry, markerMaterial);
+
+    // Create border using EdgesGeometry
+    const starBorder = new THREE.EdgesGeometry(starGeometry);
+    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
+    const borderMesh = new THREE.LineSegments(starBorder, borderMaterial);
+
+    // Combine star and border
+    const group = new THREE.Group();
+    group.add(starMesh);
+    // group.add(borderMesh);
+
+    return group;
+}
 
 
 async function updateObjectsBasedOnSelections() {
@@ -958,6 +1133,7 @@ async function updateObjectsBasedOnSelections() {
 }
 
 function plotHeatmap() {
+    return ; 
 
     const hasVisibleUserID = Object.keys(globalState.show)
         .filter((userID) => globalState.show[userID])
@@ -1283,7 +1459,7 @@ async function initializeScene() {
             playPauseButton.style.display = 'block';
           }
         playPauseButton.addEventListener('keydown', function (event) {
-            if (event.code === 'Space') { // Check if space bar is pressed
+            if (event.code === 'Space') { 
               console.log("Space bar pressed on button");
               toggleAnimation(); // Toggle play/pause state
               event.preventDefault(); // Prevent default space bar behavior (scrolling down)
@@ -1681,7 +1857,7 @@ export function dragged(event,d) {
 
     initializeOrUpdateSpeechBox();
 
-	plotHeatmap();
+	// plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
@@ -1703,9 +1879,12 @@ export function dragged(event,d) {
 }
 
 //updates the numUsers as soon as on log read
+
+
 function updateNumUsers(){
 	const uniqueUsers = new Set(globalState.finalData.map(action => action.User));
 	numUsers = uniqueUsers.size;
+    uniqueActions = Array.from(new Set(globalState.finalData.map(action => action.Name))); 
 	updateGlobalShow();
 }
 
@@ -1809,7 +1988,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
 
-		plotHeatmap();
+		// plotHeatmap();
 
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
@@ -1933,9 +2112,10 @@ function handleContextChange(context, userId, isChecked) {
 		updatePointCloudBasedOnSelections();
 		break;
 
-	  case 'Heatmap':
-		globalState.viewProps[userId]["Heatmap"] = isChecked;
-		plotHeatmap();
+	  case 'Tracemap':
+		globalState.viewProps[userId]["Tracemap"] = isChecked;
+        updateMarkersBasedOnSelections();
+		// plotHeatmap();
 		break;
 
 	  default:
@@ -2575,9 +2755,11 @@ function parseTimeToMillis(customString) {
 //   return date.getTime();
 }
 
-// function updateSpatialView(nextTimestamp){
+function updateSpatialView(nextTimestamp){
 
-// }
+    return ; 
+
+}
 
 function parseDurationToMillis(durationString) {
     // Split the string by underscores
@@ -2750,14 +2932,22 @@ function createSpeechBox(action, subAction) {
     `;
 	}
 	else{
-        // ${formattedLocation}<br>
-    	otherDetails = `
-        <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
-        <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
-        <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
-        <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
-    `;
-	}
+        if (subAction.ActionReferentBody){
+            otherDetails = `
+            <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
+            <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
+            <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
+            <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
+            `;
+            }
+            else {
+            otherDetails = `
+            <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
+            <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
+            <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
+            `;
+            }
+        }
 	details.appendChild(intentDiv);
     details.innerHTML += otherDetails;
 
@@ -2840,7 +3030,7 @@ function createSpeechBox(action, subAction) {
             updateRightControl(i);
         }
 
-        plotHeatmap();
+        // plotHeatmap();
         updatePointCloudBasedOnSelections();
         updateObjectsBasedOnSelections();
         updateMarkersBasedOnSelections();
@@ -2852,7 +3042,7 @@ function createSpeechBox(action, subAction) {
         generateHierToolBar();
         plotUserSpecificBarChart();
         plotUserSpecificDurationBarChart();
-        plotHeatmap();
+        // plotHeatmap();
         updateObjectsBasedOnSelections();
         updatePointCloudBasedOnSelections();
         updateMarkersBasedOnSelections();
@@ -3146,7 +3336,7 @@ async function initialize() {
 	    plotLLMData();
     }
 
-	plotHeatmap();
+	// plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();

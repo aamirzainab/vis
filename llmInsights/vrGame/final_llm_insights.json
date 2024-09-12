@@ -1,12 +1,13 @@
 {
     "1": {
         "topic": "Frequent Interaction with Red Cubes",
-        "insight": "Both User1 and User2 frequently interacted with red cubes, indicating a strong preference or task focus on these objects. This was evident from multiple timestamps such as \"240910_014120_164000\", \"240910_014125_701000\", \"240910_014359_804000\", and \"240910_014457_322000\".",
+        "insight": "Users frequently interacted with red cubes, often using a ray selector to grab them. These cubes were often positioned among other colorful objects, indicating a preference or task involving red cubes. The consistent interaction suggests a focused task or interest in these objects.",
         "timestamps": [
-            "240910_014120_164000",
-            "240910_014125_701000",
-            "240910_014359_804000",
-            "240910_014457_322000"
+            "240910_014126_064000",
+            "240910_014127_065000",
+            "240910_014127_803000",
+            "240910_014503_705000",
+            "240910_014504_707000"
         ],
         "analyses": [
             "user_analysis",
@@ -14,11 +15,13 @@
         ]
     },
     "2": {
-        "topic": "Yellow Cube as a Central Focus",
-        "insight": "Yellow cubes were frequently gazed at by both users, suggesting they were central or prominent in the virtual environment. Notable timestamps include \"240910_014144_699000\" and \"240910_014516_838000\".",
+        "topic": "Prominent Focus on Yellow Spheres",
+        "insight": "Users frequently gazed at and grabbed yellow spheres. These spheres were often positioned in mid-air or among other yellow objects, indicating a specific focus on brightly colored, spherical objects. The consistent interaction suggests they were a significant part of the users' tasks or interests.",
         "timestamps": [
-            "240910_014144_699000",
-            "240910_014516_838000"
+            "240910_014516_838000",
+            "240910_014517_698000",
+            "240910_014518_853000",
+            "240910_014518_965000"
         ],
         "analyses": [
             "user_analysis",
@@ -26,23 +29,24 @@
         ]
     },
     "3": {
-        "topic": "Diverse Object Colors and Shapes",
-        "insight": "Users interacted with a variety of colored objects, including blue cubes, green spheres, and orange cubes. This diversity suggests a rich and varied virtual environment. Examples include interactions with a blue sphere at \"240910_014123_698000\" and a green sphere at \"240910_014403_117000\".",
+        "topic": "Interaction with Blue Spheres",
+        "insight": "Both users interacted with blue spheres, often using a ray selector to grab them. The blue spheres were typically floating in mid-air, indicating a specific interaction type. The blue spheres were a common target for both users, suggesting a shared task or interest in these objects.",
         "timestamps": [
             "240910_014123_698000",
-            "240910_014403_117000"
+            "240910_014213_492000",
+            "240910_014547_534000"
         ],
         "analyses": [
-            "user_analysis",
-            "action_analysis"
+            "user_analysis"
         ]
     },
     "4": {
-        "topic": "Prominent Blue Cubes",
-        "insight": "Blue cubes were another common focus, indicating their significance in the users' tasks or environment. Interactions were noted at timestamps like \"240910_014226_266000\" and \"240910_014354_343000\".",
+        "topic": "Grabbing Green Cubes",
+        "insight": "Users frequently grabbed green cubes using a ray selector. These cubes were often positioned among other green objects, indicating a focused interaction. The repeated grabbing suggests they were a key part of the users' tasks or interests.",
         "timestamps": [
-            "240910_014226_266000",
-            "240910_014354_343000"
+            "240910_014437_305000",
+            "240910_014529_822000",
+            "240910_014530_101000"
         ],
         "analyses": [
             "user_analysis",
@@ -50,11 +54,12 @@
         ]
     },
     "5": {
-        "topic": "Green Spheres and Cubes",
-        "insight": "Green objects, both spheres and cubes, were frequently interacted with, suggesting they were either part of a specific task or visually distinct enough to attract attention. Notable interactions occurred at \"240910_014154_666000\" and \"240910_014403_117000\".",
+        "topic": "Interaction with Orange Cubes",
+        "insight": "Both users interacted with orange cubes, often using a ray selector to grab them. The orange cubes were prominently positioned, indicating a specific interaction type. The orange cubes were a common target for both users, suggesting a shared task or interest in these objects.",
         "timestamps": [
-            "240910_014154_666000",
-            "240910_014403_117000"
+            "240910_014416_327000",
+            "240910_014526_117000",
+            "240910_014526_472000"
         ],
         "analyses": [
             "user_analysis",
@@ -62,62 +67,62 @@
         ]
     },
     "6": {
-        "topic": "Interaction with Floating Objects",
-        "insight": "Users often gazed at floating objects, such as spheres and cubes, indicating that these objects were a significant part of the virtual environment's design. Examples include interactions at \"240910_014123_698000\" and \"240910_014516_838000\".",
+        "topic": "Gazing at Yellow Cubes",
+        "insight": "Users frequently gazed at yellow cubes, which were often surrounded by other colorful cubes. The yellow cubes were prominently positioned, drawing the users' attention. The consistent focus suggests they were a significant part of the users' tasks or interests.",
         "timestamps": [
-            "240910_014123_698000",
-            "240910_014516_838000"
+            "240910_014124_699000",
+            "240910_014224_027000",
+            "240910_014225_095000"
         ],
         "analyses": [
-            "user_analysis",
-            "action_analysis"
+            "user_analysis"
         ]
     },
     "7": {
-        "topic": "Orange Cubes as Secondary Focus",
-        "insight": "Orange cubes were also a point of interaction, though less frequent than red or yellow cubes, suggesting they were likely secondary in importance or less prominent. Interactions were noted at \"240910_014147_065000\" and \"240910_014525_971000\".",
+        "topic": "Interaction with Green Spheres",
+        "insight": "Both users interacted with green spheres, often using a ray selector to grab them. The green spheres were typically floating in mid-air, indicating a specific interaction type. The green spheres were a common target for both users, suggesting a shared task or interest in these objects.",
         "timestamps": [
-            "240910_014147_065000",
-            "240910_014525_971000"
+            "240910_014213_492000",
+            "240910_014547_534000",
+            "240910_014548_684000"
         ],
         "analyses": [
-            "user_analysis",
-            "action_analysis"
+            "user_analysis"
         ]
     },
     "8": {
-        "topic": "Patterns in Object Arrangement",
-        "insight": "The arrangement of objects, such as clusters or stacks, influenced user interaction. For example, User1 interacted with stacked red cubes at \"240910_014136_391000\", and User2 with clustered blue cubes at \"240910_014539_306000\".",
+        "topic": "Frequent Interaction with Blue Cubes",
+        "insight": "Users frequently interacted with blue cubes, often using ray selectors to grab them from a distance. The blue cubes were often part of clusters with other blue shapes, indicating a pattern of focusing on blue objects within a group.",
         "timestamps": [
-            "240910_014136_391000",
-            "240910_014539_306000"
+            "240910_014536_328000",
+            "240910_014536_857000",
+            "240910_014547_534000"
         ],
         "analyses": [
-            "user_analysis",
             "action_analysis"
         ]
     },
     "9": {
-        "topic": "Consistent Gaze Duration",
-        "insight": "Both users had consistent gaze durations on objects, typically more than 1 second, indicating a pattern in how long they focused on each object. Examples include \"240910_014120_164000\" and \"240910_014516_838000\".",
+        "topic": "Direct Grabbing vs. Ray Selector",
+        "insight": "Users employed both direct grabbing and ray selectors to interact with objects. Direct grabbing was often used for objects within immediate reach, while ray selectors were used for distant objects, indicating a pattern of choosing the most efficient interaction method based on object proximity.",
         "timestamps": [
-            "240910_014120_164000",
-            "240910_014516_838000"
+            "240910_014514_998000",
+            "240910_014519_689000"
         ],
         "analyses": [
-            "user_analysis",
             "action_analysis"
         ]
     },
     "10": {
-        "topic": "Sequential Interaction with Similar Objects",
-        "insight": "Users often interacted with similar objects in sequence, such as multiple red cubes or blue cubes, indicating a pattern of exploring similar items before moving on to different ones. Examples include \"240910_014120_164000\" and \"240910_014122_459000\".",
+        "topic": "Interaction with Multiple Colored Objects",
+        "insight": "Both users interacted with multiple colored objects, including red, yellow, blue, green, and orange. These objects were often positioned among other colorful objects, indicating a diverse interaction. The interaction with multiple colored objects suggests a complex task or interest involving various colors and shapes.",
         "timestamps": [
-            "240910_014120_164000",
-            "240910_014122_459000"
+            "240910_014126_064000",
+            "240910_014127_065000",
+            "240910_014127_803000"
         ],
         "analyses": [
-            "action_analysis"
+            "user_analysis"
         ]
     }
 }
