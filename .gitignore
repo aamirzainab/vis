@@ -14,3 +14,5 @@ obj/
 240902_150815/
 .DS_Store
 src/Tasks.md
+logs/infoVisCollab/Processed_Log_test.json
+logs/vrGame/Processed_Log_EXR_VR_Game_oldie.json

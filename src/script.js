@@ -20,9 +20,12 @@ import {
 	Line2
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
 
-let video = true ;
+let video = false ;
 
-
+//origin is = 
+//origin is = 
+// let origin = parseLocation("0.8530421,0.04346559,0.1748144,34.43481,341.7184,359.0189");
+// console.log(origin); 
 
 let speechEnabled = false;
 let xrInteractionEnabled = false;
@@ -76,7 +79,6 @@ let globalState = {
 };
 
 
-// Switch mode here, keep only one as 1 and rest 0
 let logMode = {
 	vrGame: 1,
 	immersiveAnalytics: 0,
@@ -170,6 +172,7 @@ export function updateIntervals() {
   plotUserSpecificBarChart();
   plotUserSpecificDurationBarChart();
   updateObjectsBasedOnSelections();
+  plotHeatmap();
 }
 
 function changeBinSize(newBinSize) {
@@ -203,9 +206,6 @@ function changeBinSize(newBinSize) {
 	console.log('Bin size changed to:', e.detail.size, 'Unit:', e.detail.unit);
   });
 
-
-
-
 async function loadAvatarModel(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
@@ -232,7 +232,7 @@ async function loadHand(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
 	const avatar = gltf.scene;
-	avatar.rotation.set(0, 0, 0);
+	// avatar.rotation.set(0, 0, 0);
 	avatar.scale.set(2, 2, 2);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
@@ -371,157 +371,6 @@ function updateVisualization(nextTimestamp) {
         updateRightControl(i, nextTimestamp);
     }
 }
-function updateUserDevice1(userId, timestamp) {
-    const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
-    let deviceType = '';
-
-    if (logMode.vrGame || logMode.immersiveAnalytics) {
-        deviceType = 'XRHMD';
-    } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance) {
-        deviceType = 'HandheldARInputDevice';
-    } else {
-        console.warn('Unsupported log mode.');
-        return;
-    }
-
-    const navigateActions = globalState.finalData.filter(action =>
-        action.Name === 'Navigate' &&
-        action.TriggerSource === deviceType &&
-        action.User === userField
-    );
-
-    const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime === timestamp) {  // Check if the subAction timestamp matches the given timestamp
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime
-                });
-            }
-        });
-    });
-
-    // Update avatars
-    allSubActions.forEach(subAction => {
-        const location = parseLocation(subAction.ActionInvokeLocation);
-        if (globalState.avatars[userId]) {
-            globalState.avatars[userId].position.set(location.x, location.y, location.z);
-            const euler = new THREE.Euler(
-                THREE.MathUtils.degToRad(location.pitch),
-                THREE.MathUtils.degToRad(location.yaw),
-                THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
-            );
-            globalState.avatars[userId].setRotationFromEuler(euler);
-        }
-    });
-}
-function updateLeftControl1(userId, timestamp) {
-    const userField = `User${userId + 1}`;
-    let actionName, deviceType;
-
-    if (logMode.immersiveAnalytics) {
-        actionName = 'Move Hand';
-        deviceType = 'XRHand_L';
-    } else if (logMode.vrGame) {
-        actionName = 'Move Controller';
-        deviceType = 'XRController_L';
-    } else {
-        return;
-    }
-
-    const navigateActions = globalState.finalData.filter(action =>
-        action.Name === actionName &&
-        action.TriggerSource === deviceType &&
-        action.User === userField
-    );
-
-    const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime === timestamp) {
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime
-                });
-            }
-        });
-    });
-
-    // Update left controls
-    allSubActions.forEach(subAction => {
-        const location = parseLocation(subAction.ActionInvokeLocation);
-        if (globalState.leftControls[userId]) {
-            globalState.leftControls[userId].position.set(location.x, location.y, location.z);
-            const euler = new THREE.Euler(
-                THREE.MathUtils.degToRad(location.pitch),
-                THREE.MathUtils.degToRad(location.yaw),
-                THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
-            );
-            globalState.leftControls[userId].setRotationFromEuler(euler);
-        }
-    });
-}
-
-function updateRightControl1(userId, timestamp) {
-    const userField = `User${userId + 1}`;
-    let actionName, deviceType;
-
-    if (logMode.immersiveAnalytics) {
-        actionName = 'Move Hand';
-        deviceType = 'XRHand_R';
-    } else if (logMode.vrGame) {
-        actionName = 'Move Controller';
-        deviceType = 'XRController_R';
-    } else {
-        return;
-    }
-
-    const navigateActions = globalState.finalData.filter(action =>
-        action.Name === actionName &&
-        action.TriggerSource === deviceType &&
-        action.User === userField
-    );
-
-    const allSubActions = [];
-    navigateActions.forEach(action => {
-        action.Data.forEach(subAction => {
-            const invokeTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            if (invokeTime === timestamp) {
-                allSubActions.push({
-                    parentAction: action,
-                    ...subAction,
-                    Timestamp: invokeTime
-                });
-            }
-        });
-    });
-    console.log(allSubActions);
-
-    // Update right controls
-    allSubActions.forEach(subAction => {
-        const location = parseLocation(subAction.ActionInvokeLocation);
-        if (globalState.rightControls[userId]) {
-            globalState.rightControls[userId].position.set(location.x, location.y, location.z);
-            const euler = new THREE.Euler(
-                THREE.MathUtils.degToRad(location.pitch),
-                THREE.MathUtils.degToRad(location.yaw),
-                THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
-            );
-            globalState.rightControls[userId].setRotationFromEuler(euler);
-        }
-    });
-}
-
-
-
 
 function updateUserDevice(userId, timestamp = null) {
     const userField = `User${userId + 1}`; // Adjusting userId to match "User1" for index 0
@@ -539,7 +388,7 @@ function updateUserDevice(userId, timestamp = null) {
 
     // Filter actions based on device type and user field
     const navigateActions = globalState.finalData.filter(action =>
-        action.Name === 'Navigate' &&
+        // action.Name === 'Navigate' &&
         action.TriggerSource === deviceType &&
         action.User === userField
     );
@@ -588,8 +437,9 @@ function updateUserDevice(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
+                'XYZ'
             );
+            globalState.avatars[userId].rotation.set(0,0,0); 
             globalState.avatars[userId].setRotationFromEuler(euler);
         }
     });
@@ -616,7 +466,7 @@ function updateLeftControl(userId, timestamp = null) {
     }
 
     const navigateActions = globalState.finalData.filter(action =>
-        action.Name === actionName &&
+        // action.Name === actionName &&
         action.TriggerSource === deviceType &&
         action.User === userField
     );
@@ -665,15 +515,27 @@ function updateLeftControl(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
+                'XYZ'
             );
+            globalState.leftControls[userId].rotation.set(0,0,0); 
+
+            // globalState.rightControls[userId].rotation.set(90,0,0); 
             globalState.leftControls[userId].setRotationFromEuler(euler);
         }
     });
-
-    if (allSubActions.length === 0) {
-        console.log('No suitable navigation actions found for user', userField, 'within the time range or at the specified timestamp.');
-    }
+    // allSubActions.forEach(subAction => {
+    //     const location = parseLocation(subAction.ActionInvokeLocation);
+    //     if (globalState.leftControls[userId]) {
+    //         globalState.leftControls[userId].position.set(location.x, location.y, location.z);
+    //         const euler = new THREE.Euler(
+    //             THREE.MathUtils.degToRad(location.pitch),
+    //             THREE.MathUtils.degToRad(location.yaw),
+    //             THREE.MathUtils.degToRad(location.roll),
+    //             'ZXY'
+    //         );
+    //         globalState.leftControls[userId].setRotationFromEuler(euler);
+    //     }
+    // });
 }
 
 function updateRightControl(userId, timestamp = null) {
@@ -692,7 +554,7 @@ function updateRightControl(userId, timestamp = null) {
     }
 
     const navigateActions = globalState.finalData.filter(action =>
-        action.Name === actionName &&
+        // action.Name === actionName &&
         action.TriggerSource === deviceType &&
         action.User === userField
     );
@@ -732,7 +594,6 @@ function updateRightControl(userId, timestamp = null) {
     // Sort subActions by Timestamp to process them in chronological order
     allSubActions.sort((a, b) => a.Timestamp - b.Timestamp);
 
-    // Update right controls based on subActions
     allSubActions.forEach(subAction => {
         const location = parseLocation(subAction.ActionInvokeLocation);
         if (globalState.rightControls[userId]) {
@@ -741,15 +602,30 @@ function updateRightControl(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.pitch),
                 THREE.MathUtils.degToRad(location.yaw),
                 THREE.MathUtils.degToRad(location.roll),
-                'ZXY'
+                'XYZ'
             );
+            globalState.rightControls[userId].rotation.set(0,0,0); 
+
             globalState.rightControls[userId].setRotationFromEuler(euler);
         }
     });
 
-    if (allSubActions.length === 0) {
-        console.log('No suitable navigation actions found for user', userField, 'within the time range or at the specified timestamp.');
-    }
+    // Update right controls based on subActions
+    // allSubActions.forEach(subAction => {
+    //     const location = parseLocation(subAction.ActionInvokeLocation);
+    //     if (globalState.rightControls[userId]) {
+    //         globalState.rightControls[userId].position.set(location.x, location.y, location.z);
+    //         const euler = new THREE.Euler(
+    //             THREE.MathUtils.degToRad(location.pitch),
+    //             THREE.MathUtils.degToRad(location.yaw),
+    //             THREE.MathUtils.degToRad(location.roll),
+    //             'ZXY'
+    //         );
+    //         globalState.rightControls[userId].setRotationFromEuler(euler);
+    //         // globalState.rightControls[userId].setRotationFromAxisAngle(euler);
+    //     }
+    // });
+
 }
 
 
@@ -928,6 +804,7 @@ async function updateObjectsBasedOnSelections() {
             }
         }
     }
+    //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there. 
 
     // Unload objects that are no longer needed
     for (const userID of Object.keys(globalState.loadedObjects)) {
@@ -962,15 +839,14 @@ async function updateObjectsBasedOnSelections() {
                         .then(obj => {
                             obj.name = key;
                             const location = parseLocation(subAction.ActionReferentLocation);
-                            obj.position.set(location.x, location.y, location.z);
-                            // const euler = new THREE.Euler(
-                            //     THREE.MathUtils.degToRad(location.eulerx),
-                            //     THREE.MathUtils.degToRad(location.eulery),
-                            //     THREE.MathUtils.degToRad(location.eulerz),
-                            //     'ZXY'
-                            // );
-                            // obj.setRotationFromEuler(euler);
-                            globalState.scene.add(obj);
+
+                            if (logMode.vrGame)
+                            {
+                                console.log("HELLO OBJ POSITION ", obj.position);
+                                console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z); 
+                                // obj.position.set(-location.x,location.y, -location.z);
+                            }
+  
                             // console.log(`Object loaded and added to scene: ${key}`);
                             return obj; // Return the loaded object
                         })
@@ -1204,10 +1080,19 @@ function parseLocation(locationString) {
         x: -parseFloat(parts[0]),
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
-        pitch: -parseFloat(parts[3]),  // Rotation around X-axis in degrees
+        pitch: parseFloat(parts[3]),  // Rotation around X-axis in degrees
         yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
         roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
+    // Sep 09 06:01:05 PM - Sep 09 06:02:12 PM
+    // return {
+    //     x: -parseFloat(parts[0]),
+    //     y: parseFloat(parts[1]),
+    //     z: parseFloat(parts[2]),
+    //     pitch: -parseFloat(parts[3]),  // Rotation around X-axis in degrees
+    //     yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
+    //     roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
+    // };
 }
 
 
@@ -1257,6 +1142,7 @@ async function initializeScene() {
     window_onload();
     const isHeadsetMode = logMode.vrGame || logMode.immersiveAnalytics;
     const avatarModel = isHeadsetMode ? 'headset.glb' : 'ipad.glb';
+    //headset scaled down, controller scaled down
     const loadModel = isHeadsetMode ? loadAvatarModel : loadIpadModel;
     const avatarPromises = Array.from({ length: numUsers }, () => loadModel(avatarModel));
 
@@ -1294,7 +1180,8 @@ async function initializeScene() {
     const playPauseButton = document.getElementById('playPauseButton');
     // animateVisualization();
     if (video){
-    playPauseButton.addEventListener('click', function() {
+        playPauseButton.style.display = 'block';
+        playPauseButton.addEventListener('click', function() {
         console.log("did ya come here?");
         toggleAnimation();
     });
@@ -1618,23 +1505,11 @@ function createLines(timestamp1, timestamp2) {
 	updateRangeDisplay(timestamp1,timestamp2);
 	// updateXRSnapshot();
 	for (let i = 0; i < numUsers; i++) {
-        // console.log(`Updating devices for user ${i + 1}.`);
         updateUserDevice(i);
         updateLeftControl(i);
         updateRightControl(i);
     }
-	// createDeviceSegment(1);
-	// createControllerSegment(0, 'right');
-	// createControllerSegment(0, 'left');
-	// createControllerSegment(1, 'right');
-	// createControllerSegment(1, 'left');
-	// createRayCastSegment(0);
-	// createRayCastSegment(1);
-	// createLineDrawing(0);
-	// createLineDrawing(1);
 	plotHeatmap();
-
-
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
 	initializeShadedAreaDrag();
@@ -2753,21 +2628,20 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
 	let otherDetails ;
-	if (action.TriggerSource === "Audio")
+	if (action.TriggerSource === "Audio") // zainab add all the navigates and discuss operations here 
 	{
+        // ${formattedLocation}<br>
 		otherDetails = `
-        ${formattedLocation}<br>
         <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
         <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
-        <strong>Referent Name:</strong> ${subAction.ActionReferentName || 'N/A'}<br>
         <strong>Transcribed Text:</strong> ${subAction.ActionReferentBody}<br>
 
     `;
 	}
 	else{
+        // ${formattedLocation}<br>
     	otherDetails = `
-        ${formattedLocation}<br>
         <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
         <strong>Trigger Source:</strong> ${action.TriggerSource}<br>
@@ -2810,7 +2684,7 @@ function createSpeechBox(action, subAction) {
 	if (rangeDisplay) {
 	  rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(time1))} - ${timeFormat(new Date(time2))}`;
 	}
-	initializeShadedAreaDrag();  // Ensure that drag behavior is applied to the new shaded area
+	initializeShadedAreaDrag();  
   }
 
   function initializeShadedAreaDrag() {
@@ -2867,6 +2741,7 @@ function createSpeechBox(action, subAction) {
         generateHierToolBar();
         plotUserSpecificBarChart();
         plotUserSpecificDurationBarChart();
+        plotHeatmap();
         updateObjectsBasedOnSelections();
     };
 
@@ -2909,12 +2784,7 @@ function updateTimeDisplay(timestamp, startTime) {
 
 function createSharedAxis() {
 	const { globalStartTime, globalEndTime, bins, unit } = globalState;
-	// console.log(new Date(globalStartTime));
-	// console.log(new Date(globalEndTime));
-
-	// Container setup
 	const temporalViewContainer = d3.select("#temporal-view");
-	// const minWidth = document.getElementById('temporal-view').clientWidth;
 	const minWidth = document.getElementById('temporal-view').clientWidth - margin.right - margin.left;
 	let sharedAxisContainer = temporalViewContainer.select("#shared-axis-container");
 	if (sharedAxisContainer.empty()) {
@@ -2922,15 +2792,7 @@ function createSharedAxis() {
 	}
 
 	sharedAxisContainer.html("");
-
-	// Margin setup
-	// const margin = { top: 20, right: 30, bottom: 10, left: 80 };
-
-	// Time format for ticks
 	const timeFormat = d3.timeFormat("%I:%M:%S");
-
-	// Calculate the total duration in minutes
-	// const totalDurationMinutes = (globalEndTime - globalStartTime) / (1000 * 60);
 	const totalDuration = globalEndTime - globalStartTime;
 	let intervalSizeMillis;
 	if (unit === 'minutes') {
@@ -2989,11 +2851,9 @@ function createSharedAxis() {
         let circle1 = svg.select('#time-indicator-circle1');
         let line2 = svg.select('#time-indicator-line2');
         let circle2 = svg.select('#time-indicator-circle2');
-        const indicatorSVG = d3.select("#indicator-svg"); // Select the SVG containing the shaded area
+        const indicatorSVG = d3.select("#indicator-svg"); 
         const shadedArea = indicatorSVG.select(".shading");
-
-        // Adjust this to align with the shared axis starting point
-        const sharedAxisStart = d3.select("#shared-axis-container svg g");  // Select the shared axis container
+        const sharedAxisStart = d3.select("#shared-axis-container svg g"); 
         const marginLeft = parseInt(sharedAxisStart.attr("transform").match(/translate\((\d+),/)[1]); // Extract margin.left from the transform attribute
         const alignX = 10; // Additional offset if needed
 
@@ -3024,8 +2884,6 @@ function createSharedAxis() {
                     .attr('x2', xPosition1);
                 circle1.attr('cx', xPosition1);
             }
-            // When animation is stopped
-            console.log("hey did u cme here?");
             if (!line2.empty()) {
                 line2.style('display', 'block');  // Make line2 visible again
                 let xPosition2 = Math.max(0, x(new Date(timestamp + 5000))) + marginLeft + alignX; // Position 5 seconds ahead of line1
@@ -3060,7 +2918,6 @@ function animateVisualization() {
 
     // If animation is paused
     if (!globalState.isAnimating) {
-        // Position line2 and circle2 5 seconds ahead of line1
         const currentTimestamp = globalState.globalStartTime + globalState.currentTimestamp;
         animateTemporalView(currentTimestamp + 5000); // Update line2 with a timestamp 5 seconds ahead
 
@@ -3069,7 +2926,7 @@ function animateVisualization() {
         const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
         updateShadedArea(line1X, line2X);
 
-        return; // Exit as we do not want to continue animating
+        return; 
     }
 
     // Continue animation if isAnimating is true
