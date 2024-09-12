@@ -22,10 +22,6 @@ import {
 
 let video = false ;
 
-//origin is = 
-//origin is = 
-// let origin = parseLocation("0.8530421,0.04346559,0.1748144,34.43481,341.7184,359.0189");
-// console.log(origin); 
 
 let speechEnabled = false;
 let xrInteractionEnabled = false;
@@ -75,15 +71,16 @@ let globalState = {
 	objFilePath: "",
 	viewProps: {},
 	obContext: [],
+    markers:{},
     isAnimating: false
 };
 
 
 let logMode = {
-	vrGame: 1,
+	vrGame: 0,
 	immersiveAnalytics: 0,
 	infoVisCollab: 0,
-	sceneNavigation: 0,
+	sceneNavigation: 1,
 	maintenance: 0
 }
 
@@ -173,6 +170,7 @@ export function updateIntervals() {
   plotUserSpecificDurationBarChart();
   updateObjectsBasedOnSelections();
   plotHeatmap();
+  updateMarkersBasedOnSelections();
 }
 
 function changeBinSize(newBinSize) {
@@ -358,6 +356,7 @@ function toggleInstanceRange(selectedOption){
 			plotHeatmap();
 			updatePointCloudBasedOnSelections();
 			updateObjectsBasedOnSelections();
+            updateMarkersBasedOnSelections();
 		});
 	}
 
@@ -439,7 +438,7 @@ function updateUserDevice(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.roll),
                 'XYZ'
             );
-            globalState.avatars[userId].rotation.set(0,0,0); 
+            globalState.avatars[userId].rotation.set(0,0,0);
             globalState.avatars[userId].setRotationFromEuler(euler);
         }
     });
@@ -517,9 +516,9 @@ function updateLeftControl(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.roll),
                 'XYZ'
             );
-            globalState.leftControls[userId].rotation.set(0,0,0); 
+            globalState.leftControls[userId].rotation.set(0,0,0);
 
-            // globalState.rightControls[userId].rotation.set(90,0,0); 
+            // globalState.rightControls[userId].rotation.set(90,0,0);
             globalState.leftControls[userId].setRotationFromEuler(euler);
         }
     });
@@ -604,7 +603,7 @@ function updateRightControl(userId, timestamp = null) {
                 THREE.MathUtils.degToRad(location.roll),
                 'XYZ'
             );
-            globalState.rightControls[userId].rotation.set(0,0,0); 
+            globalState.rightControls[userId].rotation.set(0,0,0);
 
             globalState.rightControls[userId].setRotationFromEuler(euler);
         }
@@ -728,6 +727,104 @@ function updatePointCloudBasedOnSelections() {
         }
     }
 }
+async function updateMarkersBasedOnSelections() {
+    const data = globalState.finalData;  // The source data containing all actions
+    const newFilteredActions = {};  // Object to keep track of filtered actions for each user
+    const selectedActions = getSelectedTopics();  // Get the list of selected topics or actions
+
+    // Determine which users have objects to display
+    const selectedUsers = Object.keys(globalState.show)
+        .filter(userID => globalState.show[userID])
+        .map(userID => `User${userID}`);
+
+    const visibleObjectUsers = selectedUsers.filter(userId => {
+        return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
+    });
+
+    // Initialize filtered actions for visible users
+    visibleObjectUsers.forEach((vcUser) => {
+        newFilteredActions[vcUser] = [];
+    });
+
+    // Filter actions based on time range and other criteria
+    for (const action of data) {
+        for (const subAction of action.Data) {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration); // Use `action.Duration` instead of `subAction.Duration`
+
+            if (
+                actionEndTime >= globalState.lineTimeStamp1 &&
+                actionStartTime <= globalState.lineTimeStamp2 &&
+                selectedActions.includes(action.Name) &&
+                visibleObjectUsers.includes(action.User)
+            ) {
+                // Add action and subAction details to the filtered actions
+                newFilteredActions[action.User].push({ subAction, action });
+            }
+        }
+    }
+
+    // Unload markers that are no longer needed
+    for (const userID of Object.keys(globalState.markers || {})) {
+        for (const key of Object.keys(globalState.markers[userID] || {})) {
+            const markerExists = newFilteredActions[userID]?.some(filteredAction => {
+                const { subAction } = filteredAction;
+                const keyForCheck = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
+                return keyForCheck === key;
+            });
+
+            if (!markerExists) {
+                const marker = globalState.markers[userID][key];
+                if (marker) {
+                    globalState.scene.remove(marker);  // Remove the marker from the scene
+                    marker.geometry.dispose();  // Dispose of the geometry
+                    marker.material.dispose();  // Dispose of the material
+                    delete globalState.markers[userID][key];  // Remove from global state
+                }
+            }
+        }
+    }
+
+    // Place new markers for filtered actions
+    for (const userID of Object.keys(newFilteredActions)) {
+        newFilteredActions[userID].forEach(({ subAction, action }) => {
+            const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
+
+            if (!globalState.markers) globalState.markers = {};
+            if (!globalState.markers[userID]) globalState.markers[userID] = {};
+
+            if (!globalState.markers[userID][key]) {  // Ensure the marker is not already created
+                const location = parseLocation(subAction.ActionInvokeLocation);  // Use the actual data to find location
+
+                // Create a triangular marker
+                const marker = createTriangleMarker(userID);
+                marker.position.set(location.x, location.y, location.z);
+                marker.name = `Marker_${key}`;
+                globalState.scene.add(marker);  // Add marker to the scene
+
+                // Store marker in globalState for later management
+                globalState.markers[userID][key] = marker;
+            }
+        });
+    }
+}
+
+function createTriangleMarker(userID) {
+    const triangleShape = new THREE.Shape();
+    triangleShape.moveTo(0, -0.05);  // Bottom vertex (now pointing downwards)
+    triangleShape.lineTo(-0.05, 0.05);  // Top left vertex
+    triangleShape.lineTo(0.05, 0.05);  // Top right vertex
+    triangleShape.lineTo(0, -0.05);  // Close the triangle
+    const extrudeSettings = { depth: 0.01, bevelEnabled: false };
+    const triangleGeometry = new THREE.ExtrudeGeometry(triangleShape, extrudeSettings);
+
+    // Material for the triangle marker
+    const markerMaterial = new THREE.MeshBasicMaterial({ color: colorScale(userID) });  // Customize marker color here
+
+    return new THREE.Mesh(triangleGeometry, markerMaterial);
+}
+
+
 
 
 async function updateObjectsBasedOnSelections() {
@@ -804,7 +901,7 @@ async function updateObjectsBasedOnSelections() {
             }
         }
     }
-    //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there. 
+    //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
 
     // Unload objects that are no longer needed
     for (const userID of Object.keys(globalState.loadedObjects)) {
@@ -843,10 +940,10 @@ async function updateObjectsBasedOnSelections() {
                             if (logMode.vrGame)
                             {
                                 console.log("HELLO OBJ POSITION ", obj.position);
-                                console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z); 
+                                console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z);
                                 // obj.position.set(-location.x,location.y, -location.z);
                             }
-  
+
                             // console.log(`Object loaded and added to scene: ${key}`);
                             return obj; // Return the loaded object
                         })
@@ -1179,12 +1276,19 @@ async function initializeScene() {
 
     const playPauseButton = document.getElementById('playPauseButton');
     // animateVisualization();
-    if (video){
-        playPauseButton.style.display = 'block';
-        playPauseButton.addEventListener('click', function() {
-        console.log("did ya come here?");
-        toggleAnimation();
-    });
+    if(video) {
+        if (playPauseButton.style.display === 'block') {
+            playPauseButton.style.display = 'none';
+          } else {
+            playPauseButton.style.display = 'block';
+          }
+        playPauseButton.addEventListener('keydown', function (event) {
+            if (event.code === 'Space') { // Check if space bar is pressed
+              console.log("Space bar pressed on button");
+              toggleAnimation(); // Toggle play/pause state
+              event.preventDefault(); // Prevent default space bar behavior (scrolling down)
+            }
+          });
     }
 
 }
@@ -1512,6 +1616,7 @@ function createLines(timestamp1, timestamp2) {
 	plotHeatmap();
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
+    updateMarkersBasedOnSelections();
 	initializeShadedAreaDrag();
 
 
@@ -1580,6 +1685,7 @@ export function dragged(event,d) {
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
+    updateMarkersBasedOnSelections();
 	for (let i = 0; i < numUsers; i++) {
 
         // Update the user's device
@@ -1707,6 +1813,7 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 
 		updatePointCloudBasedOnSelections();
 		updateObjectsBasedOnSelections();
+        updateMarkersBasedOnSelections();
     });
 
 }
@@ -1817,6 +1924,7 @@ function handleContextChange(context, userId, isChecked) {
 	  case 'Object':
 		globalState.viewProps[userId]["Object"] = isChecked;
 		updateObjectsBasedOnSelections();
+
 		break;
 
 	  case 'Context':
@@ -2467,7 +2575,9 @@ function parseTimeToMillis(customString) {
 //   return date.getTime();
 }
 
+// function updateSpatialView(nextTimestamp){
 
+// }
 
 function parseDurationToMillis(durationString) {
     // Split the string by underscores
@@ -2628,7 +2738,7 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
 	let otherDetails ;
-	if (action.TriggerSource === "Audio") // zainab add all the navigates and discuss operations here 
+	if (action.TriggerSource === "Audio") // zainab add all the navigates and discuss operations here
 	{
         // ${formattedLocation}<br>
 		otherDetails = `
@@ -2680,11 +2790,11 @@ function createSpeechBox(action, subAction) {
 		.attr("fill", "#9e9e9e")
 		.attr("fill-opacity", 0.5);
 	const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-	const rangeDisplay = document.getElementById("range-display");
+    const rangeDisplay = document.getElementById("range-display");
 	if (rangeDisplay) {
 	  rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(time1))} - ${timeFormat(new Date(time2))}`;
 	}
-	initializeShadedAreaDrag();  
+	initializeShadedAreaDrag();
   }
 
   function initializeShadedAreaDrag() {
@@ -2733,6 +2843,7 @@ function createSpeechBox(action, subAction) {
         plotHeatmap();
         updatePointCloudBasedOnSelections();
         updateObjectsBasedOnSelections();
+        updateMarkersBasedOnSelections();
 
         dragStartX = event.x;
     };
@@ -2743,6 +2854,8 @@ function createSpeechBox(action, subAction) {
         plotUserSpecificDurationBarChart();
         plotHeatmap();
         updateObjectsBasedOnSelections();
+        updatePointCloudBasedOnSelections();
+        updateMarkersBasedOnSelections();
     };
 
     const drag = d3.drag()
@@ -2851,9 +2964,9 @@ function createSharedAxis() {
         let circle1 = svg.select('#time-indicator-circle1');
         let line2 = svg.select('#time-indicator-line2');
         let circle2 = svg.select('#time-indicator-circle2');
-        const indicatorSVG = d3.select("#indicator-svg"); 
+        const indicatorSVG = d3.select("#indicator-svg");
         const shadedArea = indicatorSVG.select(".shading");
-        const sharedAxisStart = d3.select("#shared-axis-container svg g"); 
+        const sharedAxisStart = d3.select("#shared-axis-container svg g");
         const marginLeft = parseInt(sharedAxisStart.attr("transform").match(/translate\((\d+),/)[1]); // Extract margin.left from the transform attribute
         const alignX = 10; // Additional offset if needed
 
@@ -2877,6 +2990,15 @@ function createSharedAxis() {
             if (!shadedArea.empty()) {
                 shadedArea.style('display', 'none');
             }
+
+            const rangeDisplay = document.getElementById("range-display");
+            const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
+                rangeDisplay.textContent = `Selected Time: ${timeFormat(new Date(timestamp))}`;
+            // else
+            // {
+            //     rangeDisplay.textContent = `Selected Time: ${timeFormat(new Date(time1))}`;
+
+            // }
         } else {
             if (!line1.empty() && !circle1.empty()) {
                 let xPosition1 = Math.max(0, x(new Date(timestamp))) + marginLeft + alignX;
@@ -2907,7 +3029,8 @@ function updateAnimation(nextTimestamp) {
     // Perform all the necessary updates in one function
     animateTemporalView(nextTimestamp);
     updateTimeDisplay(nextTimestamp, globalState.globalStartTime);
-    updateVisualization(nextTimestamp); // This will call updateUserDevice, updateLeftControl, and updateRightControl
+    updateVisualization(nextTimestamp);
+    updateSpatialView(nextTimestamp);
 }
 
 function animateVisualization() {
@@ -2926,7 +3049,7 @@ function animateVisualization() {
         const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
         updateShadedArea(line1X, line2X);
 
-        return; 
+        return;
     }
 
     // Continue animation if isAnimating is true
@@ -3026,6 +3149,7 @@ async function initialize() {
 
 	updatePointCloudBasedOnSelections();
 	updateObjectsBasedOnSelections();
+    updateMarkersBasedOnSelections();
 	plotUserSpecificBarChart();
 	plotUserSpecificDurationBarChart();
 }

@@ -1115,7 +1115,7 @@
                 "ActionInvokeLocation":"0.00206339,-0.005580477,-0.01917975,53.81698,13.13335,3.243714",
                 "ActionInvokeTimestamp":"240910_195306_965000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.3)",
+                "ActionReferentName":"('Floor', 0.3)",
                 "ActionReferentBody":".\/Image\/1.png",
                 "ActionContext":".\/Context\/1.glb"
             }
@@ -1137,7 +1137,7 @@
                 "ActionInvokeLocation":"-0.2182871,-0.01646942,-0.1457149,57.07812,330.4586,357.282",
                 "ActionInvokeTimestamp":"240910_195308_682000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.3)",
+                "ActionReferentName":"('Floor', 0.3)",
                 "ActionReferentBody":".\/Image\/2.png",
                 "ActionContext":".\/Context\/2.glb"
             }
@@ -2701,7 +2701,7 @@
                 "ActionInvokeLocation":"-0.2932988,-0.1006647,0.2844032,55.13763,350.9338,359.633",
                 "ActionInvokeTimestamp":"240910_195326_742000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.3)",
+                "ActionReferentName":"('Sofa', 0.3)",
                 "ActionReferentBody":".\/Image\/6.png",
                 "ActionContext":".\/Context\/6.glb"
             }
@@ -3309,7 +3309,7 @@
                 "ActionInvokeLocation":"0.2002998,-0.2482657,0.8033408,60.91391,15.43877,359.0634",
                 "ActionInvokeTimestamp":"240910_195334_880000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.3)",
+                "ActionReferentName":"('Floor', 0.3)",
                 "ActionReferentBody":".\/Image\/9.png",
                 "ActionContext":".\/Context\/9.glb"
             }
@@ -4073,7 +4073,7 @@
                 "ActionInvokeLocation":"0.5282496,-0.1037159,0.925656,48.83581,17.77886,359.9368",
                 "ActionInvokeTimestamp":"240910_195340_984000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.4)",
+                "ActionReferentName":"('Sofa', 0.4)",
                 "ActionReferentBody":".\/Image\/10.png",
                 "ActionContext":".\/Context\/10.glb"
             }
@@ -6395,13 +6395,13 @@
         "TriggerSource":"HandheldARInputDevice",
         "ReferentType":"Physical",
         "ContextType":"Physical",
-        "ActionContextDescription":"A beige chair partially covered with a fitted cover is positioned on a wooden floor. There is a white cup placed on the armrest of the chair. The lighting is dim, creating shadows on the floor and the chair.",
+        "ActionContextDescription":"A beige sofa partially covered with a fitted cover is positioned on a wooden floor. There is a white cup placed on the armrest of the sofa. The lighting is dim, creating shadows on the floor and the sofa.",
         "Data":[
             {
                 "ActionInvokeLocation":"-1.527808,0.1205038,0.3834746,64.35767,49.56974,0.007903411",
                 "ActionInvokeTimestamp":"240910_195414_986000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Chair', 0.9)",
+                "ActionReferentName":"('Sofa', 0.9)",
                 "ActionReferentBody":".\/Image\/19.png",
                 "ActionContext":".\/Context\/19.glb"
             }
@@ -6973,7 +6973,7 @@
                 "ActionInvokeLocation":"-1.895263,0.09561837,1.372186,57.03779,70.12071,1.988565",
                 "ActionInvokeTimestamp":"240910_195418_605000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.1)",
+                "ActionReferentName":"('Floor', 0.1)",
                 "ActionReferentBody":".\/Image\/20.png",
                 "ActionContext":".\/Context\/20.glb"
             }
@@ -6989,13 +6989,13 @@
         "TriggerSource":"HandheldARInputDevice",
         "ReferentType":"Physical",
         "ContextType":"Physical",
-        "ActionContextDescription":"Dimly lit room with hardwood flooring, partially covered by shadows. A bed with a beige cover is visible on the right side of the image, while a dark object, possibly a chair, is in the top-left corner. An indistinct object, potentially a bag, is located at the bottom-left corner. Overall visibility is low, making it difficult to clearly identify objects.",
+        "ActionContextDescription":"Dimly lit room with hardwood flooring, partially covered by shadows. A bed with a beige cover is visible on the right side of the image, while a dark object, possibly a sofa, is in the top-left corner. An indistinct object, potentially a bag, is located at the bottom-left corner. Overall visibility is low, making it difficult to clearly identify objects.",
         "Data":[
             {
                 "ActionInvokeLocation":"-1.309365,0.0649596,2.048416,54.15803,66.56277,358.8772",
                 "ActionInvokeTimestamp":"240910_195424_325000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.1)",
+                "ActionReferentName":"('Floor', 0.1)",
                 "ActionReferentBody":".\/Image\/21.png",
                 "ActionContext":".\/Context\/21.glb"
             }
@@ -7011,13 +7011,13 @@
         "TriggerSource":"HandheldARInputDevice",
         "ReferentType":"Physical",
         "ContextType":"Physical",
-        "ActionContextDescription":"Dimly lit room showing a wooden floor, a part of a beige couch, and a dark side table. An item with a green light is plugged into an outlet on the wall. The unknown object in question is not clearly identifiable or discernible within the context of the image.",
+        "ActionContextDescription":"Dimly lit room showing a wooden floor, a part of a beige couch, and a dark side table. An item with a green light is plugged into an outlet on the wall. The floor is not clearly identifiable or discernible within the context of the image.",
         "Data":[
             {
                 "ActionInvokeLocation":"-0.5793043,0.07670751,2.335972,54.83197,92.47293,359.2278",
                 "ActionInvokeTimestamp":"240910_195426_560000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.3)",
+                "ActionReferentName":"('Floor', 0.3)",
                 "ActionReferentBody":".\/Image\/22.png",
                 "ActionContext":".\/Context\/22.glb"
             }
@@ -12817,7 +12817,7 @@
                 "ActionInvokeLocation":"-1.09824,0.07578294,0.3649203,49.29053,93.33806,2.027448",
                 "ActionInvokeTimestamp":"240910_195502_742000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Unknown', 0.2)",
+                "ActionReferentName":"('Floor', 0.2)",
                 "ActionReferentBody":".\/Image\/37.png",
                 "ActionContext":".\/Context\/37.glb"
             }
@@ -12833,13 +12833,13 @@
         "TriggerSource":"HandheldARInputDevice",
         "ReferentType":"Physical",
         "ContextType":"Physical",
-        "ActionContextDescription":"A large beige chair positioned on a wooden floor. The image's lighting might make it challenging for object recognition, as the chair blends with the darker shadows around it.",
+        "ActionContextDescription":"A large beige sofa positioned on a wooden floor. The image's lighting might make it challenging for object recognition, as the sofa blends with the darker shadows around it.",
         "Data":[
             {
                 "ActionInvokeLocation":"-1.532061,0.01929989,0.2610627,61.32842,61.854,2.152036",
                 "ActionInvokeTimestamp":"240910_195504_573000",
                 "ActionReferentLocation":null,
-                "ActionReferentName":"('Chair', 0.9)",
+                "ActionReferentName":"('Sofa', 0.9)",
                 "ActionReferentBody":".\/Image\/38.png",
                 "ActionContext":".\/Context\/38.glb"
             }

@@ -173,7 +173,7 @@ html, body {
 }
 
 #playPauseButton {
-    display: none;
+    /* display: none; */
     pointer-events: auto;
     cursor: pointer;
     margin: 0 auto;
