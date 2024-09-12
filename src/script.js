@@ -27,7 +27,7 @@ let speechEnabled = false;
 let xrInteractionEnabled = false;
 let noneEnabled = true;
 let numUsers = 0;
-let uniqueActions ; 
+let uniqueActions ;
 let x ;
 let yScale ;
 let intervals;
@@ -80,8 +80,8 @@ let globalState = {
 let logMode = {
 	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 1,
-	sceneNavigation: 0,
+	infoVisCollab: 0,
+	sceneNavigation: 1,
 	maintenance: 0
 }
 
@@ -123,7 +123,10 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#76C7C0", "#3B6978", "#FF0000", "#8dd3c7", "#fdcdac", "#bebada"]);
+    .range(["#76C7C0", "#3B6978", "#264653", "#8dd3c7", "#fdcdac", "#bebada"]);
+
+    // 264653
+    // FF0000
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -728,6 +731,14 @@ function updatePointCloudBasedOnSelections() {
         }
     }
 }
+function calculateDistance(point1, point2) {
+    return Math.sqrt(
+        Math.pow(point1.x - point2.x, 2) +
+        Math.pow(point1.y - point2.y, 2) +
+        Math.pow(point1.z - point2.z, 2)
+    );
+}
+const distanceThreshold = 0.1;
 async function updateMarkersBasedOnSelections() {
     const data = globalState.finalData;  // The source data containing all actions
     const newFilteredActions = {};  // Object to keep track of filtered actions for each user
@@ -765,240 +776,104 @@ async function updateMarkersBasedOnSelections() {
         }
     }
 
-// Unload markers that are no longer needed
-for (const userID of Object.keys(globalState.markers || {})) {
-    for (const key of Object.keys(globalState.markers[userID] || {})) {
-        const markerExists = newFilteredActions[userID]?.some(filteredAction => {
-            const { subAction } = filteredAction;
-            const keyForCheck = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
-            return keyForCheck === key;
-        });
+    // Unload markers that are no longer needed
+    for (const userID of Object.keys(globalState.markers || {})) {
+        for (const key of Object.keys(globalState.markers[userID] || {})) {
+            const markerExists = newFilteredActions[userID]?.some(filteredAction => {
+                const { subAction } = filteredAction;
+                const keyForCheck = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
+                return keyForCheck === key;
+            });
 
-        if (!markerExists) {
-            const markerGroup = globalState.markers[userID][key];  // This is a THREE.Group containing the shape and border
+            if (!markerExists) {
+                const markerGroup = globalState.markers[userID][key];  // This is a THREE.Group containing the shape and border
 
-            if (markerGroup) {
-                // Remove the marker group from the scene
-                globalState.scene.remove(markerGroup);
+                if (markerGroup) {
+                    // Remove the marker group from the scene
+                    globalState.scene.remove(markerGroup);
 
-                // Dispose of each child in the group (shape mesh and border mesh)
-                markerGroup.children.forEach(child => {
-                    if (child.geometry) {
-                        child.geometry.dispose();  // Dispose of the geometry
-                    }
-                    if (child.material) {
-                        child.material.dispose();  // Dispose of the material
-                    }
-                });
+                    // Dispose of each child in the group (shape mesh and border mesh)
+                    markerGroup.children.forEach(child => {
+                        if (child.geometry) {
+                            child.geometry.dispose();  // Dispose of the geometry
+                        }
+                        if (child.material) {
+                            child.material.dispose();  // Dispose of the material
+                        }
+                    });
 
-                // Clear the group from memory
-                markerGroup.clear();
-                
-                // Remove reference from global state
-                delete globalState.markers[userID][key];
+                    // Clear the group from memory
+                    markerGroup.clear();
+
+                    // Remove reference from global state
+                    delete globalState.markers[userID][key];
+                }
             }
         }
     }
-}
 
     // Place new markers for filtered actions
     for (const userID of Object.keys(newFilteredActions)) {
         newFilteredActions[userID].forEach(({ subAction, action }) => {
-            const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentLocation}`;
+            const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionInvokeLocation}`;
 
             if (!globalState.markers) globalState.markers = {};
             if (!globalState.markers[userID]) globalState.markers[userID] = {};
 
-            if (!globalState.markers[userID][key]) {  // Ensure the marker is not already created
+            // Ensure the marker is not already created
+            if (!globalState.markers[userID][key]) {
                 const location = parseLocation(subAction.ActionInvokeLocation);  // Use the actual data to find location
 
-                // Create a triangular marker
-                const actionIndex = uniqueActions.indexOf(action.Name);  
-                const marker = createShapeMarker(userID, actionIndex); 
-                marker.position.set(location.x, location.y, location.z);
-                marker.name = `Marker_${key}`;
-                globalState.scene.add(marker);  // Add marker to the scene
+                let tooClose = false;
+                if (action.Name === "Navigate") {
+                    for (const existingMarkerKey of Object.keys(globalState.markers[userID])) {
+                        const existingMarker = globalState.markers[userID][existingMarkerKey];
+                        const existingPosition = existingMarker.position;
+                        const distance = calculateDistance(location, existingPosition);
 
-                // Store marker in globalState for later management
-                globalState.markers[userID][key] = marker;
+                        if (distance < distanceThreshold) {
+                            tooClose = true;  // Skip adding this marker
+                            console.log("Skipped marker due to proximity");
+                            break;
+                        }
+                    }
+                }
+
+                if (!tooClose) {  // Only add the marker if it's not too close to existing markers (or not "Navigate")
+                    // Create a sphere marker
+                    const actionIndex = uniqueActions.indexOf(action.Name);
+                    const marker = createSphereMarker(actionIndex);  // Create a sphere marker with color
+                    marker.position.set(location.x, location.y, location.z);
+                    marker.name = `Marker_${key}`;
+                    globalState.scene.add(marker);  // Add marker to the scene
+
+                    // Store marker in globalState for later management
+                    globalState.markers[userID][key] = marker;
+                }
             }
         });
     }
 }
-function createShapeMarker(userID, actionIndex) {
-    const shapes = [createTriangleMarker, createSquareMarker, createCircleMarker, createHexagonMarker, createStarMarker];  // Define shape functions
-    const shapeFunction = shapes[actionIndex % shapes.length];  // Cycle through shapes
-    return shapeFunction(userID);
-}
+const colorScheme = ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6'];
 
-function createTriangleMarker(userID) {
-    const triangleShape = new THREE.Shape();
-    triangleShape.moveTo(0, -0.035);  // Bottom vertex (reduced by ~30%)
-    triangleShape.lineTo(-0.035, 0.035);  // Top left vertex (reduced by ~30%)
-    triangleShape.lineTo(0.035, 0.035);  // Top right vertex (reduced by ~30%)
-    triangleShape.lineTo(0, -0.035);  // Close the triangle
-    const triangleGeometry = new THREE.ShapeBufferGeometry(triangleShape);
+function createSphereMarker(actionIndex) {
+    const radius = 0.03;  // Reduced size for better visualization
+    const widthSegments = 32;
+    const heightSegments = 32;
 
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: colorScale(userID), 
-        side: THREE.DoubleSide, 
-        transparent: true, 
-        opacity: 0.7  // Set opacity to 70%
+    // Create sphere geometry
+    const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+
+    // Material with color based on action index
+    const markerMaterial = new THREE.MeshBasicMaterial({
+        color: colorScheme[actionIndex % colorScheme.length],  // Use color from scheme
+        transparent: false,
+        opacity: 0.5
     });
-    
-    const triangleMesh = new THREE.Mesh(triangleGeometry, markerMaterial);
 
-    // Create border using EdgesGeometry
-    const triangleBorder = new THREE.EdgesGeometry(triangleGeometry);
-    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
-    const borderMesh = new THREE.LineSegments(triangleBorder, borderMaterial);
+    const sphereMesh = new THREE.Mesh(sphereGeometry, markerMaterial);
 
-    // Combine triangle and border
-    const group = new THREE.Group();
-    group.add(triangleMesh);
-    // group.add(borderMesh);
-
-    return group;
-}
-
-// Helper function to create a 2D square marker with a border
-function createSquareMarker(userID) {
-    const squareShape = new THREE.Shape();
-    squareShape.moveTo(-0.035, 0.035);  // Top left vertex (reduced by ~30%)
-    squareShape.lineTo(0.035, 0.035);  // Top right vertex (reduced by ~30%)
-    squareShape.lineTo(0.035, -0.035);  // Bottom right vertex (reduced by ~30%)
-    squareShape.lineTo(-0.035, -0.035);  // Bottom left vertex (reduced by ~30%)
-    squareShape.lineTo(-0.035, 0.035);  // Close the square
-    const squareGeometry = new THREE.ShapeBufferGeometry(squareShape);
-
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: colorScale(userID), 
-        side: THREE.DoubleSide, 
-        transparent: true, 
-        opacity: 0.7  // Set opacity to 70%
-    });
-    const squareMesh = new THREE.Mesh(squareGeometry, markerMaterial);
-
-    // Create border using EdgesGeometry
-    const squareBorder = new THREE.EdgesGeometry(squareGeometry);
-    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
-    const borderMesh = new THREE.LineSegments(squareBorder, borderMaterial);
-
-    // Combine square and border
-    const group = new THREE.Group();
-    group.add(squareMesh);
-    // group.add(borderMesh);
-
-    return group;
-}
-
-// Helper function to create a 2D circle marker with a border
-function createCircleMarker(userID) {
-    const circleShape = new THREE.Shape();
-    circleShape.absarc(0, 0, 0.035, 0, Math.PI * 2, false);
-    const circleGeometry = new THREE.ShapeBufferGeometry(circleShape);
-
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: colorScale(userID), 
-        side: THREE.DoubleSide, 
-        transparent: true, 
-        opacity: 0.7  // Set opacity to 70%
-    });
-    const circleMesh = new THREE.Mesh(circleGeometry, markerMaterial);
-
-    // Create border using EdgesGeometry
-    const circleBorder = new THREE.EdgesGeometry(circleGeometry);
-    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
-    const borderMesh = new THREE.LineSegments(circleBorder, borderMaterial);
-
-    // Combine circle and border
-    const group = new THREE.Group();
-    group.add(circleMesh);
-    // group.add(borderMesh);
-
-    return group;
-}
-
-// Helper function to create a 2D hexagon marker with a border
-function createHexagonMarker(userID) {
-    const hexagonShape = new THREE.Shape();
-    const radius = 0.035; 
-    for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        if (i === 0) {
-            hexagonShape.moveTo(x, y);
-        } else {
-            hexagonShape.lineTo(x, y);
-        }
-    }
-    hexagonShape.closePath();
-
-    const hexagonGeometry = new THREE.ShapeBufferGeometry(hexagonShape);
-
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: colorScale(userID), 
-        side: THREE.DoubleSide, 
-        transparent: true, 
-        opacity: 0.7  // Set opacity to 70%
-    });
-    const hexagonMesh = new THREE.Mesh(hexagonGeometry, markerMaterial);
-
-    // Create border using EdgesGeometry
-    const hexagonBorder = new THREE.EdgesGeometry(hexagonGeometry);
-    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
-    const borderMesh = new THREE.LineSegments(hexagonBorder, borderMaterial);
-
-    // Combine hexagon and border
-    const group = new THREE.Group();
-    group.add(hexagonMesh);
-    // group.add(borderMesh);
-
-    return group;
-}
-
-// Helper function to create a 2D star marker with a border
-function createStarMarker(userID) {
-    const starShape = new THREE.Shape();
-    const outerRadius = 0.035;  // Reduced by ~30%
-    const innerRadius = 0.018;  // Reduced by ~30%
-    const spikes = 5;
-
-    for (let i = 0; i < spikes * 2; i++) {
-        const angle = (i / (spikes * 2)) * Math.PI * 2;
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        if (i === 0) {
-            starShape.moveTo(x, y);
-        } else {
-            starShape.lineTo(x, y);
-        }
-    }
-    starShape.closePath();
-
-    const starGeometry = new THREE.ShapeBufferGeometry(starShape);
-
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: colorScale(userID), 
-        side: THREE.DoubleSide, 
-        transparent: true, 
-        opacity: 0.7  // Set opacity to 70%
-    });
-    const starMesh = new THREE.Mesh(starGeometry, markerMaterial);
-
-    // Create border using EdgesGeometry
-    const starBorder = new THREE.EdgesGeometry(starGeometry);
-    const borderMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });  // Black border
-    const borderMesh = new THREE.LineSegments(starBorder, borderMaterial);
-
-    // Combine star and border
-    const group = new THREE.Group();
-    group.add(starMesh);
-    // group.add(borderMesh);
-
-    return group;
+    return sphereMesh;
 }
 
 
@@ -1133,7 +1008,7 @@ async function updateObjectsBasedOnSelections() {
 }
 
 function plotHeatmap() {
-    return ; 
+    return ;
 
     const hasVisibleUserID = Object.keys(globalState.show)
         .filter((userID) => globalState.show[userID])
@@ -1354,7 +1229,7 @@ function parseLocation(locationString) {
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
         pitch: parseFloat(parts[3]),  // Rotation around X-axis in degrees
-        yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
+        yaw: -parseFloat(parts[4]),    // Rotation around Y-axis in degrees
         roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
     // Sep 09 06:01:05 PM - Sep 09 06:02:12 PM
@@ -1459,7 +1334,7 @@ async function initializeScene() {
             playPauseButton.style.display = 'block';
           }
         playPauseButton.addEventListener('keydown', function (event) {
-            if (event.code === 'Space') { 
+            if (event.code === 'Space') {
               console.log("Space bar pressed on button");
               toggleAnimation(); // Toggle play/pause state
               event.preventDefault(); // Prevent default space bar behavior (scrolling down)
@@ -1884,7 +1759,7 @@ export function dragged(event,d) {
 function updateNumUsers(){
 	const uniqueUsers = new Set(globalState.finalData.map(action => action.User));
 	numUsers = uniqueUsers.size;
-    uniqueActions = Array.from(new Set(globalState.finalData.map(action => action.Name))); 
+    uniqueActions = Array.from(new Set(globalState.finalData.map(action => action.Name)));
 	updateGlobalShow();
 }
 
@@ -2757,7 +2632,7 @@ function parseTimeToMillis(customString) {
 
 function updateSpatialView(nextTimestamp){
 
-    return ; 
+    return ;
 
 }
 
