@@ -342,7 +342,7 @@ html, body {
     left: 1518px;
     width: 400px;
     height: 250px;
-    background-color: #fff;
+    background-color: #ffffff;
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 5px;
@@ -426,9 +426,9 @@ html, body {
 }
 
 #plot-box3 .filter-tag.active {
-    background-color: #649880; /* Cool Mint color */
-    color: white;
-    border-color: #345e4d;
+    background-color: #CCCCCC; /* Cool Mint color */
+    color: black;
+    border-color: #CCCCCC;
     border-radius: 10px;
 }
 

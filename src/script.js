@@ -129,7 +129,7 @@ const hsl = {
 const topicOfInterest = "";
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#a8e6cf", "#4dd0e1", "#1e88e5", "#8dd3c7", "#fdcdac", "#bebada"]);
+    .range(["#66CFAE", "#36A1B8", "#1e88e5", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
