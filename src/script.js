@@ -133,7 +133,7 @@ const colorScale = d3.scaleOrdinal()
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
-const animationStep = 100;
+const animationStep = 200;
 let roomMesh;
 let meshes = [];
 let avatars = []
@@ -150,24 +150,21 @@ let movementPointsMesh;
 function toggleAnimation() {
     if (video) {
         globalState.isAnimating = !globalState.isAnimating;
-        updatePlayPauseButton();
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        if (globalState.isAnimating) {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
         if (globalState.isAnimating) {
             animateVisualization();
         }
     }
 }
-function updatePlayPauseButton() {
-    const playIcon = document.getElementById('playIcon');
-    const pauseIcon = document.getElementById('pauseIcon');
 
-    if (globalState.isAnimating) {
-        playIcon.style.display = 'none';
-        pauseIcon.style.display = 'block';
-    } else {
-        playIcon.style.display = 'block';
-        pauseIcon.style.display = 'none';
-    }
-}
 export function updateIntervals() {
   createSharedAxis();
   createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
@@ -635,8 +632,63 @@ function updateRightControl(userId, timestamp = null) {
 }
 
 
+function calculateDistance(point1, point2) {
+    return Math.sqrt(
+        Math.pow(point1.x - point2.x, 2) +
+        Math.pow(point1.y - point2.y, 2) +
+        Math.pow(point1.z - point2.z, 2)
+    );
+}
+const distanceThreshold = 0.1;
 
+function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
+    const dynamicColorMapping = {};
 
+    // Iterate through each unique user
+    uniqueUsers.forEach(user => {
+        dynamicColorMapping[user] = {};
+        uniqueActions.forEach((action, index) => {
+            const actionKey = `Action${index + 1}`;  // Generate keys like Action1, Action2, etc.
+            if (userActionColors[user] && userActionColors[user][actionKey]) {
+                dynamicColorMapping[user][action] = userActionColors[user][actionKey];  // Assign color from predefined set
+            }
+        });
+    });
+
+    return dynamicColorMapping;
+}
+// const dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
+function getColorForUserAction(userID, actionName) {
+    console.log(userID,actionName);
+    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  // Default to white if not found
+}
+
+const userActionColors = {
+    "User1": {
+        "Action1": "#A8E6CF", // Light Green
+        "Action2": "#88DBC2", // Mint Green
+        "Action3": "#66CFAE", // Medium Green
+        "Action4": "#44C39A", // Green-Teal
+        "Action5": "#22B787", // Teal
+        "Action6": "#1EA175"  // Dark Teal
+    },
+    "User2": {
+        "Action1": "#4DD0E1", // Light Teal
+        "Action2": "#42BACE", // Teal
+        "Action3": "#36A1B8", // Deeper Teal
+        "Action4": "#2A87A0", // Medium Cyan
+        "Action5": "#1F6E88", // Dark Cyan
+        "Action6": "#155571"  // Dark Blue-Teal
+    },
+    "User3": {
+        "Action1": "#1E88E5", // Light Blue
+        "Action2": "#1876CD", // Medium Blue
+        "Action3": "#1462B4", // Darker Blue
+        "Action4": "#104F9B", // Navy Blue
+        "Action5": "#0D3C82", // Dark Navy
+        "Action6": "#09296A"  // Deep Navy
+    }
+};
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
@@ -734,36 +786,7 @@ function updatePointCloudBasedOnSelections() {
         }
     }
 }
-function calculateDistance(point1, point2) {
-    return Math.sqrt(
-        Math.pow(point1.x - point2.x, 2) +
-        Math.pow(point1.y - point2.y, 2) +
-        Math.pow(point1.z - point2.z, 2)
-    );
-}
-const distanceThreshold = 0.1;
 
-function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
-    const dynamicColorMapping = {};
-
-    // Iterate through each unique user
-    uniqueUsers.forEach(user => {
-        dynamicColorMapping[user] = {};
-        uniqueActions.forEach((action, index) => {
-            const actionKey = `Action${index + 1}`;  // Generate keys like Action1, Action2, etc.
-            if (userActionColors[user] && userActionColors[user][actionKey]) {
-                dynamicColorMapping[user][action] = userActionColors[user][actionKey];  // Assign color from predefined set
-            }
-        });
-    });
-
-    return dynamicColorMapping;
-}
-// const dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
-function getColorForUserAction(userID, actionName) {
-    console.log(userID,actionName);
-    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  // Default to white if not found
-}
 
 async function updateMarkersBasedOnSelections() {
     const data = globalState.finalData;  // The source data containing all actions
@@ -881,55 +904,9 @@ async function updateMarkersBasedOnSelections() {
         });
     }
 }
-const userActionColors = {
-    "User1": {
-        "Action1": "#A8E6CF", // Light Green
-        "Action2": "#88DBC2", // Mint Green
-        "Action3": "#66CFAE", // Medium Green
-        "Action4": "#44C39A", // Green-Teal
-        "Action5": "#22B787", // Teal
-        "Action6": "#1EA175"  // Dark Teal
-    },
-    "User2": {
-        "Action1": "#4DD0E1", // Light Teal
-        "Action2": "#42BACE", // Teal
-        "Action3": "#36A1B8", // Deeper Teal
-        "Action4": "#2A87A0", // Medium Cyan
-        "Action5": "#1F6E88", // Dark Cyan
-        "Action6": "#155571"  // Dark Blue-Teal
-    },
-    "User3": {
-        "Action1": "#1E88E5", // Light Blue
-        "Action2": "#1876CD", // Medium Blue
-        "Action3": "#1462B4", // Darker Blue
-        "Action4": "#104F9B", // Navy Blue
-        "Action5": "#0D3C82", // Dark Navy
-        "Action6": "#09296A"  // Deep Navy
-    }
-};
 
-function createSphereMarker(userID, actionName) {
-    const radius = 0.03;  // Reduced size for better visualization
-    const widthSegments = 32;
-    const heightSegments = 32;
 
-    // Get color based on user ID and action name
-    const color = getColorForUserAction(userID, actionName);
 
-    // Create sphere geometry
-    const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
-
-    // Material with color based on user ID and action
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-        color: color,  // Use color from dynamicColorMapping
-        transparent: false, 
-        opacity: 0.8  // Set opacity to 80%
-    });
-    
-    const sphereMesh = new THREE.Mesh(sphereGeometry, markerMaterial);
-
-    return sphereMesh;
-}
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
@@ -1005,8 +982,7 @@ async function updateObjectsBasedOnSelections() {
             }
         }
     }
-    //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
-
+  
     // Unload objects that are no longer needed
     for (const userID of Object.keys(globalState.loadedObjects)) {
 		for (const key of Object.keys(globalState.loadedObjects[userID])){
@@ -1027,6 +1003,8 @@ async function updateObjectsBasedOnSelections() {
 	}
 
     // Load new objects that are required
+      //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
+
     for (const userID of Object.keys(actionsToLoad)) {
 		for (const { key, subAction } of actionsToLoad[userID]) {
             if (globalState.loadedObjects[userID] === undefined) {
@@ -1040,6 +1018,15 @@ async function updateObjectsBasedOnSelections() {
                         .then(obj => {
                             obj.name = key;
                             const location = parseLocation(subAction.ActionReferentLocation);
+                            if (logMode.vrGame && video === true) {
+                                // Calculate the delta from the origin
+                                const deltaX = location.x - originLocation.x;
+                                const deltaY = location.y - originLocation.y;
+                                const deltaZ = location.z - originLocation.z;
+                                
+                                // Apply the delta to the object's position
+                                obj.position.set(deltaX, deltaY, deltaZ);
+                            }
 
                             if (logMode.vrGame)
                             {
@@ -1059,6 +1046,29 @@ async function updateObjectsBasedOnSelections() {
 			}
 		}
     }
+}
+
+function createSphereMarker(userID, actionName) {
+    const radius = 0.03;  // Reduced size for better visualization
+    const widthSegments = 32;
+    const heightSegments = 32;
+
+    // Get color based on user ID and action name
+    const color = getColorForUserAction(userID, actionName);
+
+    // Create sphere geometry
+    const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+
+    // Material with color based on user ID and action
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+        color: color,  // Use color from dynamicColorMapping
+        transparent: false, 
+        opacity: 0.8  // Set opacity to 80%
+    });
+    
+    const sphereMesh = new THREE.Mesh(sphereGeometry, markerMaterial);
+
+    return sphereMesh;
 }
 
 function plotHeatmap() {
@@ -1380,20 +1390,37 @@ async function initializeScene() {
 	setTimes(globalState.finalData);
 
     const playPauseButton = document.getElementById('playPauseButton');
-    // animateVisualization();
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
     if(video) {
-        if (playPauseButton.style.display === 'block') {
-            playPauseButton.style.display = 'none';
-          } else {
-            playPauseButton.style.display = 'block';
-          }
-        playPauseButton.addEventListener('keydown', function (event) {
+
+            playPauseButton.style.display = 'block';        
+            playIcon.setAttribute('tabindex', '0');                         
+
+            playIcon.addEventListener('keydown', function (event) {
+            console.log("did ya come here??");
             if (event.code === 'Space') {
-              console.log("Space bar pressed on button");
-              toggleAnimation(); // Toggle play/pause state
-              event.preventDefault(); // Prevent default space bar behavior (scrolling down)
+            //   console.log("Space bar pressed on button");
+              toggleAnimation(); 
+              event.preventDefault(); 
             }
           });
+          pauseIcon.setAttribute('tabindex', '0');                         
+            pauseIcon.addEventListener('keydown', function (event) {
+            console.log("did ya come here??");
+            if (event.code === 'Space') {
+            //   console.log("Space bar pressed on button");
+              toggleAnimation(); 
+              event.preventDefault(); 
+            }
+          });
+    }
+    else 
+    {   console.log("hello ");
+        console.log(playPauseButton);
+        const playIcon = document.getElementById('playIcon');
+        playIcon.style.display = 'none';
+        playPauseButton.style.display = 'none';
     }
 
 }
@@ -1481,10 +1508,7 @@ function createPlotTemporal() {
         .attr("fill", d => colorScale(d.density)); // Apply density color
 
     // Optional: Add mouse event handlers if needed for interactivity
-    svg.selectAll(".bar")
-        .on("click", function(event, d) {
-            showContextMenu(event, d.topic);
-        });
+
 }
 
 function drawBookmarks(llmTS) {
@@ -1563,11 +1587,6 @@ document.getElementById('spatial-view').addEventListener('wheel', function(event
     // Prevent default scrolling behavior
     event.preventDefault();
 });
-
-function showContextMenu(event, topic) {
-    console.log(`Context menu for ${topic}`);
-}
-
 
 
 
@@ -2039,7 +2058,6 @@ function handleContextChange(context, userId, isChecked) {
 
 	  case 'Context':
 		globalState.viewProps[userId]["Context"] = isChecked;
-        toggleAnimation();
 		updatePointCloudBasedOnSelections();
 		break;
 
@@ -2687,7 +2705,11 @@ function parseTimeToMillis(customString) {
 }
 
 function updateSpatialView(nextTimestamp){
-
+    globalState.lineTimeStamp1 = nextTimestamp;                  
+    globalState.lineTimeStamp2 = nextTimestamp + 5000;    
+      updatePointCloudBasedOnSelections();
+      updateObjectsBasedOnSelections();
+      updateMarkersBasedOnSelections();
     return ;
 
 }
@@ -3366,8 +3388,6 @@ async function initialize() {
 	await initializeScene();
 	const binsDropdown = document.getElementById('binsDropdown');
 	globalState.bins = binsDropdown.value;
-    // const playPauseButton = document.getElementById('playPauseButton');
-	// const playPauseButtonHeight = playPauseButton.offsetHeight;
 
 	createSharedAxis();
 	createPlotTemporal();
@@ -3406,7 +3426,6 @@ onWindowResize();
 
 
 function animate() {
-	// initializeInteraction();
 	requestAnimationFrame(animate);
 	globalState.controls.update();
 	globalState.renderer.render(globalState.scene, globalState.camera);
