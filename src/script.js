@@ -23,9 +23,9 @@ import {
 
 
 let logMode = {
-	vrGame: 1,
+	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 0,
+	infoVisCollab: 1,
 	sceneNavigation: 0,
 	maintenance: 0
 }
@@ -39,7 +39,7 @@ let noneEnabled = true;
 let numUsers = 0;
 let uniqueUsers ;
 let uniqueActions ;
-let dynamicColorMapping ; 
+let dynamicColorMapping ;
 let x ;
 let yScale ;
 let intervals;
@@ -127,9 +127,37 @@ const hsl = {
 	l: 0
 };
 const topicOfInterest = "";
+const userActionColors = {
+    "User1": {
+        "Action1": "#A8E6CF", // Light Green
+        "Action2": "#88DBC2", // Mint Green
+        "Action3": "#66CFAE", // Medium Green
+        "Action4": "#44C39A", // Green-Teal
+        "Action5": "#22B787", // Teal
+        "Action6": "#1EA175"  // Dark Teal
+    },
+    "User2": {
+        "Action1": "#4DD0E1", // Light Teal
+        "Action2": "#42BACE", // Teal
+        "Action3": "#36A1B8", // Deeper Teal
+        "Action4": "#2A87A0", // Medium Cyan
+        "Action5": "#1F6E88", // Dark Cyan
+        "Action6": "#155571"  // Dark Blue-Teal
+    },
+    "User3": {
+        "Action1": "#1E88E5", // Light Blue
+        "Action2": "#1876CD", // Medium Blue
+        "Action3": "#1462B4", // Darker Blue
+        "Action4": "#104F9B", // Navy Blue
+        "Action5": "#0D3C82", // Dark Navy
+        "Action6": "#09296A"  // Deep Navy
+    }
+};
+
 const colorScale = d3.scaleOrdinal()
     .domain(["User1", "User2", "User3", "0", "1", "2"])
-    .range(["#66CFAE", "#36A1B8", "#1e88e5", "#8dd3c7", "#fdcdac", "#bebada"]);
+    .range(["#66CFAE", "#36A1B8", "#4682b4", "#8dd3c7", "#fdcdac", "#bebada"]);
+
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
@@ -651,32 +679,7 @@ function getColorForUserAction(userID, actionName) {
     return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  // Default to white if not found
 }
 
-const userActionColors = {
-    "User1": {
-        "Action1": "#A8E6CF", // Light Green
-        "Action2": "#88DBC2", // Mint Green
-        "Action3": "#66CFAE", // Medium Green
-        "Action4": "#44C39A", // Green-Teal
-        "Action5": "#22B787", // Teal
-        "Action6": "#1EA175"  // Dark Teal
-    },
-    "User2": {
-        "Action1": "#4DD0E1", // Light Teal
-        "Action2": "#42BACE", // Teal
-        "Action3": "#36A1B8", // Deeper Teal
-        "Action4": "#2A87A0", // Medium Cyan
-        "Action5": "#1F6E88", // Dark Cyan
-        "Action6": "#155571"  // Dark Blue-Teal
-    },
-    "User3": {
-        "Action1": "#1E88E5", // Light Blue
-        "Action2": "#1876CD", // Medium Blue
-        "Action3": "#1462B4", // Darker Blue
-        "Action4": "#104F9B", // Navy Blue
-        "Action5": "#0D3C82", // Dark Navy
-        "Action6": "#09296A"  // Deep Navy
-    }
-};
+
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
@@ -880,7 +883,7 @@ async function updateMarkersBasedOnSelections() {
                     // Create a sphere marker
                     const actionIndex = uniqueActions.indexOf(action.Name);
                     // const marker = createSphereMarker(actionIndex);  // Create a sphere marker with color
-                    const marker = createSphereMarker(userID, action.Name); 
+                    const marker = createSphereMarker(userID, action.Name);
                     marker.position.set(location.x, location.y, location.z);
                     marker.name = `Marker_${key}`;
                     globalState.scene.add(marker);  // Add marker to the scene
@@ -918,8 +921,8 @@ async function updateMarkersBasedOnSelections() {
 // 				if (globalState.loadedObjects[nvoUser][key]) {
 //                     try {
 //                         const obj = await globalState.loadedObjects[nvoUser][key];
-//                         while (obj && obj.parent) { 
-//                             if (obj.geometry) obj.geometry.dispose(); 
+//                         while (obj && obj.parent) {
+//                             if (obj.geometry) obj.geometry.dispose();
 //                             if (obj.material) obj.material.dispose();
 //                             globalState.scene.remove(obj);
 //                         }
@@ -938,7 +941,7 @@ async function updateMarkersBasedOnSelections() {
 // 	});
 
 //     for (const action of data) {
-//         let originLocation = null ; 
+//         let originLocation = null ;
 //         if (action.Data.length > 1 ) {
 //             originLocation = parseLocation(action.Data[0].ActionReferentLocation);
 //         }
@@ -957,7 +960,7 @@ async function updateMarkersBasedOnSelections() {
 //             }
 //         }
 //     }
-  
+
 //     // Unload objects that are no longer needed
 //     for (const userID of Object.keys(globalState.loadedObjects)) {
 // 		for (const key of Object.keys(globalState.loadedObjects[userID])){
@@ -998,7 +1001,7 @@ async function updateMarkersBasedOnSelections() {
 //                                 const deltaX = location.x - originLocation.x;
 //                                 const deltaY = location.y - originLocation.y;
 //                                 const deltaZ = location.z - originLocation.z;
-                                
+
 //                                 // Apply the delta to the object's position
 //                                 obj.position.set(deltaX, deltaY, deltaZ);
 //                             }
@@ -1091,9 +1094,9 @@ async function updateObjectsBasedOnSelections() {
             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 &&
                 subAction.ActionReferentBody && action.ReferentType === "Virtual" &&
                 selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
-                
+
                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-                
+
                 if (!newFilteredActions[action.User].has(key)) {
                     newFilteredActions[action.User].add(key);
                     actionsToLoad[action.User].push({ key, subAction, originLocation }); // Add originLocation for delta calculation
@@ -1134,19 +1137,19 @@ async function updateObjectsBasedOnSelections() {
                         .then(obj => {
                             obj.name = key;
                             const location = parseLocation(subAction.ActionReferentLocation);
-                            // && video === true 
+                            // && video === true
                             if (logMode.vrGame && originLocation) {  // Only adjust if originLocation exists
                                 // Calculate the delta from the origin
-                                // console.log("came here with object " + adjustedPath); 
+                                // console.log("came here with object " + adjustedPath);
                                 const existingObject = globalState.scene.getObjectByName(key);
-                                
+
                                 const deltaX = location.x - originLocation.x;
                                 const deltaY = location.y - originLocation.y;
                                 const deltaZ = location.z - originLocation.z;
                                 console.log(existingObject);
                                 if (existingObject) {
-                                    console.log("ur changing it here !"); 
-                                    existingObject.position.set(deltaX, deltaY, deltaZ); 
+                                    console.log("ur changing it here !");
+                                    existingObject.position.set(deltaX, deltaY, deltaZ);
                                 }
                                 // obj.position.set(deltaX, deltaY, deltaZ);
                             }
@@ -1176,12 +1179,12 @@ function createSphereMarker(userID, actionName) {
     const sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
 
     // Material with color based on user ID and action
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
+    const markerMaterial = new THREE.MeshBasicMaterial({
         color: color,  // Use color from dynamicColorMapping
-        transparent: false, 
+        transparent: false,
         opacity: 0.8  // Set opacity to 80%
     });
-    
+
     const sphereMesh = new THREE.Mesh(sphereGeometry, markerMaterial);
 
     return sphereMesh;
@@ -1510,28 +1513,28 @@ async function initializeScene() {
     const pauseIcon = document.getElementById('pauseIcon');
     if(video) {
 
-            playPauseButton.style.display = 'block';        
-            playIcon.setAttribute('tabindex', '0');                         
+            playPauseButton.style.display = 'block';
+            playIcon.setAttribute('tabindex', '0');
 
             playIcon.addEventListener('keydown', function (event) {
             console.log("did ya come here??");
             if (event.code === 'Space') {
             //   console.log("Space bar pressed on button");
-              toggleAnimation(); 
-              event.preventDefault(); 
+              toggleAnimation();
+              event.preventDefault();
             }
           });
-          pauseIcon.setAttribute('tabindex', '0');                         
+          pauseIcon.setAttribute('tabindex', '0');
             pauseIcon.addEventListener('keydown', function (event) {
             console.log("did ya come here??");
             if (event.code === 'Space') {
             //   console.log("Space bar pressed on button");
-              toggleAnimation(); 
-              event.preventDefault(); 
+              toggleAnimation();
+              event.preventDefault();
             }
           });
     }
-    else 
+    else
     {   console.log("hello ");
         console.log(playPauseButton);
         const playIcon = document.getElementById('playIcon');
@@ -2821,8 +2824,8 @@ function parseTimeToMillis(customString) {
 }
 
 function updateSpatialView(nextTimestamp){
-    globalState.lineTimeStamp1 = nextTimestamp;                  
-    globalState.lineTimeStamp2 = nextTimestamp + 5000;    
+    globalState.lineTimeStamp1 = nextTimestamp;
+    globalState.lineTimeStamp2 = nextTimestamp + 5000;
       updatePointCloudBasedOnSelections();
       updateObjectsBasedOnSelections();
       updateMarkersBasedOnSelections();
@@ -2932,19 +2935,19 @@ function updateXRSnapshot(){
 		const filteredSubActions = action.Data.filter(subAction => {
 			const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
 			const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-	
-			const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 && 
+
+			const isInTimeRange = actionEndTime >= globalState.lineTimeStamp1 &&
 				actionStartTime <= globalState.lineTimeStamp2;
 
 			const containsPng = subAction.ActionReferentBody && subAction.ActionReferentBody.includes("png");
-	
+
 			if (isInTimeRange && containsPng) {
 				imgPaths.push(subAction.ActionReferentBody); // Add to imgPaths if it contains 'png'
 			}
-	
+
 			return isInTimeRange && containsPng;
 		});
-	
+
 		return hasVisibleUserID && selectedActions.includes(action.Name) && filteredSubActions.length > 0;
 	});
 
@@ -2958,7 +2961,7 @@ function updateXRSnapshot(){
 		imageWrapper.style.margin = 'auto';
 		imageWrapper.style.overflow = 'hidden'; // Ensures the content doesn't overflow
 		imageWrapper.style.textAlign = 'center'; // Center the arrows relative to the image
-	
+
 		imgPaths.forEach((imagePath, index) => {
 			imagePath = globalState.objFilePath + '\\' + imagePath;
 			const img = document.createElement('img');
@@ -2971,9 +2974,9 @@ function updateXRSnapshot(){
 			img.style.display = index === 0 ? 'block' : 'none';
 			imageWrapper.appendChild(img);
 		});
-	
+
 		container.appendChild(imageWrapper);
-	
+
 		addNavigationArrows(imageWrapper, imgPaths);
 	} else {
 		// titleElement.innerHTML = 'No images available!';
@@ -3101,8 +3104,10 @@ function createSpeechBox(action, subAction) {
     const details = document.createElement('div');
 	// Highlight the Intent field
     const intentDiv = document.createElement('div');
-    intentDiv.style.backgroundColor = '#8bb6d9';  // Cool Mint for highlighting
-    intentDiv.style.color = 'white';
+    // intentDiv.style.backgroundColor = '#d3d3d3';  // Cool Mint for highlighting
+    intentDiv.style.backgroundColor = 'rgba(235,235,235,1.0)';
+    // 8bb6d9
+    intentDiv.style.color = 'black';
     intentDiv.style.padding = '4px';
     intentDiv.style.borderRadius = '5px';
     intentDiv.style.fontSize = '1em';
