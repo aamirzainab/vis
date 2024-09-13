@@ -1137,11 +1137,18 @@ async function updateObjectsBasedOnSelections() {
                             // && video === true 
                             if (logMode.vrGame && originLocation) {  // Only adjust if originLocation exists
                                 // Calculate the delta from the origin
-                                console.log("came here with object " + adjustedPath); 
+                                // console.log("came here with object " + adjustedPath); 
+                                const existingObject = globalState.scene.getObjectByName(key);
+                                
                                 const deltaX = location.x - originLocation.x;
                                 const deltaY = location.y - originLocation.y;
                                 const deltaZ = location.z - originLocation.z;
-                                obj.position.set(deltaX, deltaY, deltaZ);
+                                console.log(existingObject);
+                                if (existingObject) {
+                                    console.log("ur changing it here !"); 
+                                    existingObject.position.set(deltaX, deltaY, deltaZ); 
+                                }
+                                // obj.position.set(deltaX, deltaY, deltaZ);
                             }
 
                             return obj; // Return the loaded object
