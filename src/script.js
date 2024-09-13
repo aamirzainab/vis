@@ -31,7 +31,7 @@ let logMode = {
 }
 
 let video = false ;
-
+const animationStep = 100;
 
 let speechEnabled = false;
 let xrInteractionEnabled = false;
@@ -133,17 +133,8 @@ const colorScale = d3.scaleOrdinal()
 
 const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
-const animationStep = 200;
-let roomMesh;
-let meshes = [];
-let avatars = []
-let interactionMeshes = []
-let speechMeshes = []
 
 
-let avatarLoaded = false;
-let roomLoaded = false;
-let movementPointsMesh;
 
 
 
@@ -216,7 +207,6 @@ async function loadAvatarModel(filename) {
 	avatar.scale.set(1, 1, 1);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
-	avatarLoaded = true;
 	return avatar;
 }
 async function loadIpadModel(filename) {
@@ -227,7 +217,6 @@ async function loadIpadModel(filename) {
 	avatar.scale.set(2, 2, 2);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
-	avatarLoaded = true;
 	return avatar;
 }
 async function loadHand(filename) {
@@ -238,7 +227,6 @@ async function loadHand(filename) {
 	avatar.scale.set(2, 2, 2);
 	avatar.name = filename;
 	globalState.scene.add(avatar);
-	avatarLoaded = true;
 	return avatar;
 }
 
@@ -905,34 +893,160 @@ async function updateMarkersBasedOnSelections() {
     }
 }
 
+// async function updateObjectsBasedOnSelections() {
+//     const data = globalState.finalData;
+// 	const newFilteredActions = {};
+//     const actionsToLoad = {};
+// 	const selectedActions = getSelectedTopics();
 
+// 	const selectedUsers = Object.keys(globalState.show)
+// 	.filter(userID => globalState.show[userID])
+// 	.map(userID => `User${userID}`);
 
+// 	const visibleObjectUsers = selectedUsers.filter(userId => {
+// 		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
+// 	});
+
+// 	const nonVisibleObjectUsers = selectedUsers.filter(userId => {
+// 		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === false;
+// 	});
+
+// 	//remove loadedObjects for selected user not selected object
+// 	for (const nvoUser of nonVisibleObjectUsers) {
+// 		if(nvoUser in globalState.loadedObjects){
+// 			for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
+// 				if (globalState.loadedObjects[nvoUser][key]) {
+//                     try {
+//                         const obj = await globalState.loadedObjects[nvoUser][key];
+//                         while (obj && obj.parent) { 
+//                             if (obj.geometry) obj.geometry.dispose(); 
+//                             if (obj.material) obj.material.dispose();
+//                             globalState.scene.remove(obj);
+//                         }
+//                         delete globalState.loadedObjects[nvoUser][key];
+//                     } catch (error) {
+//                         console.error(`Error removing object ${key}:`, error);
+//                     }
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	visibleObjectUsers.forEach((vcUser) => {
+// 		newFilteredActions[vcUser] = new Set();
+// 		actionsToLoad[vcUser] = [];
+// 	});
+
+//     for (const action of data) {
+//         let originLocation = null ; 
+//         if (action.Data.length > 1 ) {
+//             originLocation = parseLocation(action.Data[0].ActionReferentLocation);
+//         }
+//         for (const subAction of action.Data) {
+//             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+//             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+//             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2
+// 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
+// 				&& selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
+//                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
+//                 if (!newFilteredActions[action.User].has(key)){
+// 				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){
+//                     newFilteredActions[action.User].add(key);
+//                     actionsToLoad[action.User].push({ key, subAction });
+//                 }
+//             }
+//         }
+//     }
+  
+//     // Unload objects that are no longer needed
+//     for (const userID of Object.keys(globalState.loadedObjects)) {
+// 		for (const key of Object.keys(globalState.loadedObjects[userID])){
+// 			if (!newFilteredActions[userID].has(key) && globalState.loadedObjects[userID][key]) {
+// 				const obj = await globalState.loadedObjects[userID][key];  // Ensure the object is fully loaded
+// 				if (obj && obj.parent) { // Check if the object is still part of the scene
+// 					if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+// 					if (obj.material) obj.material.dispose();
+// 					globalState.scene.remove(obj);
+// 					delete globalState.loadedObjects[userID][key];
+// 					// console.log(`Object removed from scene and state: ${key}`);
+// 				}
+// 			}
+// 		}
+//     }
+//     if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
+// 		return;
+// 	}
+
+//     // Load new objects that are required
+//       //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
+
+//     for (const userID of Object.keys(actionsToLoad)) {
+// 		for (const { key, subAction } of actionsToLoad[userID]) {
+//             if (globalState.loadedObjects[userID] === undefined) {
+//                 globalState.loadedObjects[userID] = {};
+//             }
+// 			if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
+// 				// console.log(`Loading new object: ${key}`);
+//                 if (!globalState.loadedObjects[userID].hasOwnProperty(key)){
+//                     const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
+//                     globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
+//                         .then(obj => {
+//                             obj.name = key;
+//                             const location = parseLocation(subAction.ActionReferentLocation);
+//                             if (logMode.vrGame && video === true) {
+//                                 // Calculate the delta from the origin
+//                                 const deltaX = location.x - originLocation.x;
+//                                 const deltaY = location.y - originLocation.y;
+//                                 const deltaZ = location.z - originLocation.z;
+                                
+//                                 // Apply the delta to the object's position
+//                                 obj.position.set(deltaX, deltaY, deltaZ);
+//                             }
+
+//                             if (logMode.vrGame)
+//                             {
+//                                 console.log("HELLO OBJ POSITION ", obj.position);
+//                                 console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z);
+//                                 // obj.position.set(-location.x,location.y, -location.z);
+//                             }
+
+//                             // console.log(`Object loaded and added to scene: ${key}`);
+//                             return obj; // Return the loaded object
+//                         })
+//                         .catch(error => {
+//                             console.error(`Failed to load object ${key}:`, error);
+//                             delete globalState.loadedObjects[userID][key]; // Clean up state on failure
+//                         });
+//                     }
+// 			}
+// 		}
+//     }
+// }
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
-	const newFilteredActions = {};
+    const newFilteredActions = {};
     const actionsToLoad = {};
-	const selectedActions = getSelectedTopics();
+    const selectedActions = getSelectedTopics();
 
     // Gather all actions that meet the time range and have not been loaded yet
+    const selectedUsers = Object.keys(globalState.show)
+        .filter(userID => globalState.show[userID])
+        .map(userID => `User${userID}`);
 
-	const selectedUsers = Object.keys(globalState.show)
-	.filter(userID => globalState.show[userID])
-	.map(userID => `User${userID}`);
+    const visibleObjectUsers = selectedUsers.filter(userId => {
+        return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
+    });
 
-	const visibleObjectUsers = selectedUsers.filter(userId => {
-		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
-	});
+    const nonVisibleObjectUsers = selectedUsers.filter(userId => {
+        return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === false;
+    });
 
-	const nonVisibleObjectUsers = selectedUsers.filter(userId => {
-		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === false;
-	});
-
-	//remove loadedObjects for selected user not selected object
-	for (const nvoUser of nonVisibleObjectUsers) {
-		if(nvoUser in globalState.loadedObjects){
-			for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
-				if (globalState.loadedObjects[nvoUser][key]) {
+    // Remove loadedObjects for selected users who are not selecting objects
+    for (const nvoUser of nonVisibleObjectUsers) {
+        if (nvoUser in globalState.loadedObjects) {
+            for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
+                if (globalState.loadedObjects[nvoUser][key]) {
                     try {
                         const obj = await globalState.loadedObjects[nvoUser][key]; // Ensure the object is fully loaded
 
@@ -941,112 +1055,107 @@ async function updateObjectsBasedOnSelections() {
                             if (obj.geometry) obj.geometry.dispose(); // Dispose resources
                             if (obj.material) obj.material.dispose();
                             globalState.scene.remove(obj);
-
-                            // After removing, check if the object still has a parent (i.e., still in the scene)
-                            // If yes, continue removing it
                         }
 
                         // Once all instances are removed, delete from loaded objects
                         delete globalState.loadedObjects[nvoUser][key];
-                        // console.log(`All instances of object removed from scene and state: ${key}`);
                     } catch (error) {
                         console.error(`Error removing object ${key}:`, error);
                     }
-				}
-			}
-		}
-	}
-
-	// if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
-	// 	return;
-	// }
-
-	visibleObjectUsers.forEach((vcUser) => {
-		newFilteredActions[vcUser] = new Set();
-		actionsToLoad[vcUser] = [];
-	});
-
-    for (const action of data) {
-        for (const subAction of action.Data) {
-            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2
-				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
-				&& selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
-                const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-                if (!newFilteredActions[action.User].has(key)){
-				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){
-                    newFilteredActions[action.User].add(key);
-                    actionsToLoad[action.User].push({ key, subAction });
                 }
             }
         }
     }
-  
+
+    visibleObjectUsers.forEach((vcUser) => {
+        newFilteredActions[vcUser] = new Set();
+        actionsToLoad[vcUser] = [];
+    });
+
+    for (const action of data) {
+        if (action.Data.length === 0) continue; // Skip if no subactions
+
+        let originLocation = null;
+        if (action.Data.length > 1 && action.ReferentType == "Virtual") {
+            const firstDataEntry = action.Data[0];
+            if (firstDataEntry.ActionReferentLocation)
+            {
+                originLocation = parseLocation(firstDataEntry.ActionReferentLocation);
+            }
+        }
+
+        for (const subAction of action.Data) {
+            const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
+            const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
+
+            if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2 &&
+                subAction.ActionReferentBody && action.ReferentType === "Virtual" &&
+                selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
+                
+                const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
+                
+                if (!newFilteredActions[action.User].has(key)) {
+                    newFilteredActions[action.User].add(key);
+                    actionsToLoad[action.User].push({ key, subAction, originLocation }); // Add originLocation for delta calculation
+                }
+            }
+        }
+    }
+
     // Unload objects that are no longer needed
     for (const userID of Object.keys(globalState.loadedObjects)) {
-		for (const key of Object.keys(globalState.loadedObjects[userID])){
-			if (!newFilteredActions[userID].has(key) && globalState.loadedObjects[userID][key]) {
-				const obj = await globalState.loadedObjects[userID][key];  // Ensure the object is fully loaded
-				if (obj && obj.parent) { // Check if the object is still part of the scene
-					if (obj.geometry) obj.geometry.dispose(); // Dispose resources
-					if (obj.material) obj.material.dispose();
-					globalState.scene.remove(obj);
-					delete globalState.loadedObjects[userID][key];
-					// console.log(`Object removed from scene and state: ${key}`);
-				}
-			}
-		}
+        for (const key of Object.keys(globalState.loadedObjects[userID])) {
+            if (!newFilteredActions[userID].has(key) && globalState.loadedObjects[userID][key]) {
+                const obj = await globalState.loadedObjects[userID][key];  // Ensure the object is fully loaded
+                if (obj && obj.parent) { // Check if the object is still part of the scene
+                    if (obj.geometry) obj.geometry.dispose(); // Dispose resources
+                    if (obj.material) obj.material.dispose();
+                    globalState.scene.remove(obj);
+                    delete globalState.loadedObjects[userID][key];
+                }
+            }
+        }
     }
+
     if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
-		return;
-	}
+        return;
+    }
 
     // Load new objects that are required
-      //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
-
     for (const userID of Object.keys(actionsToLoad)) {
-		for (const { key, subAction } of actionsToLoad[userID]) {
+        for (const { key, subAction, originLocation } of actionsToLoad[userID]) {
             if (globalState.loadedObjects[userID] === undefined) {
                 globalState.loadedObjects[userID] = {};
             }
-			if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
-				// console.log(`Loading new object: ${key}`);
-                if (!globalState.loadedObjects[userID].hasOwnProperty(key)){
+            if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
+                if (!globalState.loadedObjects[userID].hasOwnProperty(key)) {
                     const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
                     globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
                         .then(obj => {
                             obj.name = key;
                             const location = parseLocation(subAction.ActionReferentLocation);
-                            if (logMode.vrGame && video === true) {
+                            // && video === true 
+                            if (logMode.vrGame && originLocation) {  // Only adjust if originLocation exists
                                 // Calculate the delta from the origin
+                                console.log("came here with object " + adjustedPath); 
                                 const deltaX = location.x - originLocation.x;
                                 const deltaY = location.y - originLocation.y;
                                 const deltaZ = location.z - originLocation.z;
-                                
-                                // Apply the delta to the object's position
                                 obj.position.set(deltaX, deltaY, deltaZ);
                             }
 
-                            if (logMode.vrGame)
-                            {
-                                console.log("HELLO OBJ POSITION ", obj.position);
-                                console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z);
-                                // obj.position.set(-location.x,location.y, -location.z);
-                            }
-
-                            // console.log(`Object loaded and added to scene: ${key}`);
                             return obj; // Return the loaded object
                         })
                         .catch(error => {
                             console.error(`Failed to load object ${key}:`, error);
                             delete globalState.loadedObjects[userID][key]; // Clean up state on failure
                         });
-                    }
-			}
-		}
+                }
+            }
+        }
     }
 }
+
 
 function createSphereMarker(userID, actionName) {
     const radius = 0.03;  // Reduced size for better visualization
