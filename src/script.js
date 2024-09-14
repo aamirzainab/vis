@@ -25,24 +25,19 @@ import {
 let logMode = {
 	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 1,
-	sceneNavigation: 0,
+	infoVisCollab: 0,
+	sceneNavigation: 1,
 	maintenance: 0
 }
 
 let video = false ;
 const animationStep = 100;
 
-let speechEnabled = false;
-let xrInteractionEnabled = false;
-let noneEnabled = true;
 let numUsers = 0;
 let uniqueUsers ;
 let uniqueActions ;
 let dynamicColorMapping ;
 let x ;
-let yScale ;
-let intervals;
 let globalState = {
 	currentTimestamp: 0,
 	bins: undefined,
@@ -117,16 +112,14 @@ function initializeViewProps() {
 	);
   }
 
-const userInterestTopic = "Error, bugs or complaints";
 
-const margin = { top: 20, right: 30, bottom: 10, left: 160 };
+const margin = { top: 20, right: 30, bottom: 5, left: 160 };
 let buffer = 167;
 const hsl = {
 	h: 0,
 	s: 0,
 	l: 0
 };
-const topicOfInterest = "";
 const userActionColors = {
     "User1": {
         "Action1": "#A8E6CF", // Light Green
@@ -168,21 +161,59 @@ const opacities = [0.2, 0.4, 0.6, 0.8, 1];
 
 function toggleAnimation() {
     if (video) {
-        globalState.isAnimating = !globalState.isAnimating;
-        const playIcon = document.getElementById('playIcon');
-        const pauseIcon = document.getElementById('pauseIcon');
-        if (globalState.isAnimating) {
+        const isPlaying = playIcon.style.display === 'none';
+
+        if (isPlaying) {
+            pauseIcon.style.display = 'none';
+            playIcon.style.display = 'block';
+            globalState.isAnimating = false;
+        } else {
             playIcon.style.display = 'none';
             pauseIcon.style.display = 'block';
-        } else {
-            playIcon.style.display = 'block';
-            pauseIcon.style.display = 'none';
+            globalState.isAnimating = true;
         }
+
         if (globalState.isAnimating) {
             animateVisualization();
         }
     }
 }
+
+
+
+
+// function toggleAnimation() {
+//     if (video) {
+//         const playIcon = document.getElementById('playIcon');
+//         const pauseIcon = document.getElementById('pauseIcon');
+//         if (playIcon.style.display == 'none') {
+//             pauseIcon.style.display = 'none'
+//             playIcon.style.display = 'block';
+//             globalState.isAnimating = true ; 
+//         }
+//         else 
+//         {
+//             pauseIcon.style.display = 'block';
+//             playIcon.style.display = 'none';
+//             globalState.isAnimating = false ; 
+//         }
+//         if (globalState.isAnimating) {
+//             animateVisualization();
+//         }
+        
+
+//         // if (globalState.isAnimating) {
+//         //     playIcon.style.display = 'none';
+//         //     pauseIcon.style.display = 'block';
+//         // } else {
+//         //     playIcon.style.display = 'block';
+//         //     pauseIcon.style.display = 'none';
+//         // }
+//         // if (globalState.isAnimating) {
+//         //     animateVisualization();
+//         // }
+//     }
+// }
 
 export function updateIntervals() {
   createSharedAxis();
@@ -675,8 +706,7 @@ function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
 }
 // const dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
 function getColorForUserAction(userID, actionName) {
-    console.log(userID,actionName);
-    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  // Default to white if not found
+    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  
 }
 
 
@@ -1511,37 +1541,73 @@ async function initializeScene() {
     const playPauseButton = document.getElementById('playPauseButton');
     const playIcon = document.getElementById('playIcon');
     const pauseIcon = document.getElementById('pauseIcon');
-    if(video) {
+    playPauseButton.style.display = 'block'; 
+    // if(video) {
 
-            playPauseButton.style.display = 'block';
-            playIcon.setAttribute('tabindex', '0');
+    //         playPauseButton.style.display = 'block';        
+    //         playIcon.setAttribute('tabindex', '0');                         
 
-            playIcon.addEventListener('keydown', function (event) {
-            console.log("did ya come here??");
-            if (event.code === 'Space') {
-            //   console.log("Space bar pressed on button");
-              toggleAnimation();
-              event.preventDefault();
-            }
-          });
-          pauseIcon.setAttribute('tabindex', '0');
-            pauseIcon.addEventListener('keydown', function (event) {
-            console.log("did ya come here??");
-            if (event.code === 'Space') {
-            //   console.log("Space bar pressed on button");
-              toggleAnimation();
-              event.preventDefault();
-            }
-          });
-    }
-    else
-    {   console.log("hello ");
-        console.log(playPauseButton);
-        const playIcon = document.getElementById('playIcon');
-        playIcon.style.display = 'none';
-        playPauseButton.style.display = 'none';
-    }
+    //         playIcon.addEventListener('keydown', function (event) {
+    //         console.log("did ya come here??");
+    //         if (event.code === 'Space') {
+    //         //   console.log("Space bar pressed on button");
+    //           toggleAnimation(); 
+    //           event.preventDefault(); 
+    //         }
+    //       });
+    //       pauseIcon.setAttribute('tabindex', '0');                         
+    //         pauseIcon.addEventListener('keydown', function (event) {
+    //         console.log("did ya come here??");
+    //         if (event.code === 'Space') {
+    //         //   console.log("Space bar pressed on button");
+    //           toggleAnimation(); 
+    //           event.preventDefault(); 
+    //         }
+    //       });
+    // }
+    // else 
+    // {   console.log("hello ");
+    //     console.log(playPauseButton);
+    //     const playIcon = document.getElementById('playIcon');
+    //     playIcon.style.display = 'none';
+    //     playPauseButton.style.display = 'none';
+    // }
 
+    
+    // Default state: paused, so play icon should be hidden, and pause icon should be visible.
+
+    
+    // if (video) {
+    //     playIcon.style.display = 'none'; // Hide play icon initially
+    //     pauseIcon.style.display = 'block'; // Show pause icon initially
+    //     playPauseButton.style.display = 'block'; // Show the play/pause button if video is true
+    
+    //     playIcon.setAttribute('tabindex', '0'); // Make play icon focusable
+    
+    //     playIcon.addEventListener('keydown', function (event) {
+    //         if (event.code === 'Space') {
+    //             console.log("Play icon activated with space key");
+    //             toggleAnimation();
+    //             event.preventDefault();
+    //         }
+    //     });
+    
+    //     pauseIcon.setAttribute('tabindex', '0'); // Make pause icon focusable
+    
+    //     pauseIcon.addEventListener('keydown', function (event) {
+    //         if (event.code === 'Space') {
+    //             console.log("Pause icon activated with space key");
+    //             toggleAnimation();
+    //             event.preventDefault();
+    //         }
+    //     });
+    // } else {
+    //     console.log("No video available");
+    //     playPauseButton.style.display = 'none'; // Hide play/pause button if video is false
+    //     playIcon.style.display = 'none'; // Hide play icon if video is false
+    // }
+    
+    
 }
 
 function filterDataByType(data) {
@@ -1575,8 +1641,7 @@ function createPlotTemporal() {
 
     const temporalViewContainer = d3.select("#temporal-view");
     const width = (document.getElementById('spatial-view').clientWidth - margin.left - margin.right) * 0.9;
-    // const height = document.getElementById('temporal-view').clientHeight - margin.top - margin.bottom;
-	const height = 220;
+	const height = 310;
     const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
@@ -1639,7 +1704,10 @@ function drawBookmarks(llmTS) {
 		.range([0, globalState.dynamicWidth]);
 
 	// Updated bookmark path with appropriate size
-	const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
+	// const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
+    const bookmarkPath = "M22.5 4.5 L22.5 38.25 L11.25 22.5 L0 38.25 L0 4.5 Z";
+
+
 
     Object.entries(llmTS).forEach(([id, times]) => {
         times.forEach(timeStr => {
@@ -1670,16 +1738,27 @@ function drawBookmarks(llmTS) {
                     .attr("d", bookmarkPath)
                     .attr("fill", "#ff9800");
 
-                // Append the key (number) inside the bookmark icon
-                bookmarkGroup.append("text")
-                    .attr("x", 7.5)  // Centered horizontally in the bookmark
-                    .attr("y", 14)   // Vertically aligned in the bookmark
+                    bookmarkGroup.append("text")
+                    .attr("x", 11.25)  // Centered horizontally in the bookmark (half of 22.5)
+                    .attr("y", 20)     // Vertically aligned in the bookmark (adjusted for the new height)
                     .attr("text-anchor", "middle")
-                    .attr("fill", "#000") // White color for contrast
-                    .attr("font-size", "12px") // Adjust the font size to fit inside the bookmark
+                    .attr("fill", "#000") // Black color for contrast
+                    .attr("font-size", "14px") // Adjust the font size to fit inside the bookmark
                     .attr("font-weight", "bold")
                     .text(id); // Use the key as the text
-            }
+                }
+
+
+                // Append the key (number) inside the bookmark icon
+            //     bookmarkGroup.append("text")
+            //         .attr("x", 7.5)  // Centered horizontally in the bookmark
+            //         .attr("y", 14)   // Vertically aligned in the bookmark
+            //         .attr("text-anchor", "middle")
+            //         .attr("fill", "#000") // White color for contrast
+            //         .attr("font-size", "12px") // Adjust the font size to fit inside the bookmark
+            //         .attr("font-weight", "bold")
+            //         .text(id); // Use the key as the text
+            // }
         });
     });
 }
@@ -2824,8 +2903,8 @@ function parseTimeToMillis(customString) {
 }
 
 function updateSpatialView(nextTimestamp){
-    globalState.lineTimeStamp1 = nextTimestamp;
-    globalState.lineTimeStamp2 = nextTimestamp + 5000;
+    globalState.lineTimeStamp1 = nextTimestamp;                  
+    globalState.lineTimeStamp2 = nextTimestamp + 10000;    
       updatePointCloudBasedOnSelections();
       updateObjectsBasedOnSelections();
       updateMarkersBasedOnSelections();
@@ -2921,7 +3000,7 @@ function updateXRSnapshot(){
 	// Create a title element
 	const titleElement = document.createElement('div');
 	titleElement.style.textAlign = 'center';
-	titleElement.style.marginBottom = '8px';
+	// titleElement.style.marginBottom = '8px';
 	titleElement.id = 'imageTitle';
 	container.appendChild(titleElement);
 
@@ -2955,9 +3034,9 @@ function updateXRSnapshot(){
 		container.style.display = 'block';
 		const imageWrapper = document.createElement('div');
 		imageWrapper.style.position = 'relative';
-		// imageWrapper.style.maxWidth = '500px'; // Limit the max width
-		imageWrapper.style.maxWidth = '99%';  // Set max width to 100% of the container
-        imageWrapper.style.maxHeight = '95%';  // Set max height to 100% of the container
+
+		imageWrapper.style.maxWidth = '100%';  // Set max width to 100% of the container
+        imageWrapper.style.maxHeight = '100%';  // Set max height to 100% of the container
 		imageWrapper.style.margin = 'auto';
 		imageWrapper.style.overflow = 'hidden'; // Ensures the content doesn't overflow
 		imageWrapper.style.textAlign = 'center'; // Center the arrows relative to the image
@@ -2967,10 +3046,9 @@ function updateXRSnapshot(){
 			const img = document.createElement('img');
 			img.src = imagePath;
 			img.alt = "Raw Capture Image";
-			img.style.maxWidth = '99%';
+			img.style.maxWidth = '100%';
 			img.style.maxHeight = '100%'; // Ensure it fits vertically too
 			img.style.objectFit = 'contain';
-			img.style.borderRadius = '8px';
 			img.style.display = index === 0 ? 'block' : 'none';
 			imageWrapper.appendChild(img);
 		});
@@ -2989,7 +3067,7 @@ function addNavigationArrows(imageWrapper, imgPaths) {
 	prevArrow.innerHTML = '&#10094;';
 	prevArrow.style.position = 'absolute';
 	prevArrow.style.top = '50%';
-	prevArrow.style.left = '1px';
+	prevArrow.style.left = '5px';
 	prevArrow.style.transform = 'translateY(-50%)'; // Center vertically
 	prevArrow.style.fontSize = '2em'; // Adjust size relative to image
 	prevArrow.style.background = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent background
@@ -3003,7 +3081,7 @@ function addNavigationArrows(imageWrapper, imgPaths) {
 	nextArrow.innerHTML = '&#10095;';
 	nextArrow.style.position = 'absolute';
 	nextArrow.style.top = '50%';
-	nextArrow.style.right = '1px';
+	nextArrow.style.right = '5px';
 	nextArrow.style.transform = 'translateY(-50%)';
 	nextArrow.style.fontSize = '2em';
 	nextArrow.style.background = 'rgba(0, 0, 0, 0.5)';
