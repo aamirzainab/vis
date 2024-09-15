@@ -23,10 +23,10 @@ import {
 
 
 let logMode = {
-	vrGame: 0,
+	vrGame: 1,
 	immersiveAnalytics: 0,
 	infoVisCollab: 0,
-	sceneNavigation: 1,
+	sceneNavigation: 0,
 	maintenance: 0
 }
 
