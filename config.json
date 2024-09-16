@@ -34,5 +34,11 @@
         "llmInsightFilePath": "llmInsights/maintenance/final_llm_insights.json",
         "objFilePath" : "obj/maintenance/",
         "obContext" : ["Context", "Object", "Tracemap"]
+    },
+    "videoScene":{
+        "logFilePath": "logs/videoScene/Processed_Log_VIDEO_EXR_SceneNavigation.json",
+        "llmInsightFilePath": "llmInsights/videoScene/final_llm_insights.json",
+        "objFilePath" : "obj/videoScene/",
+        "obContext" : ["Context", "Object", "Tracemap"]
     }
 }

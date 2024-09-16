@@ -23,11 +23,12 @@ import {
 
 
 let logMode = {
-	vrGame: 1,
+	vrGame: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 0,
+	infoVisCollab: 1,
 	sceneNavigation: 0,
-	maintenance: 0
+	maintenance: 0,
+    videoScene : 0
 }
 
 let video = false ;
@@ -429,7 +430,7 @@ function updateUserDevice(userId, timestamp = null) {
     // Determine the device type based on the log mode
     if (logMode.vrGame || logMode.immersiveAnalytics) {
         deviceType = 'XRHMD';
-    } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance) {
+    } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance || logMode.videoScene) {
         deviceType = 'HandheldARInputDevice';
     } else {
         console.warn('Unsupported log mode.');
@@ -1167,6 +1168,11 @@ async function updateObjectsBasedOnSelections() {
                         .then(obj => {
                             obj.name = key;
                             const location = parseLocation(subAction.ActionReferentLocation);
+                            if (logMode.videoScene)
+                            {
+                                obj.position.y += 0.25; 
+                            }
+
                             // && video === true
                             if (logMode.vrGame && originLocation) {  // Only adjust if originLocation exists
                                 // Calculate the delta from the origin
@@ -2329,10 +2335,12 @@ function plotUserSpecificBarChart() {
 			.forEach(ob => {
 				let ActionReferentName = ob.ActionReferentName;
 				ActionReferentName = ActionReferentName.split('_')[0];
-				if(globalState.useCase == "sceneNavigation"){
+				if(globalState.useCase == "sceneNavigation" || globalState.useCase == "videoScene" ){
+                    if(action.ReferentType == "Physical") {
 					ActionReferentName = ActionReferentName.split("(")[1].trim();
 					ActionReferentName = ActionReferentName.split(",")[0].trim();
 					ActionReferentName = ActionReferentName.replace(/'/g, "");
+                    }
 				}else if(globalState.useCase == "maintenance"){ //Past Inspection Log (1) Past Inspection Log (1) "('QR Code', 0.9)"
 					ActionReferentName = ActionReferentName.match(/"([^"]+)"|([a-zA-Z\s]+)/g)?.join(' ').trim();
 				}else{
