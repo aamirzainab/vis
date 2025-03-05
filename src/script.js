@@ -190,18 +190,18 @@ function toggleAnimation() {
 //         if (playIcon.style.display == 'none') {
 //             pauseIcon.style.display = 'none'
 //             playIcon.style.display = 'block';
-//             globalState.isAnimating = true ; 
+//             globalState.isAnimating = true ;
 //         }
-//         else 
+//         else
 //         {
 //             pauseIcon.style.display = 'block';
 //             playIcon.style.display = 'none';
-//             globalState.isAnimating = false ; 
+//             globalState.isAnimating = false ;
 //         }
 //         if (globalState.isAnimating) {
 //             animateVisualization();
 //         }
-        
+
 
 //         // if (globalState.isAnimating) {
 //         //     playIcon.style.display = 'none';
@@ -707,7 +707,7 @@ function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
 }
 // const dynamicColorMapping = generateDynamicColorMapping(uniqueUsers, uniqueActions);
 function getColorForUserAction(userID, actionName) {
-    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';  
+    return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';
 }
 
 
@@ -1547,31 +1547,31 @@ async function initializeScene() {
     const playPauseButton = document.getElementById('playPauseButton');
     const playIcon = document.getElementById('playIcon');
     const pauseIcon = document.getElementById('pauseIcon');
-    playPauseButton.style.display = 'block'; 
+    playPauseButton.style.display = 'block';
     // if(video) {
 
-    //         playPauseButton.style.display = 'block';        
-    //         playIcon.setAttribute('tabindex', '0');                         
+    //         playPauseButton.style.display = 'block';
+    //         playIcon.setAttribute('tabindex', '0');
 
     //         playIcon.addEventListener('keydown', function (event) {
     //         console.log("did ya come here??");
     //         if (event.code === 'Space') {
     //         //   console.log("Space bar pressed on button");
-    //           toggleAnimation(); 
-    //           event.preventDefault(); 
+    //           toggleAnimation();
+    //           event.preventDefault();
     //         }
     //       });
-    //       pauseIcon.setAttribute('tabindex', '0');                         
+    //       pauseIcon.setAttribute('tabindex', '0');
     //         pauseIcon.addEventListener('keydown', function (event) {
     //         console.log("did ya come here??");
     //         if (event.code === 'Space') {
     //         //   console.log("Space bar pressed on button");
-    //           toggleAnimation(); 
-    //           event.preventDefault(); 
+    //           toggleAnimation();
+    //           event.preventDefault();
     //         }
     //       });
     // }
-    // else 
+    // else
     // {   console.log("hello ");
     //     console.log(playPauseButton);
     //     const playIcon = document.getElementById('playIcon');
@@ -1579,17 +1579,17 @@ async function initializeScene() {
     //     playPauseButton.style.display = 'none';
     // }
 
-    
+
     // Default state: paused, so play icon should be hidden, and pause icon should be visible.
 
-    
+
     // if (video) {
     //     playIcon.style.display = 'none'; // Hide play icon initially
     //     pauseIcon.style.display = 'block'; // Show pause icon initially
     //     playPauseButton.style.display = 'block'; // Show the play/pause button if video is true
-    
+
     //     playIcon.setAttribute('tabindex', '0'); // Make play icon focusable
-    
+
     //     playIcon.addEventListener('keydown', function (event) {
     //         if (event.code === 'Space') {
     //             console.log("Play icon activated with space key");
@@ -1597,9 +1597,9 @@ async function initializeScene() {
     //             event.preventDefault();
     //         }
     //     });
-    
+
     //     pauseIcon.setAttribute('tabindex', '0'); // Make pause icon focusable
-    
+
     //     pauseIcon.addEventListener('keydown', function (event) {
     //         if (event.code === 'Space') {
     //             console.log("Pause icon activated with space key");
@@ -1612,8 +1612,8 @@ async function initializeScene() {
     //     playPauseButton.style.display = 'none'; // Hide play/pause button if video is false
     //     playIcon.style.display = 'none'; // Hide play icon if video is false
     // }
-    
-    
+
+
 }
 
 function filterDataByType(data) {
@@ -2911,8 +2911,8 @@ function parseTimeToMillis(customString) {
 }
 
 function updateSpatialView(nextTimestamp){
-    globalState.lineTimeStamp1 = nextTimestamp;                  
-    globalState.lineTimeStamp2 = nextTimestamp + 10000;    
+    globalState.lineTimeStamp1 = nextTimestamp;
+    globalState.lineTimeStamp2 = nextTimestamp + 10000;
       updatePointCloudBasedOnSelections();
       updateObjectsBasedOnSelections();
       updateMarkersBasedOnSelections();
