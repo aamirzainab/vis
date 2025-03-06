@@ -153,12 +153,7 @@ const colorScale = d3.scaleOrdinal()
     .range(["#66CFAE", "#36A1B8", "#4682b4", "#8dd3c7", "#fdcdac", "#bebada"]);
 
 
-const opacities = [0.2, 0.4, 0.6, 0.8, 1];
-
-
-
-
-
+const opacities = [0.2, 0.4, 0.6, 0.8, 1]; //TODO: Remove
 
 function toggleAnimation() {
     if (video) {
@@ -179,42 +174,6 @@ function toggleAnimation() {
         }
     }
 }
-
-
-
-
-// function toggleAnimation() {
-//     if (video) {
-//         const playIcon = document.getElementById('playIcon');
-//         const pauseIcon = document.getElementById('pauseIcon');
-//         if (playIcon.style.display == 'none') {
-//             pauseIcon.style.display = 'none'
-//             playIcon.style.display = 'block';
-//             globalState.isAnimating = true ;
-//         }
-//         else
-//         {
-//             pauseIcon.style.display = 'block';
-//             playIcon.style.display = 'none';
-//             globalState.isAnimating = false ;
-//         }
-//         if (globalState.isAnimating) {
-//             animateVisualization();
-//         }
-
-
-//         // if (globalState.isAnimating) {
-//         //     playIcon.style.display = 'none';
-//         //     pauseIcon.style.display = 'block';
-//         // } else {
-//         //     playIcon.style.display = 'block';
-//         //     pauseIcon.style.display = 'none';
-//         // }
-//         // if (globalState.isAnimating) {
-//         //     animateVisualization();
-//         // }
-//     }
-// }
 
 export function updateIntervals() {
   createSharedAxis();
@@ -269,6 +228,7 @@ async function loadAvatarModel(filename) {
 	globalState.scene.add(avatar);
 	return avatar;
 }
+
 async function loadIpadModel(filename) {
 	const loader = new GLTFLoader();
 	const gltf = await loader.loadAsync(filename);
@@ -290,38 +250,7 @@ async function loadHand(filename) {
 	return avatar;
 }
 
-
-
-d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
-  var timeExtent = d3.select(this).attr('value');
-  toggleInstanceRange(timeExtent);
-});
-
-d3.selectAll('#time-extent-toggle input[type="radio"]').on('change', function() {
-	var timeExtent = d3.select(this).attr('value');
-	toggleInstanceRange(timeExtent);
-  });
-
-function toggleInstanceRange(selectedOption){
-	console.log("selected option " + selectedOption);
-	const line1 = d3.select('#time-indicator-line1');
-	const line2 = d3.select('#time-indicator-line2');
-	const circle1 = d3.select('#time-indicator-circle1');
-	const circle2 = d3.select('#time-indicator-circle2');
-	if (selectedOption === 'Instance')
-	{
-
-	  line2.style('display', 'none');
-	  circle2.style('display', 'none');
-	}
-	if (selectedOption === 'Range')
-	{
-	//   console.log("here?");
-	  line2.style('display', null);
-	  circle2.style('display',null);
-	}
-  }
-  function window_onload() {
+function window_onload() {
 	generateUserLegends();
 	for (let i = 1; i <= numUsers; i++) {
 		document.getElementById(`toggle-user${i}`).addEventListener('change', function() {
@@ -390,9 +319,7 @@ function toggleInstanceRange(selectedOption){
 				if (globalState.lineDrawing[userID]) {
 					globalState.lineDrawing[0].forEach(filename => {
 						const existingObject = globalState.scene.getObjectByName(filename);
-						// console.log("here?")
 						if (existingObject) {
-							// console.log(" and then here?");
 							existingObject.visible = false ;
 						  }
 						globalState.scene.remove(existingObject);
@@ -400,7 +327,6 @@ function toggleInstanceRange(selectedOption){
 				}
 			}
 
-			//mits: update
 			initializeOrUpdateSpeechBox();
 			plotUserSpecificBarChart();
 			plotUserSpecificDurationBarChart();
@@ -574,19 +500,6 @@ function updateLeftControl(userId, timestamp = null) {
             globalState.leftControls[userId].setRotationFromEuler(euler);
         }
     });
-    // allSubActions.forEach(subAction => {
-    //     const location = parseLocation(subAction.ActionInvokeLocation);
-    //     if (globalState.leftControls[userId]) {
-    //         globalState.leftControls[userId].position.set(location.x, location.y, location.z);
-    //         const euler = new THREE.Euler(
-    //             THREE.MathUtils.degToRad(location.pitch),
-    //             THREE.MathUtils.degToRad(location.yaw),
-    //             THREE.MathUtils.degToRad(location.roll),
-    //             'ZXY'
-    //         );
-    //         globalState.leftControls[userId].setRotationFromEuler(euler);
-    //     }
-    // });
 }
 
 function updateRightControl(userId, timestamp = null) {
@@ -660,23 +573,6 @@ function updateRightControl(userId, timestamp = null) {
             globalState.rightControls[userId].setRotationFromEuler(euler);
         }
     });
-
-    // Update right controls based on subActions
-    // allSubActions.forEach(subAction => {
-    //     const location = parseLocation(subAction.ActionInvokeLocation);
-    //     if (globalState.rightControls[userId]) {
-    //         globalState.rightControls[userId].position.set(location.x, location.y, location.z);
-    //         const euler = new THREE.Euler(
-    //             THREE.MathUtils.degToRad(location.pitch),
-    //             THREE.MathUtils.degToRad(location.yaw),
-    //             THREE.MathUtils.degToRad(location.roll),
-    //             'ZXY'
-    //         );
-    //         globalState.rightControls[userId].setRotationFromEuler(euler);
-    //         // globalState.rightControls[userId].setRotationFromAxisAngle(euler);
-    //     }
-    // });
-
 }
 
 
@@ -687,7 +583,6 @@ function calculateDistance(point1, point2) {
         Math.pow(point1.z - point2.z, 2)
     );
 }
-const distanceThreshold = 0.1;
 
 function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
     const dynamicColorMapping = {};
@@ -709,8 +604,6 @@ function generateDynamicColorMapping(uniqueUsers, uniqueActions) {
 function getColorForUserAction(userID, actionName) {
     return (dynamicColorMapping[userID] && dynamicColorMapping[userID][actionName]) || '#ffffff';
 }
-
-
 
 function updatePointCloudBasedOnSelections() {
     const data = globalState.finalData;
@@ -740,11 +633,6 @@ function updatePointCloudBasedOnSelections() {
 			});
 		}
 	});
-
-
-	// if (hasVisibleUserID.length === 0 || visibleContextUsers.length === 0) {
-	// 	return;
-	// }
 
 	visibleContextUsers.forEach((vcUser) => {
 		newFilteredActions[vcUser] = new Set();
@@ -808,7 +696,6 @@ function updatePointCloudBasedOnSelections() {
         }
     }
 }
-
 
 async function updateMarkersBasedOnSelections() {
     const data = globalState.finalData;  // The source data containing all actions
@@ -902,7 +789,7 @@ async function updateMarkersBasedOnSelections() {
                         const existingPosition = existingMarker.position;
                         const distance = calculateDistance(location, existingPosition);
 
-                        if (distance < distanceThreshold) {
+                        if (distance < 0.1) {
                             tooClose = true;  // Skip adding this marker
                             console.log("Skipped marker due to proximity");
                             break;
@@ -926,136 +813,6 @@ async function updateMarkersBasedOnSelections() {
         });
     }
 }
-
-// async function updateObjectsBasedOnSelections() {
-//     const data = globalState.finalData;
-// 	const newFilteredActions = {};
-//     const actionsToLoad = {};
-// 	const selectedActions = getSelectedTopics();
-
-// 	const selectedUsers = Object.keys(globalState.show)
-// 	.filter(userID => globalState.show[userID])
-// 	.map(userID => `User${userID}`);
-
-// 	const visibleObjectUsers = selectedUsers.filter(userId => {
-// 		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === true;
-// 	});
-
-// 	const nonVisibleObjectUsers = selectedUsers.filter(userId => {
-// 		return userId in globalState.viewProps && globalState.viewProps[userId]["Object"] === false;
-// 	});
-
-// 	//remove loadedObjects for selected user not selected object
-// 	for (const nvoUser of nonVisibleObjectUsers) {
-// 		if(nvoUser in globalState.loadedObjects){
-// 			for (const key of Object.keys(globalState.loadedObjects[nvoUser])) {
-// 				if (globalState.loadedObjects[nvoUser][key]) {
-//                     try {
-//                         const obj = await globalState.loadedObjects[nvoUser][key];
-//                         while (obj && obj.parent) {
-//                             if (obj.geometry) obj.geometry.dispose();
-//                             if (obj.material) obj.material.dispose();
-//                             globalState.scene.remove(obj);
-//                         }
-//                         delete globalState.loadedObjects[nvoUser][key];
-//                     } catch (error) {
-//                         console.error(`Error removing object ${key}:`, error);
-//                     }
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	visibleObjectUsers.forEach((vcUser) => {
-// 		newFilteredActions[vcUser] = new Set();
-// 		actionsToLoad[vcUser] = [];
-// 	});
-
-//     for (const action of data) {
-//         let originLocation = null ;
-//         if (action.Data.length > 1 ) {
-//             originLocation = parseLocation(action.Data[0].ActionReferentLocation);
-//         }
-//         for (const subAction of action.Data) {
-//             const actionStartTime = parseTimeToMillis(subAction.ActionInvokeTimestamp);
-//             const actionEndTime = actionStartTime + parseDurationToMillis(action.Duration);
-//             if (actionEndTime >= globalState.lineTimeStamp1 && actionStartTime <= globalState.lineTimeStamp2
-// 				&& subAction.ActionReferentBody && action.ReferentType === "Virtual"
-// 				&& selectedActions.includes(action.Name) && visibleObjectUsers.includes(action.User)) {
-//                 const key = `${subAction.ActionInvokeTimestamp}_${subAction.ActionReferentBody}`;
-//                 if (!newFilteredActions[action.User].has(key)){
-// 				// if (!newFilteredActions.has(key) && !globalState.loadedObjects[key]){
-//                     newFilteredActions[action.User].add(key);
-//                     actionsToLoad[action.User].push({ key, subAction });
-//                 }
-//             }
-//         }
-//     }
-
-//     // Unload objects that are no longer needed
-//     for (const userID of Object.keys(globalState.loadedObjects)) {
-// 		for (const key of Object.keys(globalState.loadedObjects[userID])){
-// 			if (!newFilteredActions[userID].has(key) && globalState.loadedObjects[userID][key]) {
-// 				const obj = await globalState.loadedObjects[userID][key];  // Ensure the object is fully loaded
-// 				if (obj && obj.parent) { // Check if the object is still part of the scene
-// 					if (obj.geometry) obj.geometry.dispose(); // Dispose resources
-// 					if (obj.material) obj.material.dispose();
-// 					globalState.scene.remove(obj);
-// 					delete globalState.loadedObjects[userID][key];
-// 					// console.log(`Object removed from scene and state: ${key}`);
-// 				}
-// 			}
-// 		}
-//     }
-//     if (selectedUsers.length === 0 || visibleObjectUsers.length === 0) {
-// 		return;
-// 	}
-
-//     // Load new objects that are required
-//       //always get the fiurst data, var firstData = data[0]. actionreferentlocation, then we go into it and subtract the position of the first data, get the delta, add the delta in there.
-
-//     for (const userID of Object.keys(actionsToLoad)) {
-// 		for (const { key, subAction } of actionsToLoad[userID]) {
-//             if (globalState.loadedObjects[userID] === undefined) {
-//                 globalState.loadedObjects[userID] = {};
-//             }
-// 			if (!globalState.loadedObjects?.[userID]?.[key]) { // Double check to prevent race conditions
-// 				// console.log(`Loading new object: ${key}`);
-//                 if (!globalState.loadedObjects[userID].hasOwnProperty(key)){
-//                     const adjustedPath = `${globalState.objFilePath}${subAction.ActionReferentBody}`;
-//                     globalState.loadedObjects[userID][key] = loadAvatarModel(adjustedPath)
-//                         .then(obj => {
-//                             obj.name = key;
-//                             const location = parseLocation(subAction.ActionReferentLocation);
-//                             if (logMode.vrGame && video === true) {
-//                                 // Calculate the delta from the origin
-//                                 const deltaX = location.x - originLocation.x;
-//                                 const deltaY = location.y - originLocation.y;
-//                                 const deltaZ = location.z - originLocation.z;
-
-//                                 // Apply the delta to the object's position
-//                                 obj.position.set(deltaX, deltaY, deltaZ);
-//                             }
-
-//                             if (logMode.vrGame)
-//                             {
-//                                 console.log("HELLO OBJ POSITION ", obj.position);
-//                                 console.log("HELLO ACTION REFERENT LOCATION", location.x,location.y,location.z);
-//                                 // obj.position.set(-location.x,location.y, -location.z);
-//                             }
-
-//                             // console.log(`Object loaded and added to scene: ${key}`);
-//                             return obj; // Return the loaded object
-//                         })
-//                         .catch(error => {
-//                             console.error(`Failed to load object ${key}:`, error);
-//                             delete globalState.loadedObjects[userID][key]; // Clean up state on failure
-//                         });
-//                     }
-// 			}
-// 		}
-//     }
-// }
 
 async function updateObjectsBasedOnSelections() {
     const data = globalState.finalData;
@@ -1202,7 +959,6 @@ async function updateObjectsBasedOnSelections() {
     }
 }
 
-
 function createSphereMarker(userID, actionName) {
     const radius = 0.03;  // Reduced size for better visualization
     const widthSegments = 32;
@@ -1226,6 +982,7 @@ function createSphereMarker(userID, actionName) {
     return sphereMesh;
 }
 
+//user choice to use heatmap or tracemap
 function plotHeatmap() {
     return ;
 
@@ -1241,7 +998,6 @@ function plotHeatmap() {
 	// 	return globalState.viewProps[userId]["Heatmap"] === false;
 	// });
 
-	//remove evrything, TODO: Not optimal, IDEA: keep the old selected heatmap
 	Object.keys(globalState.heatmaps).forEach(userId => {
 		const userHeatmap = globalState.heatmaps[userId];
 		if (userHeatmap) {
@@ -1372,6 +1128,7 @@ function renderHeatmap(heatmap, user, voxelSize) {
         mesh: group,
     });
 }
+
 function applyGaussianBlur3D(heatmap) {
     const kernelSize = 5;
     const sigma = 2.0;
@@ -1409,6 +1166,7 @@ function applyGaussianBlur3D(heatmap) {
     }
     return smoothedHeatmap;
 }
+
 function createGaussianKernel(size, sigma) {
     const kernel = new Array(size).fill().map(() => new Array(size).fill().map(() => new Array(size).fill(0)));
     const mean = Math.floor(size / 2);
@@ -1436,7 +1194,6 @@ function createGaussianKernel(size, sigma) {
     return kernel;
 }
 
-
 function parseLocation(locationString) {
     const parts = locationString.split(',');
     if (parts.length !== 6) {
@@ -1444,22 +1201,13 @@ function parseLocation(locationString) {
         return null;
     }
     return {
-        x: -parseFloat(parts[0]),
+        x: -parseFloat(parts[0]), //unity -> three.js
         y: parseFloat(parts[1]),
         z: parseFloat(parts[2]),
         pitch: parseFloat(parts[3]),  // Rotation around X-axis in degrees
         yaw: -parseFloat(parts[4]),    // Rotation around Y-axis in degrees
         roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
     };
-    // Sep 09 06:01:05 PM - Sep 09 06:02:12 PM
-    // return {
-    //     x: -parseFloat(parts[0]),
-    //     y: parseFloat(parts[1]),
-    //     z: parseFloat(parts[2]),
-    //     pitch: -parseFloat(parts[3]),  // Rotation around X-axis in degrees
-    //     yaw: parseFloat(parts[4]),    // Rotation around Y-axis in degrees
-    //     roll: parseFloat(parts[5])    // Rotation around Z-axis in degrees
-    // };
 }
 
 
@@ -1509,7 +1257,6 @@ async function initializeScene() {
     window_onload();
     const isHeadsetMode = logMode.vrGame || logMode.immersiveAnalytics;
     const avatarModel = isHeadsetMode ? 'headset.glb' : 'ipad.glb';
-    //headset scaled down, controller scaled down
     const loadModel = isHeadsetMode ? loadAvatarModel : loadIpadModel;
     const avatarPromises = Array.from({ length: numUsers }, () => loadModel(avatarModel));
 
@@ -1544,87 +1291,6 @@ async function initializeScene() {
 
 	setTimes(globalState.finalData);
 
-    const playPauseButton = document.getElementById('playPauseButton');
-    const playIcon = document.getElementById('playIcon');
-    const pauseIcon = document.getElementById('pauseIcon');
-    playPauseButton.style.display = 'block';
-    // if(video) {
-
-    //         playPauseButton.style.display = 'block';
-    //         playIcon.setAttribute('tabindex', '0');
-
-    //         playIcon.addEventListener('keydown', function (event) {
-    //         console.log("did ya come here??");
-    //         if (event.code === 'Space') {
-    //         //   console.log("Space bar pressed on button");
-    //           toggleAnimation();
-    //           event.preventDefault();
-    //         }
-    //       });
-    //       pauseIcon.setAttribute('tabindex', '0');
-    //         pauseIcon.addEventListener('keydown', function (event) {
-    //         console.log("did ya come here??");
-    //         if (event.code === 'Space') {
-    //         //   console.log("Space bar pressed on button");
-    //           toggleAnimation();
-    //           event.preventDefault();
-    //         }
-    //       });
-    // }
-    // else
-    // {   console.log("hello ");
-    //     console.log(playPauseButton);
-    //     const playIcon = document.getElementById('playIcon');
-    //     playIcon.style.display = 'none';
-    //     playPauseButton.style.display = 'none';
-    // }
-
-
-    // Default state: paused, so play icon should be hidden, and pause icon should be visible.
-
-
-    // if (video) {
-    //     playIcon.style.display = 'none'; // Hide play icon initially
-    //     pauseIcon.style.display = 'block'; // Show pause icon initially
-    //     playPauseButton.style.display = 'block'; // Show the play/pause button if video is true
-
-    //     playIcon.setAttribute('tabindex', '0'); // Make play icon focusable
-
-    //     playIcon.addEventListener('keydown', function (event) {
-    //         if (event.code === 'Space') {
-    //             console.log("Play icon activated with space key");
-    //             toggleAnimation();
-    //             event.preventDefault();
-    //         }
-    //     });
-
-    //     pauseIcon.setAttribute('tabindex', '0'); // Make pause icon focusable
-
-    //     pauseIcon.addEventListener('keydown', function (event) {
-    //         if (event.code === 'Space') {
-    //             console.log("Pause icon activated with space key");
-    //             toggleAnimation();
-    //             event.preventDefault();
-    //         }
-    //     });
-    // } else {
-    //     console.log("No video available");
-    //     playPauseButton.style.display = 'none'; // Hide play/pause button if video is false
-    //     playIcon.style.display = 'none'; // Hide play icon if video is false
-    // }
-
-
-}
-
-function filterDataByType(data) {
-	const validData = data.filter(entry => entry.TrackingType === 'PhysicalDevice' && entry.FeatureType === 'Transformation' && typeof entry.Data === 'string');
-	const validDataInteraction = data.filter(entry => entry.TrackingType === 'XRContent' && entry.FeatureType === 'Interaction');
-	const validDataSpeech = data.filter(entry => entry.TranscriptionText !== undefined && entry.TranscriptionText !== '');
-	return {
-		validData,
-		validDataInteraction,
-		validDataSpeech
-	};
 }
 
 function createPlotTemporal() {
@@ -1647,7 +1313,7 @@ function createPlotTemporal() {
 
     const temporalViewContainer = d3.select("#temporal-view");
     const width = (document.getElementById('spatial-view').clientWidth - margin.left - margin.right) * 0.9;
-	const height = 310;
+	const height = 310; //adjusted for 1080p or above
     const speechPlotSvg = d3.select("#speech-plot-container");
 	speechPlotSvg.html("");
 	const svg = speechPlotSvg.append('svg')
@@ -1697,8 +1363,6 @@ function createPlotTemporal() {
         .attr("height", yScale.bandwidth() * 0.7)
         .attr("fill", d => colorScale(d.density)); // Apply density color
 
-    // Optional: Add mouse event handlers if needed for interactivity
-
 }
 
 function drawBookmarks(llmTS) {
@@ -1713,15 +1377,12 @@ function drawBookmarks(llmTS) {
 	// const bookmarkPath = "M15 3 L15 25.5 L7.5 15 L0 25.5 L0 3 Z";
     const bookmarkPath = "M22.5 4.5 L22.5 38.25 L11.25 22.5 L0 38.25 L0 4.5 Z";
 
-
-
     Object.entries(llmTS).forEach(([id, times]) => {
         times.forEach(timeStr => {
             const timestampMs = parseTimeToMillis(timeStr);
             const xPosition = xScale(timestampMs); // Use xScale to find the position
 
             if (timestampMs >= new Date(globalState.globalStartTime).getTime()) {
-                // Append the bookmark icon (path)
 				const bookmarkGroup = svg.append("g") // Group to keep path and text together
                     .attr("transform", `translate(${xPosition + margin.left + margin.right}, 10)`)
                     .attr("class", "bookmark-marker")
@@ -1753,23 +1414,9 @@ function drawBookmarks(llmTS) {
                     .attr("font-weight", "bold")
                     .text(id); // Use the key as the text
                 }
-
-
-                // Append the key (number) inside the bookmark icon
-            //     bookmarkGroup.append("text")
-            //         .attr("x", 7.5)  // Centered horizontally in the bookmark
-            //         .attr("y", 14)   // Vertically aligned in the bookmark
-            //         .attr("text-anchor", "middle")
-            //         .attr("fill", "#000") // White color for contrast
-            //         .attr("font-size", "12px") // Adjust the font size to fit inside the bookmark
-            //         .attr("font-weight", "bold")
-            //         .text(id); // Use the key as the text
-            // }
         });
     });
 }
-
-let currentZoomLevel = 100; // Assuming 100% is the default zoom level
 
 // Function to update the zoom level display
 function updateZoomLevelDisplay(zoomLevel) {
@@ -1778,7 +1425,9 @@ function updateZoomLevelDisplay(zoomLevel) {
 }
 
 // Example scroll/zoom event listener
+let currentZoomLevel = 100; // Assuming 100% is the default zoom level
 document.getElementById('spatial-view').addEventListener('wheel', function(event) {
+    
     // Assuming that scrolling up zooms in and scrolling down zooms out
     if (event.deltaY < 0) {
         currentZoomLevel = Math.min(currentZoomLevel + 10, 200); // Max zoom 200%
@@ -1791,8 +1440,6 @@ document.getElementById('spatial-view').addEventListener('wheel', function(event
     // Prevent default scrolling behavior
     event.preventDefault();
 });
-
-
 
 function setTimes(data) {
 	// Assuming data is an array of action records
@@ -1824,34 +1471,22 @@ function setTimes(data) {
 	}, (v, i) => new Date(globalStartTime + i * globalState.intervalDuration));
 	globalState.lineTimeStamp1 = globalStartTime;
 	globalState.lineTimeStamp2 = globalStartTime + 5000; // adding 5 second by default
-  }
-
-
-
-
+}
 
 export function getGlobalState() {
 	return globalState;
 }
 
 function createLines(timestamp1, timestamp2) {
+    const heightFactor = 1.1;
+    const y1 = 55;
+    const alignX = 10;
 	const svg = d3.select("#temporal-view");
-	// const height = parseInt(svg.style("height")) - margin.top ;
-	let height = parseInt(d3.select("#speech-plot-container").style("height")) * 1.1;
-	// height = 300;
-	// const width = parseInt(svg.style("width")) - margin.right - margin.left;
-  const dynamicWidth = globalState.dynamicWidth;
-  // const width = globalState.dynamicWidth;
-	const y1 = 55;
-  const alignX = 10 ;
-	// let xPosition1 = Math.max(0, Math.min(x(new Date(timestamp1)), width)) + margin.left + alignX;
-	// console.log("xpos1 " + xPosition1);
-	// let xPosition2 = Math.max(0, Math.min(x(new Date(timestamp2)), width)) + margin.left + alignX ;
-	// console.log("xpos2 " +  xPosition2);
+	let height = parseInt(d3.select("#speech-plot-container").style("height")) * heightFactor;
+    const dynamicWidth = globalState.dynamicWidth;
 
-  let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
-  let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
-//   const dragContainmentArea = { left: margin.left + alignX, right: dynamicWidth + margin.left - alignX };
+    let xPosition1 = Math.max(0, x(new Date(timestamp1))) + margin.left + alignX;
+    let xPosition2 = Math.max(0, x(new Date(timestamp2))) + margin.left + alignX;
 
 	let circle1 = svg.select('#time-indicator-circle1');
 	circle1.attr('class', 'interactive');
@@ -1871,7 +1506,6 @@ function createLines(timestamp1, timestamp2) {
 			.style('fill', '#9e9e9e');
 	}
 
-
 	function dragstarted(event, d) {
 		d3.select(this).raise().classed("active", true);
 	}
@@ -1888,13 +1522,11 @@ function createLines(timestamp1, timestamp2) {
 	.on("drag", dragged)
 	.on("end", dragended);
 
-
 	let line1 = svg.select('#time-indicator-line1');
 
 	if (line1.empty()) {
 		line1 = svg.append('line').attr('id', 'time-indicator-line1');
 	}
-
 
 	line1.attr('x1', xPosition1)
 		.attr('x2', xPosition1)
@@ -1915,7 +1547,6 @@ function createLines(timestamp1, timestamp2) {
 	if (line2.empty()) {
 		line2 = svg.append('line').attr('id', 'time-indicator-line2');
 	}
-
 
 	line2.attr('x1', xPosition2)
 		.attr('x2', xPosition2)
@@ -1946,11 +1577,7 @@ function createLines(timestamp1, timestamp2) {
 	updateObjectsBasedOnSelections();
     updateMarkersBasedOnSelections();
 	initializeShadedAreaDrag();
-
-
 }
-
-
 
 export function dragged(event,d) {
 	const svgElement = document.querySelector("#temporal-view svg");
@@ -1994,14 +1621,12 @@ export function dragged(event,d) {
 	  globalState.lineTimeStamp1 = otherTimestamp;
 	}
 	newXPosition = x(new Date(newTimestamp));
-	// console.log("setting posoitons.." + newXPosition);
 
 	d3.select(this).attr('x1', newXPosition + margin.left).attr('x2', newXPosition + margin.left);
 	d3.select(circleId).attr('cx', newXPosition + margin.left);
 
 
     createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-    // updateTimeDisplay(newTimestamp, globalState.globalStartTime);
     const timeStamp1 = new Date(globalState.lineTimeStamp1);
     const timeStamp2 = globalState.lineTimeStamp2;
     updateRangeDisplay(timeStamp1, timeStamp2);
@@ -2021,17 +1646,8 @@ export function dragged(event,d) {
         updateLeftControl(i);
         updateRightControl(i);
     }
-	// createRayCastSegment(0);
-	// createRayCastSegment(1);
-	// createLineDrawing(0);
-	// createLineDrawing(1);
     initializeShadedAreaDrag();
-
-    // // console.log('Dragging Event Ended');
 }
-
-//updates the numUsers as soon as on log read
-
 
 function updateNumUsers(){
 	uniqueUsers = new Set(globalState.finalData.map(action => action.User));
@@ -2061,16 +1677,12 @@ function initHierToolBar(){
         });
     });
 
-    // console.log(Array.from(uniqueActions)); // To see what actions are included
-
     // Create toolbar items for each unique action name
     uniqueActions.forEach(actionName => {
         createTopicItem(actionName, toolbar);
     });
-
 }
 
-//Keep only in the actionNames enabled and rest desabled and by default enabled ones will be checked
 function enableCheckboxes(actionNames, shouldCheck = true) {
     // Get all checkboxes with the class 'topic-checkbox'
     const allCheckboxes = document.querySelectorAll('.topic-checkbox');
@@ -2080,17 +1692,15 @@ function enableCheckboxes(actionNames, shouldCheck = true) {
         if (actionNames.includes(actionName)) {
             checkbox.disabled = false; // Enable the checkbox
             checkbox.checked = shouldCheck; // Check or uncheck based on the parameter
-			// console.log("$$$ enabled: ", actionName);
         } else {
             checkbox.disabled = true; // Disable checkboxes not in the list
             checkbox.checked = true; // Optionally uncheck them as well
-			// console.log("$$$ disabled : ", actionName);
         }
     });
 }
 
 function generateHierToolBar() {
-    const data = globalState.finalData; // Assuming this is an array of action records
+    const data = globalState.finalData;
 
     const uniqueActions = new Set();
 
@@ -2131,13 +1741,6 @@ function createTopicItem(actionName, toolbar,  isEnabled = false) {
 
     // Event listener for the checkbox
     topicCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            // Handle the checked state, e.g., filter actions, highlight elements, etc.
-            // console.log(`${actionName} is selected`);
-        } else {
-            // Handle the unchecked state
-            // console.log(`${actionName} is deselected`);
-        }
 		initializeOrUpdateSpeechBox();
 		plotUserSpecificBarChart();
 		plotUserSpecificDurationBarChart();
@@ -2213,14 +1816,14 @@ function generateUserLegends(){
 			userDiv.classList.add('collapsed');
 		}
 
-		// Event to handle expansion/collapse of nested checkboxes
+		
 		userCheckbox.addEventListener('change', function () {
 			// Get visible users by filtering the globalState.show
 			const hasVisibleUserID = Object.keys(globalState.show)
 			.filter((userID) => globalState.show[userID])
 			.map((userID) => `User${userID}`);
 
-		// Calculate the height dynamically based on the number of visible users and obContext length
+		
 		const baseHeightPerUser = 49; // Base height for each expanded user (adjust based on your UI)
 		const obContextHeightPerItem = 28; // Height of each obContext item
 
@@ -2230,7 +1833,6 @@ function generateUserLegends(){
 			userDiv.classList.remove('collapsed');
 			userDiv.classList.add('expanded');
 
-			// Set the height dynamically based on visible users and obContext length
 			const expandHeight = 58;
 			legendContainer.style.height = `${expandHeight + (numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 1) * globalState.obContext.length * obContextHeightPerItem)}px`;
 		} else {
@@ -2239,8 +1841,6 @@ function generateUserLegends(){
 			userDiv.classList.remove('expanded');
 			userDiv.classList.add('collapsed');
 
-			// Handle collapsed state: Adjust height dynamically based on the remaining visible users
-			const collapsedHeight = 0; // Adjust this based on your collapsed state height
 			legendContainer.style.height = `${(numUsers * baseHeightPerUser) + ((hasVisibleUserID.length - 2) * globalState.obContext.length * obContextHeightPerItem)}px`;
 		}
 
@@ -2250,7 +1850,7 @@ function generateUserLegends(){
 
 
 function handleContextChange(context, userId, isChecked) {
-	console.log(`Context ${context} for User ${userId} changed: ${isChecked}`);
+	// console.log(`Context ${context} for User ${userId} changed: ${isChecked}`);
 
 	// Apply logic based on the context
 	switch (context) {
@@ -2275,13 +1875,12 @@ function handleContextChange(context, userId, isChecked) {
 		console.log("Handle other obContext here!");
 		break;
 	}
-  }
+}
 
 function plotUserSpecificBarChart() {
 	const plotBox = d3.select("#plot-box2").html("");
 	const margin = { top: 30, right: 20, bottom: 70, left: 70 };
 	const width = plotBox.node().getBoundingClientRect().width - margin.left - margin.right;
-	// const height = 500 - margin.top - margin.bottom;
 	const height = plotBox.node().getBoundingClientRect().height - margin.top - margin.bottom;
 
 	const svg = plotBox.append("svg")
@@ -2293,7 +1892,6 @@ function plotUserSpecificBarChart() {
 	// Add plot title
     svg.append("text")
         .attr("x", width / 2)
-        // .attr("y", 0 - margin.top / 2)
         .attr("y", -4)
         .attr("text-anchor", "middle")
         .style("font-size", "16px")
@@ -2301,7 +1899,6 @@ function plotUserSpecificBarChart() {
         .style("font-weight", "bold")
         .text("User-Specific ActionReferentName");
 
-	// Assuming globalState.finalData.action_dict exists and is structured appropriately
 	let allUsers = new Set();
 	let userDataByActionReferentName = {};
 
@@ -2341,7 +1938,7 @@ function plotUserSpecificBarChart() {
 					ActionReferentName = ActionReferentName.split(",")[0].trim();
 					ActionReferentName = ActionReferentName.replace(/'/g, "");
                     }
-				}else if(globalState.useCase == "maintenance"){ //Past Inspection Log (1) Past Inspection Log (1) "('QR Code', 0.9)"
+				}else if(globalState.useCase == "maintenance"){
 					ActionReferentName = ActionReferentName.match(/"([^"]+)"|([a-zA-Z\s]+)/g)?.join(' ').trim();
 				}else{
 					ActionReferentName = ActionReferentName.split("(")[0].trim();
@@ -2358,7 +1955,6 @@ function plotUserSpecificBarChart() {
 		});
 
 	const users = Array.from(allUsers).sort((a, b) => {
-		// Sort by user names; this will put "User1" before "User2"
 		return a.localeCompare(b);
 	});
 	const processedData = Object.entries(userDataByActionReferentName).map(([ActionReferentName, counts]) => ({
@@ -2712,6 +2308,7 @@ function plotUserSpecificDurationBarChart() {
         .style("visibility", "hidden");
 }
 
+//Read LLM insights
 function plotLLMData(){
 	d3.json(globalState.llmInsightPath).then(function(data) {
 		globalState.llmInsightData = data;
@@ -2847,7 +2444,6 @@ function highlightAndScrollToInsight(id) {
 
 function getSelectedTopics() {
     const topicCheckboxes = document.querySelectorAll('.topic-checkbox:checked');
-    // console.log(`Found ${topicCheckboxes.length} checked checkboxes.`);  // Debug how many checkboxes are found
     let selectedActions = [];
 
     topicCheckboxes.forEach(checkbox => {
@@ -2855,22 +2451,10 @@ function getSelectedTopics() {
             selectedActions.push(checkbox.value);
         }
     });
-
     return selectedActions;
 }
 
-function getCoordinates(spatial_extent){
-	const x = spatial_extent[0][2]; // UNITY Z
-    const y = spatial_extent[0][1];
-    const z = -spatial_extent[0][0]; // Flippinh UNITY X
-	// console.log(x,y,z);
-	return {x,y,z} ;
-  }
-
-
-
 function parseTimeToMillis(customString) {
-  // console.log(" here with " + customString);
   let [dateStr, timeStr, milliStr] = customString.split('_');
 
   // Further split into year, month, day, hours, minutes, seconds
@@ -2886,28 +2470,12 @@ function parseTimeToMillis(customString) {
   // Milliseconds are straightforward, just need to parse
   let milliseconds = parseInt(milliStr, 10);
 
-  // Log the parsed components
-  // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds}`);
-
   // Create the Date object
   let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-  // console.log(`Came here with ${customString} , Year: ${year}, Month: ${month}, Day: ${day}, Hours: ${hours}, Minutes: ${minutes}, Seconds: ${seconds}, Milliseconds: ${milliseconds} and date ${date.toUTCString()}`);
-
-  // Log the Date object
-  // console.log(`Date object: ${date}`);
 
   // Return the time in milliseconds since Unix epoch
   let timeInMillis = date.getTime();
-  // console.log(`Time in milliseconds since Unix epoch: ${timeInMillis}`);
   return timeInMillis;
-
-//   let milliseconds = parseInt(milliStr.slice(0, 3), 10);
-
-//   // Create a new Date object in UTC using the parsed components
-//   let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds, milliseconds));
-
-//   // Return the time in milliseconds since the Unix epoch
-//   return date.getTime();
 }
 
 function updateSpatialView(nextTimestamp){
@@ -2936,15 +2504,12 @@ function parseDurationToMillis(durationString) {
     return totalMillis;
 }
 
-
-
 function initializeOrUpdateSpeechBox() {
     // Use selected action names from the toolbar
-    const selectedActions = getSelectedTopics(); // Assumes this returns action names selected in the toolbar
-    const data = globalState.finalData; // Assuming this is an array with all action records
+    const selectedActions = getSelectedTopics(); 
+    const data = globalState.finalData;
 
-	//mits
-	const visibleUserIDs = Object.keys(globalState.show).filter(userID => globalState.show[userID]); //asuming 1->user 1 and 2-> user 2
+	const visibleUserIDs = Object.keys(globalState.show).filter(userID => globalState.show[userID]);
 
     const container = document.getElementById("speech-box");
     const hierToolbar = document.getElementById('hier-toolbar');
@@ -2969,9 +2534,6 @@ function initializeOrUpdateSpeechBox() {
     }
     rangeDisplay.innerHTML = `<strong>Selected Time Range: ${timeFormat(new Date(globalState.lineTimeStamp1))} - ${timeFormat(new Date(globalState.lineTimeStamp2))}</strong>`;
 
-	// Filter data based on selected actions, time range, and visible user IDs
-
-	//mits: added filtering on users
 	let actionsToDisplay = data.filter(action => {
 		// Check if the action name includes any of the visible user IDs
 		const hasVisibleUserID = visibleUserIDs.some(userID => action.User.includes(userID));
@@ -2983,7 +2545,7 @@ function initializeOrUpdateSpeechBox() {
 		});
 	});
 
-	// **Add this block to display the total number of results**
+	
     const totalResults = actionsToDisplay.reduce((count, action) => count + action.Data.length, 0);
     let totalResultsDisplay = document.createElement('div');
     totalResultsDisplay.className = 'total-results-display';
@@ -3008,7 +2570,6 @@ function updateXRSnapshot(){
 	// Create a title element
 	const titleElement = document.createElement('div');
 	titleElement.style.textAlign = 'center';
-	// titleElement.style.marginBottom = '8px';
 	titleElement.id = 'imageTitle';
 	container.appendChild(titleElement);
 
@@ -3141,17 +2702,14 @@ function createSpeechBox(action, subAction) {
     const speechBox = document.createElement('div');
     speechBox.className = 'speech-box';
 
-
-    // Create a container for title and user label
     const titleContainer = document.createElement('div');
     titleContainer.style.display = 'flex';
     titleContainer.style.justifyContent = 'space-between';
     titleContainer.style.alignItems = 'center';
     titleContainer.style.marginBottom = '10px';
 
-    // Format the action and type string
     const title = document.createElement('h4');
-    title.textContent = `Action: ${action.Name}`;// | Type: ${action.Type}`;
+    title.textContent = `Action: ${action.Name}`;
     title.style.margin = '0'; // Remove margin for better alignment
 	title.style.marginLeft = '10px'
 
@@ -3176,9 +2734,6 @@ function createSpeechBox(action, subAction) {
 
     // Append the container to the speech box
     speechBox.appendChild(titleContainer);
-
-
-
     // Format Location as Position (X, Y, Z) and Orientation (Roll, Pitch, Yaw)
     const locationString = subAction.ActionInvokeLocation;
     const formattedLocation = formatLocation(locationString);
@@ -3192,7 +2747,6 @@ function createSpeechBox(action, subAction) {
     const intentDiv = document.createElement('div');
     // intentDiv.style.backgroundColor = '#d3d3d3';  // Cool Mint for highlighting
     intentDiv.style.backgroundColor = 'rgba(235,235,235,1.0)';
-    // 8bb6d9
     intentDiv.style.color = 'black';
     intentDiv.style.padding = '4px';
     intentDiv.style.borderRadius = '5px';
@@ -3200,9 +2754,8 @@ function createSpeechBox(action, subAction) {
     intentDiv.style.borderRadius = '8px';
     intentDiv.innerHTML = `<strong>Intent:</strong> ${action.Intent}`;
 	let otherDetails ;
-	if (action.TriggerSource === "Audio") // zainab add all the navigates and discuss operations here
+	if (action.TriggerSource === "Audio")
 	{
-        // ${formattedLocation}<br>
 		otherDetails = `
         <strong>Timestamp:</strong> ${new Date(parseTimeToMillis(subAction.ActionInvokeTimestamp)).toLocaleString()}<br>
         <strong>Duration:</strong> ${parseDurationToMillis(action.Duration)} ms<br>
@@ -3237,7 +2790,7 @@ function createSpeechBox(action, subAction) {
 }
 
 
-  function updateRangeDisplay(time1, time2) {
+function updateRangeDisplay(time1, time2) {
 	const indicatorSVG = d3.select("#indicator-svg");
 	indicatorSVG.selectAll("rect.shading").remove();
 	const svg = d3.select("#temporal-view");
@@ -3265,11 +2818,11 @@ function createSpeechBox(action, subAction) {
 	  rangeDisplay.textContent = `Selected Time Range: ${timeFormat(new Date(time1))} - ${timeFormat(new Date(time2))}`;
 	}
 	initializeShadedAreaDrag();
-  }
+}
 
-  function initializeShadedAreaDrag() {
+function initializeShadedAreaDrag() {
     const indicatorSVG = d3.select("#indicator-svg");
-    const shadedArea = indicatorSVG.select(".shading"); // Assuming .shading is the class for your shaded area
+    const shadedArea = indicatorSVG.select(".shading");
     let dragStartX = null;
 
     const dragstarted = (event) => {
@@ -3348,8 +2901,6 @@ function updateShadedArea(line1X, line2X) {
     shadedArea.attr("x", startX).attr("width", endX - startX);
 }
 
-
-
 function updateTimeDisplay(timestamp, startTime) {
 	const elapsedMs = timestamp - startTime;
 	const elapsedMinutes = Math.floor(elapsedMs / 60000); // Convert to minutes
@@ -3402,11 +2953,6 @@ function createSharedAxis() {
 		.domain([new Date(globalStartTime), new Date(globalEndTime)])
 		.range([0, globalState.dynamicWidth]);
 
-	// Setup the axis
-	// const xAxis = d3.axisTop(x)
-	//     // .ticks(d3.timeMinute.every(bins))
-	//     .tickFormat(timeFormat);
-
 		const xAxis = d3.axisTop(x)
 		.ticks(d3.timeMillisecond.every(intervalSizeMillis))
 		.tickFormat(timeFormat);
@@ -3426,164 +2972,8 @@ function createSharedAxis() {
 
 	// Enable horizontal scrolling
 	// sharedAxisContainer.style("overflow-x", "auto").style("max-width", "100%");
-  }
-
-
-  function animateTemporalView(timestamp) {
-    const svg = d3.select("#temporal-view");
-    if (!svg.empty()) {
-        let line1 = svg.select('#time-indicator-line1');
-        let circle1 = svg.select('#time-indicator-circle1');
-        let line2 = svg.select('#time-indicator-line2');
-        let circle2 = svg.select('#time-indicator-circle2');
-        const indicatorSVG = d3.select("#indicator-svg");
-        const shadedArea = indicatorSVG.select(".shading");
-        const sharedAxisStart = d3.select("#shared-axis-container svg g");
-        const marginLeft = parseInt(sharedAxisStart.attr("transform").match(/translate\((\d+),/)[1]); // Extract margin.left from the transform attribute
-        const alignX = 10; // Additional offset if needed
-
-        // Update line1 and circle1 based on the timestamp
-
-
-        if (globalState.isAnimating) {
-            if (!line1.empty() && !circle1.empty()) {
-                let xPosition1 = Math.max(0, x(new Date(timestamp))) + marginLeft + alignX;
-                line1.attr('x1', xPosition1)
-                    .attr('x2', xPosition1);
-                circle1.attr('cx', xPosition1);
-            }
-            // During animation, hide line2, circle2, and shaded area
-            if (!line2.empty()) {
-                line2.style('display', 'none');
-            }
-            if (!circle2.empty()) {
-                circle2.style('display', 'none');
-            }
-            if (!shadedArea.empty()) {
-                shadedArea.style('display', 'none');
-            }
-
-            const rangeDisplay = document.getElementById("range-display");
-            const timeFormat = d3.timeFormat("%b %d %I:%M:%S %p");
-                rangeDisplay.textContent = `Selected Time: ${timeFormat(new Date(timestamp))}`;
-            // else
-            // {
-            //     rangeDisplay.textContent = `Selected Time: ${timeFormat(new Date(time1))}`;
-
-            // }
-        } else {
-            if (!line1.empty() && !circle1.empty()) {
-                let xPosition1 = Math.max(0, x(new Date(timestamp))) + marginLeft + alignX;
-                line1.attr('x1', xPosition1)
-                    .attr('x2', xPosition1);
-                circle1.attr('cx', xPosition1);
-            }
-            if (!line2.empty()) {
-                line2.style('display', 'block');  // Make line2 visible again
-                let xPosition2 = Math.max(0, x(new Date(timestamp + 5000))) + marginLeft + alignX; // Position 5 seconds ahead of line1
-                line2.attr('x1', xPosition2)
-                    .attr('x2', xPosition2);
-            }
-            if (!circle2.empty()) {
-                circle2.style('display', 'block');  // Make circle2 visible again
-                let xPosition2 = Math.max(0, x(new Date(timestamp + 5000))) + marginLeft + alignX; // Position 5 seconds ahead of circle1
-                circle2.attr('cx', xPosition2);
-            }
-            if (!shadedArea.empty()) {
-                shadedArea.style('display', 'block');  // Make shaded area visible again
-            }
-        }
-    }
 }
 
-
-function updateAnimation(nextTimestamp) {
-    // Perform all the necessary updates in one function
-    animateTemporalView(nextTimestamp);
-    updateTimeDisplay(nextTimestamp, globalState.globalStartTime);
-    updateVisualization(nextTimestamp);
-    updateSpatialView(nextTimestamp);
-}
-
-function animateVisualization() {
-    const dataToVisualize = globalState.finalData;
-
-    // Check if there's data to visualize
-    if (dataToVisualize.length === 0) return;
-
-    // If animation is paused
-    if (!globalState.isAnimating) {
-        const currentTimestamp = globalState.globalStartTime + globalState.currentTimestamp;
-        animateTemporalView(currentTimestamp + 5000); // Update line2 with a timestamp 5 seconds ahead
-
-        // Update shaded area between line1 and line2
-        const line1X = parseFloat(d3.select("#time-indicator-line1").attr("x1"));
-        const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
-        updateShadedArea(line1X, line2X);
-
-        return;
-    }
-
-    // Continue animation if isAnimating is true
-    const globalStartTime = globalState.globalStartTime;
-    const globalEndTime = globalState.globalEndTime;
-    const totalTime = globalEndTime - globalStartTime;
-    const nextTimestamp = globalStartTime + globalState.currentTimestamp;
-
-    if (globalState.currentTimestamp < totalTime) {
-        const elapsedTime = globalState.currentTimestamp;
-        const binIndex = Math.floor(elapsedTime / globalState.intervalDuration);
-        globalState.startTimeStamp = globalStartTime + (binIndex * globalState.intervalDuration);
-        globalState.endTimeStamp = globalState.startTimeStamp + globalState.intervalDuration;
-
-        // Update visualization, time display, and temporal view
-        updateAnimation(nextTimestamp);
-
-        // Update slider position
-        const slider = document.querySelector('#slider-container input[type=range]');
-        if (slider) {
-            slider.value = (globalState.currentTimestamp / totalTime) * slider.max;
-        }
-
-        globalState.currentTimestamp += animationStep; // Maintain the animation step for continuity
-        requestAnimationFrame(animateVisualization);
-    } else {
-        // When animation ends
-        globalState.isAnimating = false;
-
-        // Position line2 and circle2 5 seconds ahead of line1
-        const line2Timestamp = globalState.globalStartTime + globalState.currentTimestamp;
-        animateTemporalView(line2Timestamp + 5000);  // Update with line2 positioned 5 seconds ahead
-
-        // Update shaded area between line1 and line2
-        const line1X = parseFloat(d3.select("#time-indicator-line1").attr("x1"));
-        const line2X = parseFloat(d3.select("#time-indicator-line2").attr("x1"));
-        updateShadedArea(line1X, line2X);
-
-        // Reset current timestamp for a fresh start on next play
-        globalState.currentTimestamp = 0;
-
-        // Toggle animation state or handle any UI updates
-        toggleAnimation(); // Ensure this is still the correct function to handle the animation toggle
-    }
-}
-
-
-
-
-
-  function updateAxisTicks(svg, xScale, binSize) {
-	const tickInterval = d3.timeMinute.every(binSize); // Dynamically set tick interval based on bin size
-	const xAxis = d3.axisTop(xScale)
-		.ticks(tickInterval)
-		.tickFormat(d3.timeFormat("%I:%M:%S"))
-		.tickPadding(5);
-
-	svg.select(".x-axis").call(xAxis); // Re-call the axis to update ticks
-  }
-
-
-// camera.updateProjectionMatrix();
 
 function onWindowResize() {
 	const spatialView = document.getElementById('spatial-view');
@@ -3591,6 +2981,7 @@ function onWindowResize() {
 	globalState.camera.updateProjectionMatrix();
 	globalState.renderer.setSize(spatialView.clientWidth, spatialView.clientHeight);
 }
+
 async function initialize() {
 	await initializeScene();
 	const binsDropdown = document.getElementById('binsDropdown');
@@ -3602,9 +2993,6 @@ async function initialize() {
 	generateHierToolBar();
 
 	createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
-    animateVisualization();
-
-
 	document.querySelectorAll('.topic-checkbox').forEach(checkbox => {
 	  checkbox.checked = true;
 	  checkbox.dispatchEvent(new Event('change'));
@@ -3614,7 +3002,6 @@ async function initialize() {
     if(!logMode.infoVisCollab1){
 	    plotLLMData();
     }
-
 	// plotHeatmap();
 
 	updatePointCloudBasedOnSelections();
@@ -3626,10 +3013,7 @@ async function initialize() {
 
 initialize();
 globalState.camera.updateProjectionMatrix();
-// initializeInteraction();
-
 onWindowResize();
-// window.addEventListener('resize', onWindowResize, false);
 
 
 function animate() {
@@ -3637,7 +3021,4 @@ function animate() {
 	globalState.controls.update();
 	globalState.renderer.render(globalState.scene, globalState.camera);
 }
-export function getScene() {
-	return scene;
-}
-animate();;
+animate();

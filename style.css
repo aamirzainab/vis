@@ -138,16 +138,12 @@ html, body {
     display: none;
 }
 
-#slider-container input[type=range], #playPauseButton {
+#slider-container input[type=range] {
     flex-grow: 1;
     margin: 0 10px;
 }
 
 
-#playPauseButton svg {
-    width: 24px;
-    height: 24px;
-}
  #speech-plot-container {
         /* overflow-x: scroll; */
       padding: 10px;
@@ -170,22 +166,6 @@ html, body {
     width: 100%;
     padding: 0 10px;
     z-index: 10;
-}
-
-#playPauseButton {
-    pointer-events: auto;
-    cursor: pointer;
-    background-color: #fff;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-40%);
-    align-items: center;
-    justify-content: center;
-}
-.play-pause-icon {
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
 }
 
 #bin-selection-container, #time-extent-toggle {
