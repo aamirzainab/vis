@@ -1,5 +1,5 @@
 {
-    "vrGame": {
+    "VR_GAME": {
         "logFilePath": "logs/vrGame/Processed_Log_EXR_VR_Game.json",
         "llmInsightFilePath": "llmInsights/vrGame/final_llm_insights.json",
         "objFilePath" : "obj/vrGame/",
@@ -17,12 +17,6 @@
         "objFilePath" : "obj/infoVisCollab/",
         "obContext" : ["Context", "Object", "Tracemap"]
     },
-    "infoVisCollab1": {
-        "logFilePath": "logs/infoVisCollab/Processed_Log_EXR_InfoVisCollabModified.json",
-        "llmInsightFilePath": "llmInsights/infoVisCollab/final_llm_insights.json",
-        "objFilePath" : "obj/infoVisCollab/",
-        "obContext" : ["Context", "Object", "Tracemap"]
-    },
 	"sceneNavigation": {
         "logFilePath": "logs/sceneNavigation/Processed_Log_EXR_SceneNavigation.json",
         "llmInsightFilePath": "llmInsights/sceneNavigation/final_llm_insights.json",
@@ -35,7 +29,7 @@
         "objFilePath" : "obj/maintenance/",
         "obContext" : ["Context", "Object", "Tracemap"]
     },
-    "videoScene":{
+    "SceneNavigation":{
         "logFilePath": "logs/videoScene/Processed_Log_VIDEO_EXR_SceneNavigation.json",
         "llmInsightFilePath": "llmInsights/videoScene/final_llm_insights.json",
         "objFilePath" : "obj/videoScene/",

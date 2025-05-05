@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First Page</title>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='server/static/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1><i>'Explain'</i> your XR users</h1><br>
+        <form action="/submit" method="POST" enctype="multipart/form-data">
+            <div>
+                <label for="jsonFile">Upload Session Log File :</label>
+                <input type="file" id="jsonFile" name="json_file" accept=".json" required>
+            </div>
+            <br>
+            <textarea id="userInput" name="user_input" class="input-field" placeholder="Tell us your analysis of interest!"></textarea>
+            <br>
+            <button type="submit" class="submit-btn">Analyze</button>
+        </form>
+    </div>
+</body>
+</html>

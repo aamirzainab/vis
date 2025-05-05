@@ -23,12 +23,12 @@ import {
 
 
 let logMode = {
-	vrGame: 0,
+	VR_GAME: 1,
 	immersiveAnalytics: 0,
-	infoVisCollab: 1,
+	infoVisCollab: 0,
 	sceneNavigation: 0,
 	maintenance: 0,
-    videoScene : 0
+    SceneNavigation : 0
 }
 
 let video = false ;

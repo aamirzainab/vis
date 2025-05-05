@@ -1,0 +1,26 @@
+{
+    "User1": {
+        "Action1": "#A8E6CF", 
+        "Action2": "#88DBC2", 
+        "Action3": "#66CFAE", 
+        "Action4": "#44C39A", 
+        "Action5": "#22B787", 
+        "Action6": "#1EA175"  
+    },
+    "User2": {
+        "Action1": "#4DD0E1", 
+        "Action2": "#42BACE", 
+        "Action3": "#36A1B8", 
+        "Action4": "#2A87A0", 
+        "Action5": "#1F6E88", 
+        "Action6": "#155571"  
+    },
+    "User3": {
+        "Action1": "#1E88E5", 
+        "Action2": "#1876CD", 
+        "Action3": "#1462B4", 
+        "Action4": "#104F9B", 
+        "Action5": "#0D3C82", 
+        "Action6": "#09296A" 
+    }
+}
