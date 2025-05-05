@@ -28,7 +28,7 @@ def submit():
     json_file = request.files['json_file']
     if json_file:
         json_file_path = os.path.join(app.config['UPLOAD_FOLDER'], json_file.filename)
-        # json_file.save(json_file_path) #this saves to server uploads folder
+        json_file.save(json_file_path) #this saves to server uploads folder
 
         user_input = request.form['user_input']
 
