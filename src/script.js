@@ -21,11 +21,15 @@ import {
 } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/Line2.js';
 
 
+const uploadedLog    = window.UPLOADED_LOG;      // your session–log JSON
+const sFileName      = window.UPLOADED_FILENAME; // the filename string
+const sUserInput     = window.USER_INPUT;        // the textarea contents
 
+console.log("Server datal ", sFileName, sUserInput, uploadedLog)
 let logMode = {
-	VR_GAME: 1,
+	VR_GAME: 0,
 	immersiveAnalytics: 0,
-	infoVisCollab: 0,
+	infoVisCollab: 1,
 	sceneNavigation: 0,
 	maintenance: 0,
     SceneNavigation : 0
