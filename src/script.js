@@ -25,7 +25,6 @@ const uploadedLog    = window.UPLOADED_LOG;      // your session–log JSON
 const sFileName      = window.UPLOADED_FILENAME; // the filename string
 const sUserInput     = window.USER_INPUT;        // the textarea contents
 
-console.log("Server datal ", sFileName, sUserInput, uploadedLog)
 let logMode = {
 	VR_GAME: 0,
 	immersiveAnalytics: 0,
@@ -92,6 +91,21 @@ const configData = await Promise.all([
 	fetch('config.json').then(response => response.json()),
 ]);
 
+const useCaseKey = Object
+  .keys(configData[0] || {})
+  .find(k => sFileName.toLowerCase().includes(k.toLowerCase()));
+
+
+if(useCaseKey){
+    Object.keys(logMode).forEach(k => {
+        logMode[k] = (k === useCaseKey ? 1 : 0);
+    });
+
+    globalState.finalData = uploadedLog;
+}else{
+    console.warn("usecase not configured, sample usecase displayed!!");
+}
+
 let selectedLogMode = Object.keys(logMode).find(key => logMode[key] === 1);
 globalState.useCase = selectedLogMode;
 
@@ -102,7 +116,7 @@ if (selectedLogMode && configData[0][selectedLogMode]) {
 	globalState.obContext = configData[0][selectedLogMode].obContext;
 
 } else {
-    console.log("No valid mode selected or key not found in JSON.");
+    console.log("unsupported usecase or not configured!");
 }
 
 function initializeViewProps() {
@@ -1248,10 +1262,12 @@ async function initializeScene() {
 	// globalState.scene.add(gridHelper);
 	// await Promise.all([loadRoomModel()]);
 
-  	const finalData = await Promise.all([
-		fetch(globalState.logFIlePath).then(response => response.json()),
-		  ]);
-  globalState.finalData = finalData[0];
+    if(!globalState.finalData){
+        const finalData = await Promise.all([
+            fetch(globalState.logFIlePath).then(response => response.json()),
+            ]);
+        globalState.finalData = finalData[0];
+    }
 
     updateNumUsers();
     initializeViewProps();
