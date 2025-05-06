@@ -84,9 +84,6 @@ let globalState = {
     isAnimating: video
 };
 
-
-
-
 const configData = await Promise.all([
 	fetch('config.json').then(response => response.json()),
 ]);
@@ -354,7 +351,7 @@ function updateUserDevice(userId, timestamp = null) {
     let deviceType = '';
 
     // Determine the device type based on the log mode
-    if (logMode.vrGame || logMode.immersiveAnalytics) {
+    if (logMode.VR_GAME || logMode.immersiveAnalytics) {
         deviceType = 'XRHMD';
     } else if (logMode.infoVisCollab || logMode.infoVisCollab1 || logMode.sceneNavigation || logMode.maintenance || logMode.videoScene) {
         deviceType = 'HandheldARInputDevice';
@@ -435,7 +432,7 @@ function updateLeftControl(userId, timestamp = null) {
     if (logMode.immersiveAnalytics) {
         actionName = 'Move Hand';
         deviceType = 'XRHand_L';
-    } else if (logMode.vrGame) {
+    } else if (logMode.VR_GAME) {
         actionName = 'Move Controller';
         deviceType = 'XRController_L';
     } else {
@@ -510,7 +507,7 @@ function updateRightControl(userId, timestamp = null) {
     if (logMode.immersiveAnalytics) {
         actionName = 'Move Hand';
         deviceType = 'XRHand_R';
-    } else if (logMode.vrGame) {
+    } else if (logMode.VR_GAME) {
         actionName = 'Move Controller';
         deviceType = 'XRController_R';
     } else {
@@ -931,7 +928,7 @@ async function updateObjectsBasedOnSelections() {
                             }
 
                             // && video === true
-                            if (logMode.vrGame && originLocation) {  // Only adjust if originLocation exists
+                            if (logMode.VR_GAME && originLocation) {  // Only adjust if originLocation exists
                                 // Calculate the delta from the origin
                                 // console.log("came here with object " + adjustedPath);
                                 const existingObject = globalState.scene.getObjectByName(key);
@@ -1255,7 +1252,7 @@ async function initializeScene() {
     updateNumUsers();
     initializeViewProps();
     window_onload();
-    const isHeadsetMode = logMode.vrGame || logMode.immersiveAnalytics;
+    const isHeadsetMode = logMode.VR_GAME || logMode.immersiveAnalytics;
     const avatarModel = isHeadsetMode ? 'headset.glb' : 'ipad.glb';
     const loadModel = isHeadsetMode ? loadAvatarModel : loadIpadModel;
     const avatarPromises = Array.from({ length: numUsers }, () => loadModel(avatarModel));
@@ -1263,15 +1260,15 @@ async function initializeScene() {
 
 	globalState.avatars = await Promise.all(avatarPromises);
 	const controlModels = {
-		vrGame: { right: "controller_r.glb", left: "controller_l.glb" },
+		VR_GAME: { right: "controller_r.glb", left: "controller_l.glb" },
 		immersiveAnalytics: { right: "hand_r.glb", left: "hand_l.glb" },
 	};
 
 	// Determine right and left control models
 	let rightControlModel, leftControlModel;
 
-	if (logMode.vrGame) {
-		({ right: rightControlModel, left: leftControlModel } = controlModels.vrGame);
+	if (logMode.VR_GAME) {
+		({ right: rightControlModel, left: leftControlModel } = controlModels.VR_GAME);
 	} else if (logMode.immersiveAnalytics) {
 		({ right: rightControlModel, left: leftControlModel } = controlModels.immersiveAnalytics);
 	} else {
