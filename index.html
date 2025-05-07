@@ -117,9 +117,27 @@
             <svg id="shared-axis"></svg>
         </div>
         <div id="controls-container">
+            <div id="time-extent-toggle" class="segmented-control">
+                <input 
+                  type="radio" 
+                  name="timeExtent" 
+                  id="toggle-instance" 
+                  value="instance" 
+                  checked
+                >
+                <label for="toggle-instance">Instance</label>
+              
+                <input 
+                  type="radio" 
+                  name="timeExtent" 
+                  id="toggle-interval" 
+                  value="range"
+                >
+                <label for="toggle-interval">Intervals</label>
+            </div>
             <div id="bin-selection-container" class="dropdown">
-                <button class="dropbtn" onclick="myFunction()">Intervals
-                </button>
+                <!-- <button class="dropbtn" onclick="myFunction()">Intervals
+                </button> -->
                 <select id="binsDropdown">
                     <option value="0.5">0.5</option>
                     <option value="1" >1</option>

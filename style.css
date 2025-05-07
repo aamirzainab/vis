@@ -113,7 +113,7 @@ html, body {
     bottom: 0px;
 }
 
-.toolbar, #obj-toolbar, #toolbar, #bin-selection-container {
+.toolbar, #obj-toolbar, #toolbar {
     background-color: #f9f9f9;
     /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
     position: absolute;
@@ -160,36 +160,65 @@ html, body {
 #controls-container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start; /* line up items from the left */
+    gap: 10px;                    /* space between toggle & dropdown */
     position: absolute;
     top: 0;
     width: 100%;
     padding: 0 10px;
     z-index: 10;
-}
+  }
 
-#bin-selection-container, #time-extent-toggle {
-    position: relative;
-    margin-right: 10px; /* Space between controls */
-    display: flex;
+  /* ─── Segmented control styling ─── */
+.segmented-control {
+    display: inline-flex;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    user-select: none;
+  }
+  .segmented-control input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .segmented-control label {
+    padding: 6px 12px;
+    margin: 0;
+    background: #f9f9f9;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .segmented-control input:checked + label {
+    background: #98b3d1;
+    color: #fff;
+  }
+
+  #bin-selection-container {
+    display: none;       /* so JS can toggle between 'flex' and 'none' */
+    flex: none;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     padding: 5px 10px;
-    background-color: #fff;
+    background: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-
 #bin-selection-container select {
-    appearance: none; /* Remove default styling */
-    background-color: transparent; /* Make it transparent to show the container's color */
-    border: none; /* No borders */
-    padding: 5px 8px; /* Same padding for visual consistency */
-    font-size: 1.01em; /* Large, readable text */
-    color: #333; /* A dark grey for text to make it readable */
-    cursor: pointer; /* Indicate it's a dropdown */
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+#unit-selection-container {
+    display: flex;
+    gap: 6px;
 }
 
 #bin-selection-container::after {

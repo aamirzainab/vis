@@ -84,7 +84,8 @@ let globalState = {
 	viewProps: {},
 	obContext: [],
     markers:{},
-    isAnimating: video
+    isAnimating: video,
+    instanceMode: true
 };
 
 const configData = await Promise.all([
@@ -3039,3 +3040,26 @@ function animate() {
 	globalState.renderer.render(globalState.scene, globalState.camera);
 }
 animate();
+
+// window.addEventListener('DOMContentLoaded', () => {
+    const instRadio = document.getElementById('toggle-instance');
+    const intvRadio = document.getElementById('toggle-interval');
+    const binBox    = document.getElementById('bin-selection-container');
+    
+    if (!instRadio || !intvRadio || !binBox) {
+        console.error('Toggle or container missing:', {
+          instRadio, intvRadio, binBox
+        });
+    }
+
+    function refreshIntervals() {
+        const isInterval = intvRadio.checked;
+        binBox.style.display           = isInterval ? 'flex' : 'none';
+        globalState.instanceMode       = !isInterval;
+    }
+    
+    refreshIntervals();
+    
+    instRadio.addEventListener('change', refreshIntervals);
+    intvRadio .addEventListener('change', refreshIntervals);
+//   });
