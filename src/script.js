@@ -1583,14 +1583,14 @@ function createLines(timestamp1, timestamp2) {
     // Hide the second handle in Instance mode
     if (globalState.instanceMode) {
         // remove or hide the second handle in Instance mode
-        console.log("### Def Instance")
+        // console.log("### Def Instance")
         // globalState.lineTimeStamp2 = globalState.lineTimeStamp1;
         svg.select('#time-indicator-line2').style('display', 'none');
         svg.select('#time-indicator-circle2').style('display', 'none');
         svg.selectAll('.shading').style('display','none');
     } else {
         // show the second handle in other modes
-        console.log("### Def NOT Instance")
+        // console.log("### Def NOT Instance")
         svg.select('#time-indicator-line2').style('display', null);
         svg.select('#time-indicator-circle2').style('display', null);
         svg.selectAll('.shading').style('display','none');
