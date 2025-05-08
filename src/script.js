@@ -1580,6 +1580,22 @@ function createLines(timestamp1, timestamp2) {
 		.attr('cy', y1)
 		.call(drag);
 
+    // Hide the second handle in Instance mode
+    if (globalState.instanceMode) {
+        // remove or hide the second handle in Instance mode
+        console.log("### Def Instance")
+        // globalState.lineTimeStamp2 = globalState.lineTimeStamp1;
+        svg.select('#time-indicator-line2').style('display', 'none');
+        svg.select('#time-indicator-circle2').style('display', 'none');
+        svg.selectAll('.shading').style('display','none');
+    } else {
+        // show the second handle in other modes
+        console.log("### Def NOT Instance")
+        svg.select('#time-indicator-line2').style('display', null);
+        svg.select('#time-indicator-circle2').style('display', null);
+        svg.selectAll('.shading').style('display','none');
+        // globalState.lineTimeStamp2 = globalState.lineTimeStamp1 + globalState.intervalDuration;
+    }
 
 	circle1.call(drag);
 	circle2.call(drag);
@@ -1598,6 +1614,14 @@ function createLines(timestamp1, timestamp2) {
 }
 
 export function dragged(event,d) {
+    const draggedId = d3.select(this).attr('id');
+    if (
+        globalState.instanceMode &&
+        (draggedId === 'time-indicator-line2' ||
+        draggedId === 'time-indicator-circle2')
+    ) {
+        return; 
+    }
 	const svgElement = document.querySelector("#temporal-view svg");
 	const container = document.getElementById("temporal-view");
 	const indicatorSvg = document.getElementById('indicator-svg');
@@ -1622,10 +1646,12 @@ export function dragged(event,d) {
 	  newTimestamp = new Date(globalState.globalEndTime);
 	  newXPosition = x(newTimestamp);
 	}
-	if (isLine1) {
-		newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
-	} else {
-		newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
+	if (!globalState.instanceMode) {
+		if (isLine1) {
+			newTimestamp = Math.min(newTimestamp, otherTimestamp - minDistanceMillis);
+		} else {
+			newTimestamp = Math.max(newTimestamp, otherTimestamp + minDistanceMillis);
+		}
 	}
 	if (isLine1) {
 	  globalState.lineTimeStamp1 = newTimestamp;
@@ -2810,6 +2836,13 @@ function createSpeechBox(action, subAction) {
 
 function updateRangeDisplay(time1, time2) {
 	const indicatorSVG = d3.select("#indicator-svg");
+        // Instance mode: don’t draw any shading
+    if (globalState.instanceMode) {
+        indicatorSVG.selectAll("rect.shading").remove();
+        document.getElementById("range-display").textContent = '';
+        return;
+    }
+        
 	indicatorSVG.selectAll("rect.shading").remove();
 	const svg = d3.select("#temporal-view");
 
@@ -3060,6 +3093,12 @@ animate();
     
     refreshIntervals();
     
-    instRadio.addEventListener('change', refreshIntervals);
-    intvRadio .addEventListener('change', refreshIntervals);
+    instRadio.addEventListener('change', () => {
+        refreshIntervals();
+        createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+      });
+      intvRadio .addEventListener('change', () => {
+        refreshIntervals();
+        createLines(globalState.lineTimeStamp1, globalState.lineTimeStamp2);
+      });
 //   });
